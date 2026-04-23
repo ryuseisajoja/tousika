@@ -361,10 +361,15 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     padding: 6px 6px calc(155px + env(safe-area-inset-bottom)) 6px;
     display: flex; justify-content: center; align-items: flex-start;
   }
-  :root { --mob-csw: 84px; --mob-csh: 84px; }
+  :root { --mob-csw: 88px; --mob-csh: 88px; } /* ← 🌟少しだけセルを大きくしました */
   #board { display: none !important; }
   #board-mobile { display: grid !important; gap: 4px; width: max-content; }
   .mob-bottom { display: flex !important; }
+  
+  /* 🌟追加：マス目の文字サイズ調整：10px以上に固定して読みやすく */
+  .mob-cell .ct { font-size: 11px !important; line-height: 1.1; margin-bottom: 4px; }
+  .mob-cell .cs2 { display: none; } /* サブテキスト（説明文）はマスから消してスッキリさせる */
+
   /* モーダル下スライド */
   .mo { align-items: flex-end; padding-bottom: env(safe-area-inset-bottom); }
   .mb { max-height: 80vh; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; box-shadow: 0 -4px 0 var(--border); width: 100%; max-width: 100%; }
