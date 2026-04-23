@@ -1932,7 +1932,7 @@ function resolveBonds(p, isGoal=false) {
 
 
 // ─── モーダル＆市場 ───
-function showModal({type, tag, title, desc, extra='', eff='', effc='gold', acts}){
+function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts}){
   document.getElementById('mbox').className='mb '+type;
   // ライブ共有（他プレイヤーに現在の画面を送信）
   broadcastLive({ type, tag, title, desc: desc.replace(/<[^>]+>/g,'').slice(0,120), eff, effc }).catch(()=>{});
