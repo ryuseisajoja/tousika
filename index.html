@@ -3189,7 +3189,7 @@ async function syncGameState() {
     lastVersion    = gs.version;
 
     // 状態を反映
-    Object.assign(G, gs);
+    Object.assign(G, gs); G.goalOrder = G.goalOrder || [];
     G.players = _restorePlayers(gs.players);
     if(G.market?.id) G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
 
@@ -3253,7 +3253,7 @@ async function waitingPollTick() {
         estates: p.estates || [], //
         color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
       }));
-      Object.assign(G, gs);
+      Object.assign(G, gs); G.goalOrder = G.goalOrder || [];
       lastVersion = gs.version || 1;
       _syncBusy   = false;
       if(G.market && G.market.id) {
