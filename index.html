@@ -3104,6 +3104,8 @@ function _restorePlayers(raw) {
   const arr = Array.isArray(raw) ? raw : Object.values(raw || {});
   return arr.map((p, i) => ({
     ...p,
+    bonds: p.bonds || [],     // 
+    estates: p.estates || [], // 
     color: (p.color && typeof p.color === 'object' && p.color.bg)
       ? p.color : COLORS[i % COLORS.length]
   }));
