@@ -3631,18 +3631,19 @@ let _resizeTimer = null;
 window.addEventListener('resize', () => {
   clearTimeout(_resizeTimer);
   _resizeTimer = setTimeout(() => {
+    // ゲーム画面表示中のみ実行
+    if(document.getElementById('game-screen').style.display !== 'block') return;
     buildBoard();
     renderAll();
     showMobTabs();
-    if(isLandscapeMobile()) scaleBoardForLandscape();
   }, 200);
 });
 window.addEventListener('orientationchange', () => {
   setTimeout(() => {
+    if(document.getElementById('game-screen').style.display !== 'block') return;
     buildBoard();
     renderAll();
     showMobTabs();
-    if(isLandscapeMobile()) scaleBoardForLandscape();
   }, 400);
 });
 
