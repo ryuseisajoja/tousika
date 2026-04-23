@@ -3926,6 +3926,34 @@ renderAll = function() {
 };
 
 setCount(3);
-</script>
+// ─── スマホ用：自分の全資産を表示する ───
+function showMyAssets() {
+  const p = G.players[G.ci]; // 現在のターンの人の資産を見る（あるいは自分のIDに固定も可能）
+  const b1 = p.bonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
+  const b2 = p.bonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+  
+  let estatesHtml = p.estates.length > 0 
+    ? p.estates.map(e => `🏠 ${fmtM(e.price)} の物件`).join('<br>') 
+    : 'なし';
+
+  showModal({
+    type: 't-info',
+    tag: 'ASSETS',
+    title: `${p.name} さんの資産状況`,
+    desc: `
+      <div style="text-align: left; line-height: 2;">
+        💰 <strong>現金：</strong> <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span><br>
+        📈 <strong>株式：</strong> ${p.stocks} 株<br>
+        🏦 <strong>国債（1年）：</strong> ${b1} 口<br>
+        🏦 <strong>国債（2年）：</strong> ${b2} 口<br>
+        🥇 <strong>純金：</strong> ${p.gold} 口<br>
+        🏡 <strong>不動産：</strong><br>${estatesHtml}<br>
+        🚀 <strong>IPO（未上場）：</strong> ${p.ipo} 口<br>
+        🛡️ <strong>保険：</strong> ${p.insYear === G.year ? '✅ 加入中' : '❌ 未加入'}
+      </div>
+    `,
+    acts: [{lbl: '閉じる', p: true, fn: closeModal}]
+  });
+}</script>
 </body>
 </html>
