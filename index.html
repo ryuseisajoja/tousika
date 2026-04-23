@@ -384,7 +384,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 }
 
 /* ── 横画面モバイル（PCボードをスケール） ── */
-@media(max-height: 550px) and (orientation: landscape) {
+@media(max-height: 700px) and (orientation: landscape) and (max-width: 1024px) {
   #board-mobile { display: none !important; }
   #board { display: grid !important; transform-origin: top left; }
   .mob-bottom { display: none !important; }
@@ -1049,6 +1049,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
       <div class="g-logo">投資家人生</div>
       <div class="g-meta">
         <button class="rule-btn" style="margin:0; padding:4px 12px; font-size:11px; box-shadow:2px 2px 0 var(--border);" onclick="window.open('https://docs.google.com/document/d/1z6x-cUXpG5ylhaJ7Q6paigI04jCrEZ6T3r0TC6nzcmk/edit?tab=t.8o3j36ov64i9#heading=h.m5pahkuy15tl', '_blank')">📖 ルール</button>
+        <button onclick="emergencyReset()" title="詰まったとき押す" style="background:#fee2e2;border:2px solid var(--red);border-radius:10px;padding:2px 7px;font-size:10px;font-weight:900;color:var(--red);cursor:pointer;white-space:nowrap">⚡リセット</button>
         <div id="sync-dot" onclick="showSyncDebug()" title="タップで診断" style="width:12px;height:12px;border-radius:50%;background:#94a3b8;flex-shrink:0;transition:background .3s;cursor:pointer;box-shadow:0 0 0 2px var(--border)"></div>
         <button onclick="toggleBGM()" id="game-bgm-btn" style="background:#fff;border:2px solid var(--border);border-radius:16px;padding:4px 10px;font-size:11px;font-weight:900;cursor:pointer;box-shadow:2px 2px 0 var(--border)">🎵</button>
         <div id="online-status" style="display:none">
@@ -1416,7 +1417,7 @@ async function determineJobsRoulette() {
 
 function isLandscapeMobile() {
   // 横画面かつ高さが550px以下 = モバイル横画面
-  return window.innerHeight <= 550 && window.innerWidth > window.innerHeight;
+  return window.innerHeight <= 700 && window.innerWidth > window.innerHeight && window.innerWidth <= 1024;
 }
 function isPortraitMobile() {
   return window.innerWidth <= 768 && !isLandscapeMobile();
@@ -1711,8 +1712,10 @@ async function onRoll(){
     if(activeEl) {
       activeEl.classList.add('active-cell');
       // モバイル: アクティブセルが見えるようにスクロール
-      if(window.innerWidth <= 768) {
+      if(isPortraitMobile()) {
         activeEl.scrollIntoView({behavior:'smooth', block:'center'});
+      } else if(isLandscapeMobile()) {
+        activeEl.scrollIntoView({behavior:'smooth', block:'nearest'});
       }
     }
     renderAll(); await sleep(250);
@@ -1734,7 +1737,17 @@ async function onRoll(){
     }
     if(p.pos===42) break;
   }
-  await processCell(p, CELLS[p.pos]);
+  try {
+    await processCell(p, CELLS[p.pos]);
+  } catch(e) {
+    console.error('[processCell error]', e);
+    toast('⚠️ エラーが発生しました。ターンをスキップします。');
+    isMoving = false;
+    document.getElementById('dice-area')?.classList.remove('disabled');
+    const md = document.getElementById('mob-dice-area');
+    if(md) { md.style.opacity='1'; md.style.pointerEvents='auto'; }
+    nextTurn();
+  }
 }
 
 async function nextTurn(){
@@ -3103,6 +3116,25 @@ function _dot(color, ms=350) {
   d.style.background = color;
   if(ms) setTimeout(()=>{ d.style.background='#94a3b8'; }, ms);
 }
+
+// ── 緊急リセット（詰まった時） ──────────────────────────
+function emergencyReset() {
+  if(!confirm('サイコロが止まった・画面が動かないときに使います。\nリセットしますか？')) return;
+  isMoving = false;
+  _syncRunning = false;
+  // ダイス有効化
+  document.getElementById('dice-area')?.classList.remove('disabled');
+  const md = document.getElementById('mob-dice-area');
+  if(md) { md.style.opacity='1'; md.style.pointerEvents='auto'; }
+  // オンラインなら即座に同期
+  if(!LOCAL_MODE) {
+    lastVersion = -1; // 強制再読み込み
+    syncGameState();
+  }
+  renderAll();
+  toast('🔄 リセットしました');
+}
+
 function showSyncDebug() {
   const msg = `🔍 同期診断
 COUNT:${_syncCallCount} LOCAL:${LOCAL_MODE}
