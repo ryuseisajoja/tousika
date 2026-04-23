@@ -1432,7 +1432,16 @@ function isPortraitMobile() {
   return window.innerWidth <= 768 && !isLandscapeMobile();
 }
 
+// 🌟追加：画面回転時のバグを直すリセット機能
+function resetBoardStyles() {
+  const wrap = document.querySelector('.board-wrap');
+  if(wrap) { wrap.style.width = ''; wrap.style.height = ''; wrap.style.position = ''; }
+  const board = document.getElementById('board');
+  if(board) { board.style.transform = ''; board.style.position = ''; }
+}
+
 function buildBoard(){
+  resetBoardStyles(); // ← 🌟ここでリセットを実行
   if(isPortraitMobile()) {
     buildMobileBoard();
     return;
@@ -3604,6 +3613,7 @@ function scaleBoardForLandscape() {
   // 変換をリセットしてから実サイズを取得
   board.style.transform       = '';
   board.style.transformOrigin = 'top left';
+  wrap.style.position         = 'relative'; // 🌟追加：ボードが画面外に消えるのを防ぐ
   board.style.position        = 'absolute';
 
   const bw = board.offsetWidth;
@@ -3927,13 +3937,18 @@ renderAll = function() {
 
 setCount(3);
 // ─── スマホ用：自分の全資産を表示する ───
-function showMyAssets() {
-  const p = G.players[G.ci]; // 現在のターンの人の資産を見る（あるいは自分のIDに固定も可能）
-  const b1 = p.bonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
-  const b2 = p.bonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+window.showMyAssets = function() {
+  const p = G.players[G.ci];
+  if(!p) return;
   
-  let estatesHtml = p.estates.length > 0 
-    ? p.estates.map(e => `🏠 ${fmtM(e.price)} の物件`).join('<br>') 
+  // 🌟追加：データが空の場合のエラー防止
+  const safeBonds = p.bonds || [];
+  const safeEstates = p.estates || [];
+  const b1 = safeBonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
+  const b2 = safeBonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+  
+  let estatesHtml = safeEstates.length > 0 
+    ? safeEstates.map(e => `🏠 ${fmtM(e.price)} の物件`).join('<br>') 
     : 'なし';
 
   showModal({
