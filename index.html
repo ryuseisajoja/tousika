@@ -1112,18 +1112,22 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 <!-- ═══ モバイル下部固定バー ═══ -->
 <div class="mob-bottom" id="mob-bottom">
-  <div class="mob-bottom-top">
-    <div class="mob-mkt-pill" id="mob-mkt-pill">
-      <div class="mn" id="mob-mkt-nm">📊 物価安定</div>
-      <div class="mp" id="mob-mkt-pr">¥50,000/10株</div>
-    </div>
-    <div class="mob-dice-wrap" onclick="onRoll()" id="mob-dice-area">
-      <div class="mob-die" id="mob-die">🎲</div>
-      <div class="mob-roll-hint" id="mob-roll-hint">タップして振る！</div>
-    </div>
+<div class="mob-bottom-top">
+  <div class="mob-mkt-pill" id="mob-mkt-pill" style="flex: 1.5;">
+    <div class="mn" id="mob-mkt-nm">📊 物価安定</div>
+    <div class="mp" id="mob-mkt-pr">¥50,000/10株</div>
   </div>
-  <div class="mob-turn-name" id="mob-turn-name">—</div>
-  <div class="mob-players-strip" id="mob-players-strip"></div>
+
+  <button onclick="showMyAssets()" style="
+    flex: 1; background: var(--blue); color: #fff; border: 2px solid var(--border);
+    border-radius: 10px; font-weight: 900; font-size: 11px; padding: 6px 4px;
+    box-shadow: 0 3px 0 var(--border); margin: 0 4px; font-family: inherit;
+  ">📊 資産</button>
+
+  <div class="mob-dice-wrap" onclick="onRoll()" id="mob-dice-area" style="flex: 1;">
+    <div class="mob-die" id="mob-die" style="width: 44px; height: 44px; font-size: 28px;">🎲</div>
+    <div class="mob-roll-hint" id="mob-roll-hint" style="font-size: 8px;">TAP!</div>
+  </div>
 </div>
 
 <!-- ═══ スペクテーターカード ═══ -->
