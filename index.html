@@ -38,19 +38,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 @keyframes popUp { 0%{transform: scale(0.5) translateY(20px); opacity:0;} 80%{transform: scale(1.1) translateY(-5px); opacity:1;} 100%{transform: scale(1) translateY(0); opacity:1;} }
 @keyframes bounceIn { 0%{transform: translateY(30px); opacity:0;} 100%{transform: translateY(0); opacity:1;} }
 
-/* 🌟修正：設定画面をスクロール可能にし、入力欄を1列に強制する */
-.setup { background: #fff; border: 4px solid var(--border); border-radius: 24px; padding: 20px 28px; max-width: 460px; width: 90%; position: relative; z-index: 10; box-shadow: 8px 8px 0px var(--border); animation: bounceIn .6s .8s ease both; text-align: center; max-height: 80vh; overflow-y: auto; }
-.names-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; } /* 🌟ここを2列から1列に変更 */
-
-/* 🌟追加：横画面の時に「縦にして」と表示する（横画面バグを物理的に防ぐ） */
-@media (orientation: landscape) and (max-height: 500px) {
-  body::before {
-    content: "📱 スマホを縦向きにしてプレイしてください";
-    position: fixed; inset: 0; z-index: 99999; background: #ffde59;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 20px; color: #2d3436;
-  }
-}
+.setup { background: #fff; border: 4px solid var(--border); border-radius: 24px; padding: 20px 28px; max-width: 460px; width: 90%; position: relative; z-index: 10; box-shadow: 8px 8px 0px var(--border); animation: bounceIn .6s .8s ease both; text-align: center; }
 .s-lbl { font-size: 13px; font-weight: 900; color: var(--text); margin-bottom: 10px; text-align: center; }
 .cnt-row { display: flex; gap: 8px; margin-bottom: 20px; }
 .cnt-btn { flex: 1; padding: 10px; background: #f1f5f9; border: 3px solid var(--border); border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; transition: all .1s; box-shadow: 0 4px 0 var(--border); color: var(--text); font-family: 'Nunito', sans-serif; }
@@ -373,15 +361,10 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     padding: 6px 6px calc(155px + env(safe-area-inset-bottom)) 6px;
     display: flex; justify-content: center; align-items: flex-start;
   }
-  :root { --mob-csw: 88px; --mob-csh: 88px; } /* ← 🌟少しだけセルを大きくしました */
+  :root { --mob-csw: 84px; --mob-csh: 84px; }
   #board { display: none !important; }
   #board-mobile { display: grid !important; gap: 4px; width: max-content; }
   .mob-bottom { display: flex !important; }
-  
-  /* 🌟追加：マス目の文字サイズ調整：10px以上に固定して読みやすく */
-  .mob-cell .ct { font-size: 11px !important; line-height: 1.1; margin-bottom: 4px; }
-  .mob-cell .cs2 { display: none; } /* サブテキスト（説明文）はマスから消してスッキリさせる */
-
   /* モーダル下スライド */
   .mo { align-items: flex-end; padding-bottom: env(safe-area-inset-bottom); }
   .mb { max-height: 80vh; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; box-shadow: 0 -4px 0 var(--border); width: 100%; max-width: 100%; }
@@ -1124,22 +1107,19 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 <!-- ═══ モバイル下部固定バー ═══ -->
 <div class="mob-bottom" id="mob-bottom">
-<div class="mob-bottom-top">
-  <div class="mob-mkt-pill" id="mob-mkt-pill" style="flex: 1.5;">
-    <div class="mn" id="mob-mkt-nm">📊 物価安定</div>
-    <div class="mp" id="mob-mkt-pr">¥50,000/10株</div>
+  <div class="mob-bottom-top">
+    <div class="mob-mkt-pill" id="mob-mkt-pill" style="flex:1.5">
+      <div class="mn" id="mob-mkt-nm">📊 物価安定</div>
+      <div class="mp" id="mob-mkt-pr">¥50,000/10株</div>
+    </div>
+    <button onclick="showMyAssets()" style="flex:1;background:var(--blue);color:#fff;border:2px solid var(--border);border-radius:10px;font-weight:900;font-size:11px;padding:6px 4px;box-shadow:0 3px 0 var(--border);margin:0 4px;font-family:inherit">📊 資産</button>
+    <div class="mob-dice-wrap" onclick="onRoll()" id="mob-dice-area" style="flex:1">
+      <div class="mob-die" id="mob-die" style="width:44px;height:44px;font-size:28px">🎲</div>
+      <div class="mob-roll-hint" id="mob-roll-hint" style="font-size:8px">TAP!</div>
+    </div>
   </div>
-
-  <button onclick="showMyAssets()" style="
-    flex: 1; background: var(--blue); color: #fff; border: 2px solid var(--border);
-    border-radius: 10px; font-weight: 900; font-size: 11px; padding: 6px 4px;
-    box-shadow: 0 3px 0 var(--border); margin: 0 4px; font-family: inherit;
-  ">📊 資産</button>
-
-  <div class="mob-dice-wrap" onclick="onRoll()" id="mob-dice-area" style="flex: 1;">
-    <div class="mob-die" id="mob-die" style="width: 44px; height: 44px; font-size: 28px;">🎲</div>
-    <div class="mob-roll-hint" id="mob-roll-hint" style="font-size: 8px;">TAP!</div>
-  </div>
+  <div class="mob-turn-name" id="mob-turn-name">—</div>
+  <div class="mob-players-strip" id="mob-players-strip"></div>
 </div>
 
 <!-- ═══ スペクテーターカード ═══ -->
@@ -1444,36 +1424,7 @@ function isPortraitMobile() {
   return window.innerWidth <= 768 && !isLandscapeMobile();
 }
 
-// 🌟追加：画面回転時のバグを直すリセット機能
-function resetBoardStyles() {
-  const wrap = document.querySelector('.board-wrap');
-  if(wrap) { wrap.style.width = ''; wrap.style.height = ''; wrap.style.position = ''; }
-  const board = document.getElementById('board');
-  if(board) { board.style.transform = ''; board.style.position = ''; }
-}
-
-// 🌟追加：画面回転時のバグを直すリセット機能
-function resetBoardStyles() {
-  const wrap = document.querySelector('.board-wrap');
-  if(wrap) { 
-    wrap.style.width = ''; 
-    wrap.style.height = ''; 
-    wrap.style.position = ''; 
-    wrap.style.display = '';
-    wrap.style.alignItems = '';
-    wrap.style.justifyContent = '';
-  }
-  const board = document.getElementById('board');
-  if(board) { 
-    board.style.transform = ''; 
-    board.style.position = ''; 
-    board.style.transformOrigin = '';
-    board.style.margin = '';
-  }
-}
-
 function buildBoard(){
-  resetBoardStyles(); // ← 🌟ここで毎回リセット
   if(isPortraitMobile()) {
     buildMobileBoard();
     return;
@@ -1574,13 +1525,12 @@ function renderAll(){
                p.job==='fre' ? '<span class="jpill" style="color:var(--orange);border-color:var(--orange)">フリーター</span>' :
                '<span class="jpill" style="color:var(--green)">投資家</span>';
     const bankruptTag = p.isBankrupt ? ' <span class="jpill" style="color:#fff;background:var(--red);border-color:var(--red)">💥破産</span>' : '';
-    const safeBonds = p.bonds || [];
-    const safeEstates = p.estates || [];
-    const b1 = safeBonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
-    const b2 = safeBonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+    const b1 = p.bonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
+    const b2 = p.bonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+
     list.innerHTML+=`<div class="pcard${act}" id="pc-${i}">
       <div class="pa" style="color:${p.color.bg}; border-color:${p.color.bg};">${p.name[0]}</div>
-     <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} 1年債${b1} 2年債${b2} 不動産${safeEstates.length}</div></div>
+      <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} 1年債${b1} 2年債${b2} 不動産${p.estates.length}</div></div>
       <div class="pas"><div class="pm${p.cash<0?' neg':''}">${fmtM(p.cash)}</div></div>
     </div>`;
   });
@@ -1825,7 +1775,6 @@ async function nextTurn(){
 
   // オンライン: Firebase に書き込み
   if(!LOCAL_MODE) {
-    _syncRunning = false; // 書き込み前にsyncガードを解放
     pushState();          // awaitしない（ゲームをブロックしない）
   }
 }
@@ -1985,7 +1934,7 @@ function resolveBonds(p, isGoal=false) {
 function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts}){
   document.getElementById('mbox').className='mb '+type;
   // ライブ共有（他プレイヤーに現在の画面を送信）
-  broadcastLive({ type, tag, title, desc: desc.replace(/<[^>]+>/g,'').slice(0,120), eff, effc }).catch(()=>{});
+  broadcastLive({ type, tag, title, desc: (desc||'').replace(/<[^>]+>/g,'').slice(0,120), eff, effc }).catch(()=>{});
   const tagEl=document.getElementById('mtag'); tagEl.textContent=tag;
   tagEl.style.color = type.includes('happen')?'var(--red)':type.includes('event')?'var(--gold)':'var(--blue)';
   document.getElementById('mtitle').textContent=title;
@@ -3108,22 +3057,28 @@ async function fbPatch(path, data) {
 }
 
 // ─── 状態同期（リトライ付き）──────────────────────────────────
+let _isPushing = false; // 書き込み中フラグ
 async function pushState() {
   if(LOCAL_MODE || !roomCode || !FB_URL) return;
   G.version = (G.version || 0) + 1;
+  const newVersion = G.version;
   const gs = JSON.parse(JSON.stringify(G));
-  // ★ 書き込み前にlastVersionを更新 → syncGameStateの誤上書きを防ぐ
-  lastVersion = G.version;
-  for(let i = 0; i < 3; i++) {
-    const ok = await fbSet(`rooms/${roomCode}/gameState`, gs);
-    if(ok) {
-      _dot('#4ade80', 300);
-      return;
+  _isPushing = true;
+  try {
+    for(let i = 0; i < 3; i++) {
+      const ok = await fbSet(`rooms/${roomCode}/gameState`, gs);
+      if(ok) {
+        lastVersion = newVersion; // ★ 書き込み成功後に更新
+        _dot('#4ade80', 300);
+        return;
+      }
+      if(i < 2) await new Promise(r => setTimeout(r, 1000));
     }
-    if(i < 2) await new Promise(r => setTimeout(r, 1000));
+    _dot('#ef4444', 1000);
+    toast('⚠️ Firebase書き込み失敗。ネットワークを確認してください。');
+  } finally {
+    _isPushing = false; // 成功・失敗どちらでも解放
   }
-  _dot('#ef4444', 1000);
-  toast('⚠️ Firebase書き込み失敗。ネットワークを確認してください。');
 }
 
 // ─── ライブイベント送信（他プレイヤーに今の画面を共有） ───
@@ -3155,8 +3110,8 @@ function _restorePlayers(raw) {
   const arr = Array.isArray(raw) ? raw : Object.values(raw || {});
   return arr.map((p, i) => ({
     ...p,
-    bonds: p.bonds || [],     // 
-    estates: p.estates || [], // 
+    bonds:   p.bonds   || [],
+    estates: p.estates || [],
     color: (p.color && typeof p.color === 'object' && p.color.bg)
       ? p.color : COLORS[i % COLORS.length]
   }));
@@ -3215,7 +3170,7 @@ async function syncGameState() {
   if(!roomCode)   { _syncLastState='roomCode=null';     _dot('#f97316'); return; }
   if(!FB_URL)     { _syncLastState='FB_URL=null';       _dot('#ef4444'); return; }
   if(_syncRunning){ _syncLastState='busy';              return; }
-  // ★ 自分のターンで動作中はスキップ（processCell実行中など）
+  if(_isPushing)  { _syncLastState='書き込み中';         return; } // ★ 書き込み中は読まない
   if(isMyTurn() && isMoving){ _syncLastState='自ターン移動中'; return; }
 
   _syncRunning = true;
@@ -3239,7 +3194,7 @@ async function syncGameState() {
     lastVersion    = gs.version;
 
     // 状態を反映
-    Object.assign(G, gs); G.goalOrder = G.goalOrder || [];
+    Object.assign(G, gs);
     G.players = _restorePlayers(gs.players);
     if(G.market?.id) G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
 
@@ -3297,15 +3252,13 @@ async function waitingPollTick() {
       // 配列の正規化（Firebase配列→JS配列）
       const rawP = gs.players;
       const arrP = Array.isArray(rawP) ? rawP : Object.values(rawP || {});
-     gs.players = arrP.map((p, i) => ({
+      gs.players = arrP.map((p, i) => ({
         ...p,
-        bonds: p.bonds || [],     //
-        estates: p.estates || [], //
         color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
       }));
-      Object.assign(G, gs); G.goalOrder = G.goalOrder || [];
+      Object.assign(G, gs);
       lastVersion = gs.version || 1;
-      _syncBusy   = false;
+      _syncRunning = false;
       if(G.market && G.market.id) {
         G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
       }
@@ -3636,16 +3589,30 @@ window.addEventListener('load', () => {
 
 // ─── モバイル用ボードスケール ────────────────────────
 
+// ── 横画面モバイル: PCボードをスケールしてフィット ──
 function scaleBoardForLandscape() {
-  // 何もしない
-}
+  const board = document.getElementById('board');
+  const wrap  = document.querySelector('.board-wrap');
+  if(!board || !wrap || !isLandscapeMobile()) return;
 
-    // 🌟ココが重要２：外枠のサイズを、縮小した後のボードにピッタリ合わせる
-    wrap.style.width = (bw * scale) + 'px';
-    wrap.style.height = (bh * scale) + 'px';
-    wrap.style.display = 'block';
-    wrap.style.margin = '0 auto'; // 画面の中央に配置
-  }, 100);
+  // 変換をリセットしてから実サイズを取得
+  board.style.transform       = '';
+  board.style.transformOrigin = 'top left';
+  board.style.position        = 'absolute';
+
+  const bw = board.offsetWidth;
+  const bh = board.offsetHeight;
+  if(!bw || !bh) return;
+
+  const ww = wrap.clientWidth  - 8;
+  const wh = wrap.clientHeight - 8;
+  const scale = Math.min(ww / bw, wh / bh, 1);
+
+  board.style.transform = `scale(${scale})`;
+
+  // wrap のサイズを縮小後のボードサイズに合わせる
+  wrap.style.width  = Math.ceil(bw * scale) + 'px';
+  wrap.style.height = Math.ceil(bh * scale) + 'px';
 }
 
 // ─── ゲーム画面に入ったときの初期化 ─────────────────────
@@ -3669,6 +3636,14 @@ window.addEventListener('resize', () => {
     showMobTabs();
     if(isLandscapeMobile()) scaleBoardForLandscape();
   }, 200);
+});
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    buildBoard();
+    renderAll();
+    showMobTabs();
+    if(isLandscapeMobile()) scaleBoardForLandscape();
+  }, 400);
 });
 
 // ═══════════════════════════════════════════
@@ -3944,40 +3919,36 @@ renderAll = function() {
   if(isMyTurn()) hideSpectatorCard();
 };
 
-setCount(3);
+
 // ─── スマホ用：自分の全資産を表示する ───
 window.showMyAssets = function() {
   const p = G.players[G.ci];
   if(!p) return;
-  
-  // 🌟追加：データが空の場合のエラー防止
-  const safeBonds = p.bonds || [];
+  const safeBonds   = p.bonds   || [];
   const safeEstates = p.estates || [];
   const b1 = safeBonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
   const b2 = safeBonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
-  
-  let estatesHtml = safeEstates.length > 0 
-    ? safeEstates.map(e => `🏠 ${fmtM(e.price)} の物件`).join('<br>') 
+  const estatesHtml = safeEstates.length > 0
+    ? safeEstates.map(e=>`🏠 ${fmtM(e.price)} の物件`).join('<br>')
     : 'なし';
-
   showModal({
-    type: 't-info',
-    tag: 'ASSETS',
-    title: `${p.name} さんの資産状況`,
-    desc: `
-      <div style="text-align: left; line-height: 2;">
-        💰 <strong>現金：</strong> <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span><br>
-        📈 <strong>株式：</strong> ${p.stocks} 株<br>
-        🏦 <strong>国債（1年）：</strong> ${b1} 口<br>
-        🏦 <strong>国債（2年）：</strong> ${b2} 口<br>
-        🥇 <strong>純金：</strong> ${p.gold} 口<br>
-        🏡 <strong>不動産：</strong><br>${estatesHtml}<br>
-        🚀 <strong>IPO（未上場）：</strong> ${p.ipo} 口<br>
-        🛡️ <strong>保険：</strong> ${p.insYear === G.year ? '✅ 加入中' : '❌ 未加入'}
-      </div>
-    `,
-    acts: [{lbl: '閉じる', p: true, fn: closeModal}]
+    type:'t-info', tag:'ASSETS',
+    title:`${p.name} さんの資産状況`,
+    desc:`<div style="text-align:left;line-height:2">
+      💰 <strong>現金：</strong> <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span><br>
+      📈 <strong>株式：</strong> ${p.stocks} 株<br>
+      🏦 <strong>国債（1年）：</strong> ${b1} 口<br>
+      🏦 <strong>国債（2年）：</strong> ${b2} 口<br>
+      🥇 <strong>純金：</strong> ${p.gold} 口<br>
+      🏡 <strong>不動産：</strong><br>${estatesHtml}<br>
+      🚀 <strong>IPO（未上場）：</strong> ${p.ipo} 口<br>
+      🛡️ <strong>保険：</strong> ${p.insYear===G.year?'✅ 加入中':'❌ 未加入'}
+    </div>`,
+    acts:[{lbl:'閉じる', p:true, fn:closeModal}]
   });
-}</script>
+};
+
+setCount(3);
+</script>
 </body>
 </html>
