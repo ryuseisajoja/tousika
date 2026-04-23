@@ -1440,8 +1440,28 @@ function resetBoardStyles() {
   if(board) { board.style.transform = ''; board.style.position = ''; }
 }
 
+// 🌟追加：画面回転時のバグを直すリセット機能
+function resetBoardStyles() {
+  const wrap = document.querySelector('.board-wrap');
+  if(wrap) { 
+    wrap.style.width = ''; 
+    wrap.style.height = ''; 
+    wrap.style.position = ''; 
+    wrap.style.display = '';
+    wrap.style.alignItems = '';
+    wrap.style.justifyContent = '';
+  }
+  const board = document.getElementById('board');
+  if(board) { 
+    board.style.transform = ''; 
+    board.style.position = ''; 
+    board.style.transformOrigin = '';
+    board.style.margin = '';
+  }
+}
+
 function buildBoard(){
-  resetBoardStyles(); // ← 🌟ここでリセットを実行
+  resetBoardStyles(); // ← 🌟ここで毎回リセット
   if(isPortraitMobile()) {
     buildMobileBoard();
     return;
@@ -3610,25 +3630,28 @@ function scaleBoardForLandscape() {
   const wrap  = document.querySelector('.board-wrap');
   if(!board || !wrap || !isLandscapeMobile()) return;
 
-  // 変換をリセットしてから実サイズを取得
-  board.style.transform       = '';
-  board.style.transformOrigin = 'top left';
-  wrap.style.position         = 'relative'; // 🌟追加：ボードが画面外に消えるのを防ぐ
-  board.style.position        = 'absolute';
+  // 🌟絶対配置をやめて、Flexboxの中央揃えで綺麗に縮小する
+  resetBoardStyles();
+  wrap.style.display = 'flex';
+  wrap.style.alignItems = 'center';
+  wrap.style.justifyContent = 'center';
 
-  const bw = board.offsetWidth;
-  const bh = board.offsetHeight;
-  if(!bw || !bh) return;
+  // 描画が完了するのを少し待ってからサイズを計算（これが消える原因でした！）
+  setTimeout(() => {
+    const bw = board.offsetWidth;
+    const bh = board.offsetHeight;
+    const ww = wrap.clientWidth;
+    const wh = wrap.clientHeight;
 
-  const ww = wrap.clientWidth  - 8;
-  const wh = wrap.clientHeight - 8;
-  const scale = Math.min(ww / bw, wh / bh, 1);
+    if(!bw || !bh || !ww || !wh) return;
 
-  board.style.transform = `scale(${scale})`;
+    // 画面に収まる縮小率を計算（少し余白を作るために10px引く）
+    const scale = Math.min((ww - 10) / bw, (wh - 10) / bh, 1);
 
-  // wrap のサイズを縮小後のボードサイズに合わせる
-  wrap.style.width  = Math.ceil(bw * scale) + 'px';
-  wrap.style.height = Math.ceil(bh * scale) + 'px';
+    // 中央を基準に縮小
+    board.style.transformOrigin = 'center center';
+    board.style.transform = `scale(${scale})`;
+  }, 100);
 }
 
 // ─── ゲーム画面に入ったときの初期化 ─────────────────────
