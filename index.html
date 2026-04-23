@@ -1524,12 +1524,13 @@ function renderAll(){
                p.job==='fre' ? '<span class="jpill" style="color:var(--orange);border-color:var(--orange)">フリーター</span>' :
                '<span class="jpill" style="color:var(--green)">投資家</span>';
     const bankruptTag = p.isBankrupt ? ' <span class="jpill" style="color:#fff;background:var(--red);border-color:var(--red)">💥破産</span>' : '';
-    const b1 = p.bonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
-    const b2 = p.bonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
-
+    const safeBonds = p.bonds || [];
+    const safeEstates = p.estates || [];
+    const b1 = safeBonds.filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
+    const b2 = safeBonds.filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
     list.innerHTML+=`<div class="pcard${act}" id="pc-${i}">
       <div class="pa" style="color:${p.color.bg}; border-color:${p.color.bg};">${p.name[0]}</div>
-      <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} 1年債${b1} 2年債${b2} 不動産${p.estates.length}</div></div>
+     <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} 1年債${b1} 2年債${b2} 不動産${safeEstates.length}</div></div>
       <div class="pas"><div class="pm${p.cash<0?' neg':''}">${fmtM(p.cash)}</div></div>
     </div>`;
   });
