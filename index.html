@@ -38,7 +38,19 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 @keyframes popUp { 0%{transform: scale(0.5) translateY(20px); opacity:0;} 80%{transform: scale(1.1) translateY(-5px); opacity:1;} 100%{transform: scale(1) translateY(0); opacity:1;} }
 @keyframes bounceIn { 0%{transform: translateY(30px); opacity:0;} 100%{transform: translateY(0); opacity:1;} }
 
-.setup { background: #fff; border: 4px solid var(--border); border-radius: 24px; padding: 20px 28px; max-width: 460px; width: 90%; position: relative; z-index: 10; box-shadow: 8px 8px 0px var(--border); animation: bounceIn .6s .8s ease both; text-align: center; max-height: 75vh; overflow-y: auto; }
+/* 🌟修正：設定画面をスクロール可能にし、入力欄を1列に強制する */
+.setup { background: #fff; border: 4px solid var(--border); border-radius: 24px; padding: 20px 28px; max-width: 460px; width: 90%; position: relative; z-index: 10; box-shadow: 8px 8px 0px var(--border); animation: bounceIn .6s .8s ease both; text-align: center; max-height: 80vh; overflow-y: auto; }
+.names-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; } /* 🌟ここを2列から1列に変更 */
+
+/* 🌟追加：横画面の時に「縦にして」と表示する（横画面バグを物理的に防ぐ） */
+@media (orientation: landscape) and (max-height: 500px) {
+  body::before {
+    content: "📱 スマホを縦向きにしてプレイしてください";
+    position: fixed; inset: 0; z-index: 99999; background: #ffde59;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 20px; color: #2d3436;
+  }
+}
 .s-lbl { font-size: 13px; font-weight: 900; color: var(--text); margin-bottom: 10px; text-align: center; }
 .cnt-row { display: flex; gap: 8px; margin-bottom: 20px; }
 .cnt-btn { flex: 1; padding: 10px; background: #f1f5f9; border: 3px solid var(--border); border-radius: 12px; font-size: 18px; font-weight: 900; cursor: pointer; transition: all .1s; box-shadow: 0 4px 0 var(--border); color: var(--text); font-family: 'Nunito', sans-serif; }
@@ -3624,30 +3636,9 @@ window.addEventListener('load', () => {
 
 // ─── モバイル用ボードスケール ────────────────────────
 
-// ── 横画面モバイル: PCボードをスケールしてフィット ──
 function scaleBoardForLandscape() {
-  const board = document.getElementById('board');
-  const wrap  = document.querySelector('.board-wrap');
-  if(!board || !wrap || !isLandscapeMobile()) return;
-
-  // いったんリセット
-  resetBoardStyles();
-
-  setTimeout(() => {
-    // 🌟ココが重要：ボードの本来のサイズ（取得できない場合はデフォルト値を設定）
-    const bw = board.offsetWidth || 888; 
-    const bh = board.offsetHeight || 656; 
-    const ww = window.innerWidth - 20; 
-    const wh = window.innerHeight - 40; // ヘッダーの余白を引く
-
-    if(!bw || !bh) return;
-
-    // 画面に収まる縮小率を計算
-    const scale = Math.min(ww / bw, wh / bh, 1);
-
-    // 左上を基準に縮小
-    board.style.transformOrigin = 'top left';
-    board.style.transform = `scale(${scale})`;
+  // 何もしない
+}
 
     // 🌟ココが重要２：外枠のサイズを、縮小した後のボードにピッタリ合わせる
     wrap.style.width = (bw * scale) + 'px';
@@ -3678,14 +3669,6 @@ window.addEventListener('resize', () => {
     showMobTabs();
     if(isLandscapeMobile()) scaleBoardForLandscape();
   }, 200);
-});
-window.addEventListener('orientationchange', () => {
-  setTimeout(() => {
-    buildBoard();
-    renderAll();
-    showMobTabs();
-    if(isLandscapeMobile()) scaleBoardForLandscape();
-  }, 400);
 });
 
 // ═══════════════════════════════════════════
