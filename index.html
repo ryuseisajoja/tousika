@@ -3246,8 +3246,10 @@ async function waitingPollTick() {
       // 配列の正規化（Firebase配列→JS配列）
       const rawP = gs.players;
       const arrP = Array.isArray(rawP) ? rawP : Object.values(rawP || {});
-      gs.players = arrP.map((p, i) => ({
+     gs.players = arrP.map((p, i) => ({
         ...p,
+        bonds: p.bonds || [],     //
+        estates: p.estates || [], //
         color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
       }));
       Object.assign(G, gs);
