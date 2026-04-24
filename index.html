@@ -4189,7 +4189,13 @@ window.addEventListener('orientationchange', () => {
   };
 })();
 
-// BGM削除済み
+// BGM削除済み（エラーで止まらないようにするダミー）
+const BGM = {
+  play: function() {},
+  toggle: function() {},
+  isMuted: function() { return true; },
+  isPlaying: function() { return false; }
+};
 function toggleBGM(){}
 function updateBGMBtn(){}
 
