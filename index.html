@@ -1211,7 +1211,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="wtitle">最終結果発表!</div>
   <div class="wname" id="wname"></div>
   <div class="rank-list" id="rankings"></div>
-  <button class="wagain" onclick="location.reload()">もう一度プレイ</button>
+  <button class="wagain" onclick="localStorage.removeItem('session');location.reload()">もう一度プレイ</button>
 </div>
 
 <script>
@@ -2031,7 +2031,7 @@ function resolveBonds(p, isGoal=false) {
 function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts, fullScreen=false, isFinal=false}){
   document.getElementById('mbox').className='mb '+type;
   // ライブ共有（他プレイヤーに現在の画面を送信）
-  broadcastLive({ type, tag, title, desc: (desc||'').replace(/<[^>]+>/g,'').slice(0,120), eff, effc, _final: isFinal }, fullScreen).catch(()=>{});
+  broadcastLive({ type, tag, title, desc: (desc||'').replace(/<[^>]+>/g,'').slice(0,200), descHtml: (desc||'').slice(0,1500), eff, effc, _final: isFinal }, fullScreen).catch(()=>{});
   const tagEl=document.getElementById('mtag'); tagEl.textContent=tag;
   tagEl.style.color = type.includes('happen')?'var(--red)':type.includes('event')?'var(--gold)':'var(--blue)';
   document.getElementById('mtitle').textContent=title;
@@ -2169,7 +2169,7 @@ window.openBonds = function(p, cell) {
         <div class="tst" style="color:var(--blue); border-bottom:2px dotted #cbd5e1; margin-bottom:8px;">🏦 1年債（1口5,000円）</div>
         <div class="tr">
             <input class="tinp" id="b1" type="number" min="10" step="10" value="10"> <span style="font-size:12px; font-weight:900;">口</span>
-            <button class="tbtn tbbuy" style="width:100%; margin-left:10px;" onclick="execBond('1yr', ${p.id}, ${cell ? cell.i : -1})">1年債を購入する</button>
+            <button class="tbtn tbbuy" style="width:100%; margin-left:10px;" onclick="execBond('1yr', '${p.id}', ${cell ? cell.i : -1})">1年債を購入する</button>
         </div>
     </div>`;
     
@@ -2180,7 +2180,7 @@ window.openBonds = function(p, cell) {
             <div class="tst" style="color:var(--purple); border-bottom:2px dotted #cbd5e1; margin-bottom:8px;">🏦 2年債（1口5,000円）</div>
             <div class="tr">
                 <input class="tinp" id="b2" type="number" min="10" step="10" value="10"> <span style="font-size:12px; font-weight:900;">口</span>
-                <button class="tbtn tbbuy" style="width:100%; margin-left:10px; background:var(--purple);" onclick="execBond('2yr', ${p.id}, ${cell ? cell.i : -1})">2年債を購入する</button>
+                <button class="tbtn tbbuy" style="width:100%; margin-left:10px; background:var(--purple);" onclick="execBond('2yr', '${p.id}', ${cell ? cell.i : -1})">2年債を購入する</button>
             </div>
         </div>`;
     }
@@ -2983,7 +2983,22 @@ function applyDebtInterest(p) {
 async function settlePlayer(p) {
   const c = p.color;
 
-  // ① 市場変動（このプレイヤー専用・投資家の公開操作なし）
+  // ① まず誰の決算かを全員に知らせる
+  await new Promise(resolve => {
+    showModal({
+      type:'t-event', tag:'🏁 最終決算', fullScreen:true, isFinal:true,
+      title:`${p.name} の決算スタート！`,
+      desc:`<div style="text-align:center;padding:10px">
+        <div style="width:60px;height:60px;border-radius:50%;background:${c.bg};color:${c.tx};display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;border:4px solid var(--border);margin-bottom:12px">${p.name[0]}</div><br>
+        <span style="font-size:14px;font-weight:900;color:${c.bg}">${p.name}</span> の全資産を清算します<br>
+        <span style="font-size:12px;color:var(--text2)">${p.job==='emp'?'🏢 会社員':p.job==='inv'?'📈 投資家':'💼 フリーター'}</span>
+      </div>`,
+      eff:'', effc:'gold',
+      acts:[{lbl:'清算スタート！', p:true, fn:()=>{closeModal(); resolve();}}]
+    });
+  });
+
+  // ② 市場変動（このプレイヤー専用・投資家の公開操作なし）
   const market = await spinRoulette(`${p.name}の市場変動！`, MARKETS, 't-info');
   G.market = market;
   updateMktDisplay();
@@ -2998,8 +3013,8 @@ async function settlePlayer(p) {
     await new Promise(resolve => {
       showModal({
         type:'t-event', tag:`📈 ${p.name}・株式清算`, fullScreen:true, isFinal:true,
-        title:`${market.emoji} ${market.name}で株を売却`,
-        desc:`保有: <strong>${stocks}株</strong><br>
+        title:`${p.name} の株式清算 ${market.emoji}${market.name}`,
+        desc:`<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><div style='width:24px;height:24px;border-radius:50%;background:${c.bg};color:${c.tx};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px'>${p.name[0]}</div><strong style='color:${c.bg}'>${p.name}</strong></div>保有: <strong>${stocks}株</strong><br>
           株価: <strong>${fmtM(market.stockPrice)}/10株</strong><br>
           配当金: <span class="lp">+${fmtM(div)}</span><br>
           株売却: <span class="lp">+${fmtM(sv)}</span>`,
@@ -3112,7 +3127,7 @@ async function settlePlayer(p) {
   await new Promise(resolve => {
     showModal({
       type:'t-event', tag:`✅ ${p.name} 清算完了`, fullScreen:true, isFinal:true,
-      title:`${p.name} の最終資産`,
+      title:`✅ ${p.name} の決算完了`,
       desc:`<div style="text-align:center;margin:8px 0">
           <div style="font-size:28px;font-weight:900;color:${c.bg}">${fmtM(p.cash)}</div>
           ${interestPaid>0?`<div style="font-size:12px;color:var(--red);margin-top:4px">借金利子 -${fmtM(interestPaid)}</div>`:''}
@@ -3742,7 +3757,10 @@ function enterGame() {
     _syncCallCount = 0;
     _syncLastState = 'ゲーム開始';
     console.log('[enterGame] room='+roomCode+' fb='+!!FB_URL+' id='+myId+' v='+G.version);
-    // 参加者向けデバッグトースト
+    // ★ セッション情報を保存（更新ボタン対策）
+    localStorage.setItem('session', JSON.stringify({
+      roomCode, myId, myName, isHost, FB_URL, ts: Date.now()
+    }));
     if(!isMyTurn()) toast('🔄 同期開始 room:'+roomCode);
   }
 
@@ -3782,30 +3800,121 @@ function goOnlineMode() {
 
 // ─── 初期化 ───────────────────────────────────
 window.addEventListener('load', () => {
-  const savedFb  = localStorage.getItem('fbUrl');
+  const savedFb   = localStorage.getItem('fbUrl');
+  const sessionRaw = localStorage.getItem('session');
   const roomParam = new URLSearchParams(location.search).get('room');
 
+  // ★ ゲーム中に更新ボタンを押した場合の自動復帰
+  if(sessionRaw) {
+    try {
+      const sess = JSON.parse(sessionRaw);
+      const age  = Date.now() - (sess.ts || 0);
+      // 2時間以内のセッションなら復帰を試みる
+      if(age < 2 * 60 * 60 * 1000 && sess.roomCode && sess.FB_URL) {
+        tryRejoinSession(sess);
+        return;
+      }
+    } catch(e) {}
+    localStorage.removeItem('session');
+  }
+
   if(roomParam) {
-    // 招待URLでアクセス → Firebase設定を確認してからjoin
     if(savedFb) {
       FB_URL = savedFb;
-      goToLobby(); // goToLobbyがURLパラメータを読んで自動入力する
+      goToLobby();
     } else {
-      // Firebase未設定 → 設定画面を出してから自動join
       document.getElementById('fb-screen-sub').textContent =
         `ルーム「${roomParam}」への参加にはFirebase設定が必要です`;
       showScreen('firebase-screen');
-      // 設定完了後にgoToLobbyが呼ばれ、URLパラメータで自動入力される
     }
   } else if(savedFb) {
-    // Firebase設定済み・直接アクセス → スタート画面
     FB_URL = savedFb;
     showScreen('start-screen');
   } else {
-    // 初回アクセス → スタート画面
     showScreen('start-screen');
   }
 });
+
+// ─── ゲーム中断からの復帰 ────────────────────────
+async function tryRejoinSession(sess) {
+  // 復帰中UI
+  showScreen('start-screen');
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#fff';
+  overlay.innerHTML = `
+    <div style="font-size:48px">🔄</div>
+    <div style="font-size:20px;font-weight:900">ゲームに復帰中...</div>
+    <div style="font-size:14px;opacity:.7">ルーム: ${sess.roomCode}</div>
+    <button id="rejoin-cancel" style="margin-top:8px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);border-radius:20px;padding:8px 24px;color:#fff;font-size:14px;font-weight:900;cursor:pointer">キャンセル</button>`;
+  document.body.appendChild(overlay);
+
+  document.getElementById('rejoin-cancel').onclick = () => {
+    localStorage.removeItem('session');
+    overlay.remove();
+    showScreen('start-screen');
+  };
+
+  try {
+    // セッション情報を復元
+    FB_URL   = sess.FB_URL;
+    roomCode = sess.roomCode;
+    myId     = sess.myId;
+    myName   = sess.myName || '';
+    isHost   = sess.isHost || false;
+    localStorage.setItem('fbUrl', sess.FB_URL);
+
+    // Firebaseからゲーム状態を取得
+    const room = await fbGet(`rooms/${roomCode}`);
+    overlay.remove();
+
+    if(!room) {
+      localStorage.removeItem('session');
+      toast('❌ ルームが見つかりません。ゲームが終了した可能性があります。');
+      showScreen('start-screen');
+      return;
+    }
+
+    if(!room.started || !room.gameState) {
+      // まだゲーム開始前 → 待合室に戻る
+      localStorage.removeItem('session');
+      toast('⏳ ゲーム開始前のルームです。待合室に戻ります。');
+      goToWaiting();
+      return;
+    }
+
+    // ゲーム状態を復元
+    const gs = room.gameState;
+    const rawP = Array.isArray(gs.players) ? gs.players : Object.values(gs.players || {});
+    gs.players = rawP.map((p, i) => ({
+      ...p,
+      bonds:   _toArray(p.bonds),
+      estates: _toArray(p.estates),
+      color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
+    }));
+    Object.assign(G, gs);
+    G.goalOrder = Array.isArray(G.goalOrder) ? G.goalOrder : [];
+    if(G.market?.id) G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
+    lastVersion = gs.version || 0;
+    _pc = G.players.length;
+
+    // ゲーム終了済みなら結果画面を表示
+    if(gs.gameOver) {
+      enterGame();
+      setTimeout(() => showWinner(), 500);
+      return;
+    }
+
+    toast('✅ ゲームに復帰しました！');
+    enterGame();
+
+  } catch(e) {
+    overlay.remove();
+    localStorage.removeItem('session');
+    console.error('[rejoin error]', e);
+    toast('❌ 復帰に失敗しました: ' + e.message);
+    showScreen('start-screen');
+  }
+}
 
 // ─── モバイル用ボードスケール ────────────────────────
 
@@ -4014,7 +4123,11 @@ function showSpectatorCard(live) {
     if(body) body.className = 'lo-body ' + type;
     if(tag) { tag.textContent = live.tag||''; tag.style.background = tagBg; }
     if(ttl) ttl.textContent = live.title||'';
-    if(dsc) { dsc.textContent = live.desc||''; dsc.style.display = live.desc?'block':'none'; }
+    if(dsc) {
+      if(live.descHtml) dsc.innerHTML = live.descHtml;
+      else dsc.textContent = live.desc||'';
+      dsc.style.display = (live.desc||live.descHtml)?'block':'none';
+    }
     if(eff) { eff.textContent = live.eff||''; eff.className='lo-eff '+(live.effc||'gold'); eff.style.display=live.eff?'block':'none'; }
     ov.classList.add('show');
     ov.onclick = (e) => { if(e.target===ov||e.target.classList.contains('lo-close')) hideLiveOverlay(); };
