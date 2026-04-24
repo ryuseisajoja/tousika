@@ -3915,17 +3915,22 @@ window.addEventListener('load', () => {
 
 // ─── ゲーム中断からの復帰 ────────────────────────
 async function tryRejoinSession(sess) {
-  // まずスタート画面を裏で表示しておく
+  // ── まず確認画面を表示 ──
   showScreen('start-screen');
   const age = Date.now() - (sess.ts || 0);
   const ageMin = Math.floor(age / 60000);
   const ageStr = ageMin < 1 ? 'たった今' : `${ageMin}分前`;
 
+  // Promiseを使って、ユーザーが「はい(true)」か「いいえ(false)」を選ぶまで待機する
   const shouldRejoin = await new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'rejoin-overlay';
-    // z-indexを増やして、裏のボタンを絶対に押せないようにブロック
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#ffe55c,#ffde59);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:24px;font-family:"M PLUS Rounded 1c",sans-serif;';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9000;
+      background:linear-gradient(160deg,#ffe55c,#ffde59);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:0;padding:24px;font-family:'M PLUS Rounded 1c',sans-serif;
+    `;
     overlay.innerHTML = `
       <div style="font-size:52px;margin-bottom:12px">🔄</div>
       <div style="font-size:22px;font-weight:900;color:#2d3436;margin-bottom:6px">ゲームに復帰しますか？</div>
@@ -3934,22 +3939,25 @@ async function tryRejoinSession(sess) {
         <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;padding:6px 0;border-bottom:2px dashed #e2e8f0">
           <span>🏠 ルームコード</span><span style="font-family:'Nunito',sans-serif;font-size:16px;color:#ff9f43;letter-spacing:.2em">${sess.roomCode}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;padding:6px 0">
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;padding:6px 0;border-bottom:2px dashed #e2e8f0">
           <span>👤 プレイヤー名</span><span>${sess.myName||'不明'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:900;padding:6px 0">
+          <span>👑 ホスト</span><span>${sess.isHost?'はい':'いいえ'}</span>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px">
-        <button id="rejoin-yes" style="padding:14px;background:#4ade80;border:4px solid #2d3436;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 6px 0 #2d3436;">
+        <button id="rejoin-yes" style="padding:14px;background:#4ade80;border:4px solid #2d3436;border-radius:16px;font-size:18px;font-weight:900;cursor:pointer;box-shadow:0 6px 0 #2d3436;font-family:'M PLUS Rounded 1c',sans-serif">
           🎮 ゲームに復帰する
         </button>
-        <button id="rejoin-no" style="padding:12px;background:#fff;border:3px solid #2d3436;border-radius:14px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #2d3436;color:#636e72">
+        <button id="rejoin-no" style="padding:12px;background:#fff;border:3px solid #2d3436;border-radius:14px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 4px 0 #2d3436;font-family:'M PLUS Rounded 1c',sans-serif;color:#636e72">
           ✕ 復帰しない（最初から）
         </button>
       </div>
     `;
     document.body.appendChild(overlay);
 
- // 「はい」が押されたら true を返す
+    // 「はい」が押されたら true を返す
     document.getElementById('rejoin-yes').onclick = (e) => {
       e.preventDefault();
       overlay.remove();
@@ -3961,27 +3969,19 @@ async function tryRejoinSession(sess) {
       overlay.remove();
       resolve(false); 
     };
-
-  if (shouldRejoin) {
-    // 復帰処理を実行
-    _doRejoin(sess); 
-  } else {
-    // 復帰しない場合、セッションを消去
-    localStorage.removeItem('session');
-    // 画面をリロードせずに、URLの ?room= パラメータだけを消す（安全なリセット）
-    window.history.replaceState(null, '', window.location.pathname);
-  }
+  });
 
   // ── 選択結果に応じた処理の完全分岐 ──
   if (shouldRejoin) {
     // 復帰処理を実行
     _doRejoin(sess); 
   } else {
-    // 復帰しない場合、セッションを消し、URLの ?room=... パラメータも消して画面をクリーンリセット
+    // 復帰しない場合、セッションを消去してURLのパラメータだけ消す（リロードはしない）
     localStorage.removeItem('session');
-    window.location.href = window.location.pathname; 
+    window.history.replaceState(null, '', window.location.pathname);
   }
 }
+
 async function _doRejoin(sess) {
   // 復帰中インジケーター
   const loading = document.createElement('div');
