@@ -3921,16 +3921,11 @@ async function tryRejoinSession(sess) {
   const ageMin = Math.floor(age / 60000);
   const ageStr = ageMin < 1 ? 'たった今' : `${ageMin}分前`;
 
-  // Promiseを使って、ユーザーが「はい(true)」か「いいえ(false)」を選ぶまで待機する
   const shouldRejoin = await new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'rejoin-overlay';
-    overlay.style.cssText = `
-      position:fixed;inset:0;z-index:9000;
-      background:linear-gradient(160deg,#ffe55c,#ffde59);
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      gap:0;padding:24px;font-family:'M PLUS Rounded 1c',sans-serif;
-    `;
+    // 🌟 z-indexを増やして裏のボタンを押せないようにブロック
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#ffe55c,#ffde59);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:24px;font-family:"M PLUS Rounded 1c",sans-serif;';
     overlay.innerHTML = `
       <div style="font-size:52px;margin-bottom:12px">🔄</div>
       <div style="font-size:22px;font-weight:900;color:#2d3436;margin-bottom:6px">ゲームに復帰しますか？</div>
@@ -3957,13 +3952,11 @@ async function tryRejoinSession(sess) {
     `;
     document.body.appendChild(overlay);
 
-    // 「はい」が押されたら true を返す
     document.getElementById('rejoin-yes').onclick = (e) => {
       e.preventDefault();
       overlay.remove();
       resolve(true); 
     };
-    // 「いいえ」が押されたら false を返す
     document.getElementById('rejoin-no').onclick = (e) => {
       e.preventDefault();
       overlay.remove();
@@ -3971,17 +3964,14 @@ async function tryRejoinSession(sess) {
     };
   });
 
-  // ── 選択結果に応じた処理の完全分岐 ──
   if (shouldRejoin) {
-    // 復帰処理を実行
     _doRejoin(sess); 
   } else {
-    // 復帰しない場合、セッションを消去してURLのパラメータだけ消す（リロードはしない）
+    // 🌟 復帰しない場合、セッションを消去してURLパラメータを消す（リロードしない）
     localStorage.removeItem('session');
     window.history.replaceState(null, '', window.location.pathname);
   }
 }
-
 async function _doRejoin(sess) {
   // 復帰中インジケーター
   const loading = document.createElement('div');
