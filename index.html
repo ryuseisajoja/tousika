@@ -3921,7 +3921,8 @@ async function tryRejoinSession(sess) {
   const ageMin = Math.floor(age / 60000);
   const ageStr = ageMin < 1 ? 'たった今' : `${ageMin}分前`;
 
-  await new Promise((resolveConfirm) => {
+  // Promiseを使って、ユーザーが「はい(true)」か「いいえ(false)」を選ぶまで待機する
+  const shouldRejoin = await new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.id = 'rejoin-overlay';
     overlay.style.cssText = `
@@ -3956,28 +3957,28 @@ async function tryRejoinSession(sess) {
     `;
     document.body.appendChild(overlay);
 
+    // 「はい」が押されたら true を返す
     document.getElementById('rejoin-yes').onclick = () => {
       overlay.remove();
-      resolveConfirm(true);
-      _doRejoin(sess); // 復帰処理を実行
+      resolve(true); 
     };
+    // 「いいえ」が押されたら false を返す
     document.getElementById('rejoin-no').onclick = () => {
       overlay.remove();
-      localStorage.removeItem('session');
-      showScreen('start-screen');
-      resolveConfirm(false);
+      resolve(false); 
     };
   });
 
-  // 「復帰しない」を選んだ場合はここで終了
-  // （resolveConfirmの値を使って判定は不可なのでyes/noで直接制御）
-  // → rejoin-yes のみ _doRejoin を呼ぶ方式に変更済み
-
-  // ← ここは「復帰しない」を選んだ場合も通過してしまうので関数を分ける
-  // → 上で resolveConfirm(false) が呼ばれた場合はもう return 済みなので不要
-  // 実際には「復帰しない」ボタンで return するよう修正
+  // ── 選択結果に応じた処理の完全分岐 ──
+  if (shouldRejoin) {
+    // 復帰処理を実行
+    _doRejoin(sess); 
+  } else {
+    // 復帰しない場合、セッションを消し、URLの ?room=... パラメータも消して画面をクリーンリセット
+    localStorage.removeItem('session');
+    window.location.href = window.location.pathname; 
+  }
 }
-
 async function _doRejoin(sess) {
   // 復帰中インジケーター
   const loading = document.createElement('div');
