@@ -978,8 +978,9 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 /* ═══ SPECTATOR CARD（他プレイヤーの行動表示） ═══ */
 #spectator-card {
-  position:fixed;top:70px;right:12px;z-index:400;
-  width:min(260px, 88vw);
+  /* PC: 右下（サイドバー幅分 右端から）= ボードとも被らない */
+  position:fixed;bottom:20px;right:16px;z-index:400;
+  width:min(280px, 88vw);
   background:rgba(15,23,42,.92);
   border:2px solid rgba(255,255,255,.15);
   border-radius:16px;padding:12px 14px;
@@ -988,11 +989,15 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   transition:transform .3s, opacity .3s;
   display:none;
 }
+/* スマホ縦: モバイルバーの上に */
+@media(max-width:768px) and (orientation:portrait) {
+  #spectator-card { bottom:calc(160px + env(safe-area-inset-bottom)); right:12px; }
+}
 #spectator-card.show {
   display:block;
   animation:scIn .35s cubic-bezier(.34,1.2,.64,1) both;
 }
-@keyframes scIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes scIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
 
 .sc-header {
   display:flex;align-items:center;gap:8px;margin-bottom:8px;
