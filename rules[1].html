@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ルールブック｜投資家人生</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fffce8; --border:#2d3436;
+  --green:#4ade80; --red:#ff6b6b; --blue:#4facfe;
+  --gold:#fde047; --orange:#ff9f43; --teal:#2dd4bf;
+  --purple:#d8b4fe; --text:#2d3436; --text2:#636e72;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg);
+  background-image:radial-gradient(#dfe6e9 2px,transparent 2px);
+  background-size:24px 24px;
+  font-family:'M PLUS Rounded 1c',sans-serif;
+  color:var(--text);
+  min-height:100vh;
+}
+
+/* ─── ヘッダー ─── */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  background:#ffde59;
+  border-bottom:4px solid var(--border);
+  box-shadow:0 4px 0 var(--border);
+  display:flex;align-items:center;gap:12px;
+  padding:10px 20px;
+}
+.top-bar-logo{font-size:22px;font-weight:900;color:var(--text);display:flex;gap:2px}
+.top-bar-logo span:nth-child(1){color:var(--red)}
+.top-bar-logo span:nth-child(2){color:var(--blue)}
+.top-bar-logo span:nth-child(3){color:var(--green)}
+.top-bar-logo span:nth-child(4){color:var(--orange)}
+.top-bar-logo span:nth-child(5){color:var(--purple)}
+.top-bar-sub{font-size:12px;font-weight:900;color:var(--text);background:rgba(255,255,255,.6);padding:3px 12px;border-radius:20px;border:2px solid var(--border)}
+.back-btn{
+  margin-left:auto;
+  background:#fff;border:3px solid var(--border);border-radius:12px;
+  padding:6px 16px;font-size:13px;font-weight:900;cursor:pointer;
+  box-shadow:0 3px 0 var(--border);font-family:inherit;color:var(--text);
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  transition:all .1s;
+}
+.back-btn:hover{transform:translateY(2px);box-shadow:0 1px 0 var(--border)}
+
+/* ─── TOC（目次） ─── */
+.toc{
+  display:flex;flex-wrap:wrap;gap:8px;
+  padding:16px 20px;max-width:900px;margin:0 auto;
+}
+.toc-item{
+  background:#fff;border:2.5px solid var(--border);border-radius:20px;
+  padding:6px 16px;font-size:12px;font-weight:900;cursor:pointer;
+  text-decoration:none;color:var(--text);
+  box-shadow:0 3px 0 var(--border);transition:all .1s;
+  display:flex;align-items:center;gap:6px;
+}
+.toc-item:hover{transform:translateY(2px);box-shadow:0 1px 0 var(--border)}
+
+/* ─── コンテンツ ─── */
+.content{max-width:900px;margin:0 auto;padding:0 20px 60px}
+
+/* ─── セクション ─── */
+.section{
+  background:#fff;border:4px solid var(--border);border-radius:24px;
+  padding:24px 28px;margin-bottom:20px;
+  box-shadow:6px 6px 0 var(--border);
+  scroll-margin-top:70px;
+}
+.section-header{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:18px;
+  padding-bottom:12px;border-bottom:3px dashed #e2e8f0;
+}
+.section-num{
+  width:40px;height:40px;border-radius:50%;
+  background:var(--border);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Nunito',sans-serif;font-size:18px;font-weight:900;
+  flex-shrink:0;border:3px solid var(--border);
+}
+.section-title{font-size:20px;font-weight:900}
+.section-sub{font-size:12px;color:var(--text2);font-weight:700;margin-top:2px}
+
+/* ─── 情報ボックス ─── */
+.info-box{
+  background:#f8fafc;border:2px dashed #cbd5e1;border-radius:14px;
+  padding:14px 16px;margin-bottom:12px;font-size:13px;font-weight:700;
+  line-height:1.8;
+}
+.info-box.gold{background:#fffbeb;border-color:#fde047}
+.info-box.blue{background:#eff6ff;border-color:#93c5fd}
+.info-box.red{background:#fef2f2;border-color:#fca5a5}
+.info-box.green{background:#f0fdf4;border-color:#86efac}
+
+/* ─── 職業カード ─── */
+.job-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+.job-card{
+  border:4px solid var(--border);border-radius:20px;
+  overflow:hidden;box-shadow:5px 5px 0 var(--border);
+}
+.job-card-head{
+  padding:16px 18px 12px;display:flex;align-items:center;gap:10px;
+}
+.job-icon{font-size:30px}
+.job-name{font-size:18px;font-weight:900}
+.job-tag{font-size:10px;font-weight:900;padding:2px 10px;border-radius:20px;background:rgba(255,255,255,.4);border:2px solid rgba(255,255,255,.5);margin-top:3px;display:inline-block}
+.job-body{background:#fff;padding:14px 18px}
+.job-salary{margin-bottom:10px}
+.job-salary-title{font-size:11px;font-weight:900;color:var(--text2);letter-spacing:.1em;margin-bottom:6px}
+.salary-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #e2e8f0;font-size:13px;font-weight:700}
+.salary-row:last-child{border-bottom:none}
+.salary-amt{font-family:'Nunito',sans-serif;font-weight:900;color:var(--green)}
+.skill-list{list-style:none}
+.skill-item{
+  font-size:12px;font-weight:700;padding:6px 10px;
+  background:#f8fafc;border-radius:10px;border:2px solid #e2e8f0;
+  margin-bottom:6px;line-height:1.6;
+}
+.skill-item strong{color:var(--orange)}
+
+/* ─── 職業配分テーブル ─── */
+.ratio-table{width:100%;border-collapse:collapse;margin-top:10px;border-radius:12px;overflow:hidden;border:2px solid var(--border)}
+.ratio-table th{background:var(--text);color:#fff;padding:8px 14px;font-size:12px;font-weight:900;text-align:left}
+.ratio-table td{padding:8px 14px;font-size:13px;font-weight:700;border-bottom:2px solid #f1f5f9}
+.ratio-table tr:last-child td{border-bottom:none}
+.ratio-table tr:nth-child(even) td{background:#f8fafc}
+
+/* ─── 資産カード ─── */
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.asset-card{
+  border:3px solid var(--border);border-radius:16px;
+  padding:14px;box-shadow:4px 4px 0 var(--border);
+}
+.asset-icon{font-size:28px;margin-bottom:6px}
+.asset-name{font-size:15px;font-weight:900;margin-bottom:6px}
+.asset-detail{font-size:12px;font-weight:700;color:var(--text2);line-height:1.7}
+.asset-detail strong{color:var(--text)}
+
+/* ─── カードテーブル ─── */
+.card-table{width:100%;border-collapse:collapse;margin-top:12px;border:2px solid var(--border);border-radius:12px;overflow:hidden}
+.card-table th{background:var(--text);color:#fff;padding:8px 12px;font-size:11px;font-weight:900;text-align:left;white-space:nowrap}
+.card-table td{padding:8px 12px;font-size:12px;font-weight:700;border-bottom:2px solid #f1f5f9;vertical-align:top;line-height:1.6}
+.card-table tr:last-child td{border-bottom:none}
+.card-table tr:nth-child(even) td{background:#f8fafc}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:900;border:2px solid;margin-right:4px}
+.tag-event{background:#fefce8;border-color:#fde047;color:#92400e}
+.tag-happen{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+.tag-ins{background:#f0fdf4;border-color:#86efac;color:#166534}
+.tag-noins{background:#fef2f2;border-color:#fca5a5;color:#991b1b}
+
+/* ─── ターン手順 ─── */
+.flow{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.flow-step{
+  display:flex;align-items:flex-start;gap:12px;
+  background:#f8fafc;border-radius:14px;border:2px solid #e2e8f0;
+  padding:12px 16px;
+}
+.flow-num{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;font-family:'Nunito',sans-serif;
+  flex-shrink:0;border:2px solid var(--border);
+}
+.flow-content{flex:1}
+.flow-title{font-size:14px;font-weight:900;margin-bottom:3px}
+.flow-desc{font-size:12px;font-weight:700;color:var(--text2);line-height:1.6}
+
+/* ─── 借金テーブル ─── */
+.debt-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.debt-card{
+  background:#fff7ed;border:3px solid var(--orange);border-radius:14px;
+  padding:14px;text-align:center;box-shadow:4px 4px 0 var(--border);
+}
+.debt-year{font-size:11px;font-weight:900;color:var(--orange);margin-bottom:4px}
+.debt-limit{font-family:'Nunito',sans-serif;font-size:22px;font-weight:900}
+
+/* ─── バッジ ─── */
+.badge{
+  display:inline-block;padding:3px 12px;border-radius:20px;
+  font-size:11px;font-weight:900;border:2px solid var(--border);
+  box-shadow:2px 2px 0 var(--border);margin-right:6px;
+}
+
+/* ─── 強制ストップ手順 ─── */
+.forced-flow{counter-reset:forced;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.forced-step{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 16px;background:#fff7ed;border:2px solid var(--orange);
+  border-radius:14px;
+}
+.forced-step-num{
+  width:28px;height:28px;background:var(--orange);color:#fff;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;flex-shrink:0;border:2px solid var(--border);
+}
+.forced-sub{
+  margin-top:6px;display:flex;flex-direction:column;gap:4px;
+}
+.forced-sub-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:12px;font-weight:700;color:var(--text2);
+}
+.forced-sub-dot{color:var(--orange);font-weight:900;flex-shrink:0}
+
+/* ─── IPO判定 ─── */
+.ipo-table{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.ipo-row{flex:1;min-width:100px;text-align:center;border-radius:12px;border:2px solid var(--border);padding:10px;box-shadow:3px 3px 0 var(--border)}
+.ipo-dice{font-size:22px;margin-bottom:4px}
+.ipo-result{font-size:11px;font-weight:900;color:var(--text2)}
+.ipo-amount{font-size:13px;font-weight:900;margin-top:4px}
+
+/* ─── 勝利条件ボックス ─── */
+.win-box{
+  background:linear-gradient(135deg,#fffbeb,#fef9e7);
+  border:4px solid var(--orange);border-radius:20px;
+  padding:20px 24px;text-align:center;
+  box-shadow:6px 6px 0 var(--border);
+  margin-top:12px;
+}
+.win-formula{
+  font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;
+  background:#fff;border:3px solid var(--border);border-radius:14px;
+  padding:12px 20px;margin-top:12px;display:inline-block;
+  box-shadow:4px 4px 0 var(--border);
+}
+
+/* ─── レスポンシブ ─── */
+@media(max-width:600px){
+  .section{padding:16px 16px}
+  .job-grid{grid-template-columns:1fr}
+  .debt-cards{grid-template-columns:repeat(3,1fr)}
+  .debt-limit{font-size:18px}
+  .asset-grid{grid-template-columns:repeat(2,1fr)}
+  .toc{padding:12px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-logo">
+    <span>投</span><span>資</span><span>家</span><span>人</span><span>生</span>
+  </div>
+  <div class="top-bar-sub">📖 公式ルールブック</div>
+  <a class="back-btn" href="javascript:history.back()">← 戻る</a>
+</div>
+
+<!-- 目次 -->
+<div class="toc">
+  <a class="toc-item" href="#overview">🎯 概要</a>
+  <a class="toc-item" href="#win">🏆 勝利条件</a>
+  <a class="toc-item" href="#turn">🔄 ターン手順</a>
+  <a class="toc-item" href="#jobs">👔 職業</a>
+  <a class="toc-item" href="#forced">🚦 強制ストップ</a>
+  <a class="toc-item" href="#assets">💎 資産・投資</a>
+  <a class="toc-item" href="#debt">💳 借金・保険</a>
+  <a class="toc-item" href="#events">🃏 イベントカード</a>
+  <a class="toc-item" href="#happenings">⚡ ハプニングカード</a>
+</div>
+
+<div class="content">
+
+<!-- 1. 概要 -->
+<div class="section" id="overview">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-title">🎯 ゲーム概要</div>
+      <div class="section-sub">Overview</div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+    <div class="info-box gold" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">👥</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:900">プレイ人数</div>
+      <div style="font-size:18px;font-weight:900">3〜6人</div>
+      <div style="font-size:11px;color:var(--text2)">+ GM 1名推奨</div>
+    </div>
+    <div class="info-box blue" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">⏱️</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:900">プレイ時間</div>
+      <div style="font-size:18px;font-weight:900">45〜60分</div>
+    </div>
+    <div class="info-box green" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">🎓</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:900">対象年齢</div>
+      <div style="font-size:18px;font-weight:900">中学生〜大人</div>
+    </div>
+    <div class="info-box" style="text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">📅</div>
+      <div style="font-size:12px;color:var(--text2);font-weight:900">ゲーム期間</div>
+      <div style="font-size:18px;font-weight:900">3年間 / 3周</div>
+    </div>
+  </div>
+  <div class="info-box" style="margin-top:12px">
+    💡 <strong>コンセプト：</strong>知識・運・決断力が試される「超・実践型」金融ボードゲーム。株式・国債・不動産・金など実際の投資商品を疑似体験し、3年間で最も多くの総資産を築いたプレイヤーが勝利！
+  </div>
+</div>
+
+<!-- 2. 勝利条件 -->
+<div class="section" id="win">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--orange)">2</div>
+    <div>
+      <div class="section-title">🏆 勝利条件</div>
+      <div class="section-sub">Winning Conditions</div>
+    </div>
+  </div>
+  <p style="font-size:14px;font-weight:700;line-height:1.8">ゲーム期間である<strong>3年（盤面3周）</strong>が終了した時点で、<strong>総資産が最も多いプレイヤー</strong>の勝利！</p>
+  <div class="win-box">
+    <div style="font-size:13px;font-weight:900;color:var(--text2);margin-bottom:4px">💰 総資産の計算式</div>
+    <div class="win-formula">総資産 ＝ 手持ち現金 ＋ 株式評価額 ＋ 不動産評価額 － 借金総額</div>
+  </div>
+</div>
+
+<!-- 3. ターン手順 -->
+<div class="section" id="turn">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--blue)">3</div>
+    <div>
+      <div class="section-title">🔄 1ターンの手順</div>
+      <div class="section-sub">Turn Sequence</div>
+    </div>
+  </div>
+  <p style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">プレイヤーは時計回りに手番を行います。自分の番が来たら以下の順に行います。</p>
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-num">1</div>
+      <div class="flow-content">
+        <div class="flow-title">🎲 移動フェーズ</div>
+        <div class="flow-desc">サイコロを1個振り、出た目の数だけコマを進める。</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-num">2</div>
+      <div class="flow-content">
+        <div class="flow-title">🗺️ マス効果フェーズ</div>
+        <div class="flow-desc">止まったマスの指示に従う（お金の受取・支払い、カードを引く等）。<br><strong>強制ストップマス</strong>では特別なフェーズが発生。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. 職業 -->
+<div class="section" id="jobs">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--purple)">4</div>
+    <div>
+      <div class="section-title">👔 職業システム</div>
+      <div class="section-sub">Occupations</div>
+    </div>
+  </div>
+  <p style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">ゲームスタート時にランダムで決定。一度決まった職業は<strong>変更不可</strong>（例外：AIリストラ）。</p>
+
+  <!-- 人数別配分 -->
+  <div class="info-box" style="margin-bottom:14px">
+    <strong>👥 プレイ人数別・職業配分</strong>
+    <table class="ratio-table" style="margin-top:10px">
+      <tr><th>人数</th><th>🏢 会社員</th><th>📈 投資家</th></tr>
+      <tr><td>3人</td><td>2人</td><td>1人</td></tr>
+      <tr><td>4人</td><td>2人</td><td>2人</td></tr>
+      <tr><td>5人</td><td>3人</td><td>2人</td></tr>
+      <tr><td>6人</td><td>3人</td><td>3人</td></tr>
+    </table>
+  </div>
+
+  <div class="job-grid">
+    <!-- 会社員 -->
+    <div class="job-card">
+      <div class="job-card-head" style="background:linear-gradient(135deg,#4facfe,#0066cc)">
+        <div class="job-icon">🏢</div>
+        <div>
+          <div class="job-name" style="color:#fff">会社員</div>
+          <div class="job-tag">安定・防御型</div>
+        </div>
+      </div>
+      <div class="job-body">
+        <div class="job-salary">
+          <div class="job-salary-title">💴 給料（3年合計：390万円確定）</div>
+          <div class="salary-row"><span>1年目</span><span class="salary-amt">30万円</span></div>
+          <div class="salary-row"><span>2年目</span><span class="salary-amt">50万円 ＋ ボーナス50万</span></div>
+          <div class="salary-row"><span>3年目</span><span class="salary-amt">60万円 ＋ 退職金200万</span></div>
+        </div>
+        <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
+        <ul class="skill-list">
+          <li class="skill-item">💳 <strong>信用力（金利免除）</strong>：借金の利子（20%）が常に0%。借りた額だけ返せばOK。</li>
+          <li class="skill-item">🏠 <strong>住宅手当</strong>：不動産購入時に10万円引き。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 投資家 -->
+    <div class="job-card">
+      <div class="job-card-head" style="background:linear-gradient(135deg,#4ade80,#16a34a)">
+        <div class="job-icon">📈</div>
+        <div>
+          <div class="job-name" style="color:#fff">投資家</div>
+          <div class="job-tag">変動・攻撃型</div>
+        </div>
+      </div>
+      <div class="job-body">
+        <div class="job-salary">
+          <div class="job-salary-title">💴 給料（完全歩合制 ※運により激変）</div>
+          <div class="salary-row"><span>1年目</span><span class="salary-amt">サイコロ × 10万円</span></div>
+          <div class="salary-row"><span>2年目</span><span class="salary-amt">サイコロ × 30万円</span></div>
+          <div class="salary-row"><span>3年目</span><span class="salary-amt">サイコロ × 50万円</span></div>
+        </div>
+        <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
+        <ul class="skill-list">
+          <li class="skill-item">🔍 <strong>公開操作</strong>：他の投資家が株売買をした際、自分もそのタイミングで株売買ができる。</li>
+          <li class="skill-item">🎮 <strong>市場操作</strong>：市場取引マス到達時、市場カードを事前確認し変動前後どちらかで取引可能。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- フリーター -->
+    <div class="job-card">
+      <div class="job-card-head" style="background:linear-gradient(135deg,#fde047,#d97706)">
+        <div class="job-icon">💼</div>
+        <div>
+          <div class="job-name" style="color:#fff">フリーター</div>
+          <div class="job-tag">AIリストラで転落</div>
+        </div>
+      </div>
+      <div class="job-body">
+        <div class="info-box red" style="margin-bottom:10px;font-size:12px">⚠️ <strong>19マス目（AIに職を奪われる）</strong>に会社員が止まるとフリーターに転職。</div>
+        <div class="job-salary">
+          <div class="job-salary-title">💴 給料</div>
+          <div class="salary-row"><span>1年目</span><span style="color:var(--red);font-weight:900">なし</span></div>
+          <div class="salary-row"><span>2年目</span><span class="salary-amt">10万円</span></div>
+          <div class="salary-row"><span>3年目</span><span class="salary-amt">20万円</span></div>
+        </div>
+        <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
+        <ul class="skill-list">
+          <li class="skill-item" style="color:var(--text2)">なし（イベントカード「出世」で会社員に復帰可能）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5. 強制ストップ -->
+<div class="section" id="forced">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--red)">5</div>
+    <div>
+      <div class="section-title">🚦 強制ストップマス</div>
+      <div class="section-sub">マス10（1年目終わり）・マス31（2年目終わり）・マス42（ゴール）</div>
+    </div>
+  </div>
+  <div class="forced-flow">
+    <div class="forced-step">
+      <div class="forced-step-num">1</div>
+      <div class="flow-content">
+        <div class="flow-title">📊 市場カードを引く</div>
+        <div class="flow-desc">次に誰かが引くまで、そのカードの市場状況が続く。</div>
+      </div>
+    </div>
+    <div class="forced-step">
+      <div class="forced-step-num">2</div>
+      <div class="flow-content">
+        <div class="flow-title">💰 収入フェーズ</div>
+        <div class="forced-sub">
+          <div class="forced-sub-item"><span class="forced-sub-dot">①</span>給料をもらう</div>
+          <div class="forced-sub-item"><span class="forced-sub-dot">②</span>株の配当をもらえる（保有株数 × 1,000円）</div>
+          <div class="forced-sub-item"><span class="forced-sub-dot">③</span>株を売れる（市場価格で10株単位から、一部だけでも可）</div>
+          <div class="forced-sub-item"><span class="forced-sub-dot">④</span>国債の利子を受け取り、満期になったものは現金化</div>
+        </div>
+      </div>
+    </div>
+    <div class="forced-step">
+      <div class="forced-step-num">3</div>
+      <div class="flow-content">
+        <div class="flow-title">📈 投資フェーズ</div>
+        <div class="forced-sub">
+          <div class="forced-sub-item"><span class="forced-sub-dot">①</span>株を買える（市場価格で10株単位から）</div>
+          <div class="forced-sub-item"><span class="forced-sub-dot">②</span>国債を買える（市場に左右されず、1年債・2年債を選択）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="info-box gold" style="margin-top:14px">
+    🏁 <strong>ゴール時の清算：</strong>株売却（市場カードを引いて清算）→ 国債清算 → 不動産：購入額×3倍 → IPO・金を換金
+  </div>
+</div>
+
+<!-- 6. 資産・投資 -->
+<div class="section" id="assets">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--green)">6</div>
+    <div>
+      <div class="section-title">💎 資産と投資ルール</div>
+      <div class="section-sub">Assets &amp; Investment</div>
+    </div>
+  </div>
+
+  <div class="asset-grid">
+    <div class="asset-card" style="border-color:var(--blue);background:#f0f9ff">
+      <div class="asset-icon">📈</div>
+      <div class="asset-name">株式</div>
+      <div class="asset-detail">
+        <strong>取引場所：</strong>強制ストップ・市場取引マス<br>
+        <strong>単位：</strong>10株単位のみ<br>
+        <strong>価格：</strong>現在の市場カードによる<br>
+        <strong>配当：</strong>2・3年目の決算時に<br>　10株につき1,000円
+      </div>
+    </div>
+    <div class="asset-card" style="border-color:var(--teal);background:#f0fdfa">
+      <div class="asset-icon">🏦</div>
+      <div class="asset-name">国債</div>
+      <div class="asset-detail">
+        <strong>1口：</strong>5,000円（10口単位）<br><br>
+        <strong>1年債：</strong>次の強制ストップで満期。利子10%（途中解約不可）<br><br>
+        <strong>2年債：</strong>1年目のみ購入可。次の強制ストップで利子20%。その次で満期＋利子20%（途中解約不可）
+      </div>
+    </div>
+    <div class="asset-card" style="border-color:var(--orange);background:#fff7ed">
+      <div class="asset-icon">🏠</div>
+      <div class="asset-name">不動産</div>
+      <div class="asset-detail">
+        <strong>購入：</strong>特定のマスで購入可能<br>
+        <strong>種類：</strong>20万・30万・50万等<br>
+        <strong>ゴール時：</strong>購入額 × 3倍で銀行が買い取り
+      </div>
+    </div>
+    <div class="asset-card" style="border-color:var(--purple);background:#faf5ff">
+      <div class="asset-icon">🚀</div>
+      <div class="asset-name">IPO（未上場株）</div>
+      <div class="asset-detail">
+        <strong>価格：</strong>1口20万円（3口まで）<br>
+        <strong>判定：</strong>ゴール時にサイコロ<br>
+      </div>
+      <div class="ipo-table" style="margin-top:8px">
+        <div class="ipo-row" style="background:#fef2f2;border-color:#fca5a5">
+          <div class="ipo-dice">🎲</div>
+          <div class="ipo-result">出目1〜4</div>
+          <div class="ipo-amount" style="color:var(--red)">倒産 (0円)</div>
+        </div>
+        <div class="ipo-row" style="background:#f0fdf4;border-color:#86efac">
+          <div class="ipo-dice">🎲</div>
+          <div class="ipo-result">出目5</div>
+          <div class="ipo-amount" style="color:var(--green)">上場 (200万)</div>
+        </div>
+        <div class="ipo-row" style="background:#fefce8;border-color:#fde047">
+          <div class="ipo-dice">🎲</div>
+          <div class="ipo-result">出目6</div>
+          <div class="ipo-amount" style="color:var(--orange)">🦄 2,000万</div>
+        </div>
+      </div>
+    </div>
+    <div class="asset-card" style="border-color:var(--gold);background:#fffbeb">
+      <div class="asset-icon">🥇</div>
+      <div class="asset-name">金（ゴールド）</div>
+      <div class="asset-detail">
+        <strong>価格：</strong>1口20万円（制限なし）<br>
+        <strong>判定：</strong>ゴール時の市場カード<br><br>
+        📉 デフレ → 1口50万<br>
+        📊 物価安定 → 1口20万<br>
+        📈 インフレ → 1口10万
+      </div>
+    </div>
+    <div class="asset-card" style="border-color:var(--green);background:#f0fdf4">
+      <div class="asset-icon">💹</div>
+      <div class="asset-name">積立NISA</div>
+      <div class="asset-detail">
+        <strong>取得：</strong>特定のマスで購入<br>
+        <strong>上限：</strong>最大10万円まで積立<br>
+        <strong>ゴール時：</strong>積立額 × 3倍で満期
+      </div>
+    </div>
+  </div>
+
+  <!-- 市場カード -->
+  <div style="margin-top:20px">
+    <div style="font-size:14px;font-weight:900;margin-bottom:10px">📊 市場カード（株価）</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#eff6ff;border-color:#93c5fd">
+        <div style="font-size:20px;margin-bottom:4px">📉</div>
+        <div style="font-weight:900">デフレ</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--blue)">¥3,000</div>
+        <div style="font-size:11px;color:var(--text2)">10株単位</div>
+      </div>
+      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#f0fdf4;border-color:#86efac">
+        <div style="font-size:20px;margin-bottom:4px">📊</div>
+        <div style="font-weight:900">物価安定</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green)">¥5,000</div>
+        <div style="font-size:11px;color:var(--text2)">10株単位</div>
+      </div>
+      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#fef2f2;border-color:#fca5a5">
+        <div style="font-size:20px;margin-bottom:4px">📈</div>
+        <div style="font-weight:900">インフレ</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--red)">¥7,000</div>
+        <div style="font-size:11px;color:var(--text2)">10株単位</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 7. 借金・保険 -->
+<div class="section" id="debt">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--orange)">7</div>
+    <div>
+      <div class="section-title">💳 借金・保険・破産</div>
+      <div class="section-sub">Finance &amp; Risks</div>
+    </div>
+  </div>
+
+  <div style="font-size:14px;font-weight:900;margin-bottom:10px">📊 借入限度額</div>
+  <div class="debt-cards">
+    <div class="debt-card">
+      <div class="debt-year">1年目</div>
+      <div class="debt-limit">100万円</div>
+    </div>
+    <div class="debt-card">
+      <div class="debt-year">2年目</div>
+      <div class="debt-limit">200万円</div>
+    </div>
+    <div class="debt-card">
+      <div class="debt-year">3年目</div>
+      <div class="debt-limit">300万円</div>
+    </div>
+  </div>
+
+  <div class="info-box" style="margin-top:14px">
+    💴 <strong>返済ルール：</strong>10万円単位で返済。利子は<strong>20%</strong>（元本10万＋利子2万＝12万返済）。<br>
+    🏢 <strong>会社員は利子免除：</strong>借りた額（10万円）だけ返せばOK。<br>
+    📌 <strong>借入タイミング：</strong>自分のターンならいつでも可。全員支払い時等は他人のターンでも緊急借入可能。
+  </div>
+
+  <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:10px">🛡️ 保険</div>
+  <div class="info-box green">
+    <strong>保険料：</strong>年3万円（各年度のスタート時に加入を宣言して支払う）<br>
+    <strong>効果：</strong>加入した年度内の「保険対象」ハプニング被害を<strong>0円</strong>に<br>
+    <strong>対象外：</strong>株価暴落・税金・投資詐欺などは保険では防げない
+  </div>
+
+  <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:10px">💥 支払不能と破産</div>
+  <div class="info-box red">
+    現金がなく、借金も限度額一杯で、かつ<strong>すべての資産（株・不動産・金・IPO）を市場の半値で売却しても支払い額に届かない</strong>場合、<strong>ゲームから脱落</strong>となります。
+  </div>
+</div>
+
+<!-- 8. イベントカード -->
+<div class="section" id="events">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--gold)">8</div>
+    <div>
+      <div class="section-title">🎊 イベントカード</div>
+      <div class="section-sub">引いた本人が基本的に得をするカード</div>
+    </div>
+  </div>
+  <table class="card-table">
+    <tr>
+      <th>カード名</th>
+      <th>条件</th>
+      <th>効果</th>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#fefce8;border-color:#fde047">市場</span>配当金廃止</td>
+      <td>株10口以上</td>
+      <td>次の強制ストップの配当が0円になる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#fefce8;border-color:#fde047">市場</span>増配</td>
+      <td>株10口以上</td>
+      <td>次の強制ストップの配当が2倍になる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#fefce8;border-color:#fde047">市場</span>株主優待①</td>
+      <td>株10口以上</td>
+      <td>次年度の保険に<strong>1万円</strong>で加入できる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#fefce8;border-color:#fde047">市場</span>株主優待②</td>
+      <td>株10口以上</td>
+      <td>不動産購入時に<strong>10万円引き</strong>になる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#e9d5ff;border-color:#d8b4fe">職業</span>出世</td>
+      <td>会社員・フリーター</td>
+      <td>会社員→課長（+20万）・フリーター→会社員に復帰</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#fed7aa;border-color:#fb923c">不動産</span>価格上昇</td>
+      <td>不動産保有</td>
+      <td>不動産を<strong>購入額の4倍</strong>で売れる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>市場操作</td>
+      <td>なし</td>
+      <td>指定した相手の次の市場取引の市場状態を指定できる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>金利上昇</td>
+      <td>なし</td>
+      <td>全員の借金利子が投資家30%・会社員10%になる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>マイナス金利政策</td>
+      <td>金利上昇中</td>
+      <td>金利上昇の効果を終了させる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#bbf7d0;border-color:#4ade80">現金</span>特別定額給付金</td>
+      <td>なし</td>
+      <td>引いた人<strong>+10万円</strong>・他全員<strong>+5万円</strong></td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#bbf7d0;border-color:#4ade80">現金</span>クラウドファンディング</td>
+      <td>なし</td>
+      <td>引いた人が他全員から<strong>5万円ずつ</strong>徴収できる</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#99f6e4;border-color:#2dd4bf">国債</span>利回り上昇</td>
+      <td>国債10口以上</td>
+      <td>保有国債の利子が<strong>10%上昇</strong>する</td>
+    </tr>
+    <tr>
+      <td><span class="badge" style="background:#99f6e4;border-color:#2dd4bf">国債</span>利回り下落</td>
+      <td>国債10口以上</td>
+      <td>保有国債の利子が<strong>10%下落</strong>する</td>
+    </tr>
+  </table>
+</div>
+
+<!-- 9. ハプニングカード -->
+<div class="section" id="happenings">
+  <div class="section-header">
+    <div class="section-num" style="background:var(--red)">9</div>
+    <div>
+      <div class="section-title">⚡ ハプニングカード</div>
+      <div class="section-sub">保険加入の有無で被害が変わります</div>
+    </div>
+  </div>
+  <table class="card-table">
+    <tr>
+      <th>カード名</th>
+      <th>保険あり</th>
+      <th>保険なし（被害）</th>
+    </tr>
+    <tr>
+      <td><span class="tag tag-ins">保険対象</span>巨大地震発生</td>
+      <td style="color:var(--green);font-weight:900">無効</td>
+      <td>最も高い不動産を1件失う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-ins">保険対象</span>交通事故</td>
+      <td style="color:var(--green);font-weight:900">0円</td>
+      <td>30万円支払う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-ins">保険対象</span>緊急入院</td>
+      <td style="color:var(--green);font-weight:900">0円</td>
+      <td>15万円支払う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-ins">保険対象</span>クレカ不正利用</td>
+      <td style="color:var(--green);font-weight:900">0円</td>
+      <td>20万円支払う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-ins">保険対象</span>ロストバッゲージ</td>
+      <td style="color:var(--green);font-weight:900">0円</td>
+      <td>10万円支払う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-noins">保険対象外</span>給料未払い</td>
+      <td colspan="1" style="color:var(--red);font-weight:900">防げない</td>
+      <td>次年度の給料が0円になる</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-noins">保険対象外</span>投資詐欺（ポンジ）</td>
+      <td style="color:var(--red);font-weight:900">防げない</td>
+      <td>サイコロの出目 × 6万円支払う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-noins">保険対象外</span>追徴課税</td>
+      <td style="color:var(--red);font-weight:900">防げない</td>
+      <td>20万円支払う（会社員は免除）</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-noins">保険対象外</span>ギリシャ危機</td>
+      <td style="color:var(--red);font-weight:900">防げない</td>
+      <td>保有国債を3分の1失う</td>
+    </tr>
+    <tr>
+      <td><span class="tag tag-noins">保険対象外</span>銀行破綻</td>
+      <td style="color:var(--red);font-weight:900">防げない</td>
+      <td>現金が10万円を超えていたら10万円になる</td>
+    </tr>
+  </table>
+
+  <div class="info-box red" style="margin-top:14px">
+    ⚠️ <strong>保険対象外のカードは保険では防げません。</strong>株価暴落・税金・詐欺・国債危機・銀行破綻などは保険があっても被害を受けます。
+  </div>
+</div>
+
+<!-- フッター -->
+<div style="text-align:center;margin-top:30px;font-size:12px;font-weight:900;color:var(--text2)">
+  Team 金融すごろく（YouKey College）<br>
+  Hideshige Hashimoto　Kanae Maeda　Soichi Morimoto　Toki Kobayashi　Ryusei Koya
+</div>
+
+</div><!-- /content -->
+
+<script>
+// スムーズスクロール
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t) t.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>
