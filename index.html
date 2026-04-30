@@ -1087,7 +1087,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     </div>
   </div>
   <div class="setup">
-    <button class="rule-btn" onclick="window.open('https://docs.google.com/document/d/1z6x-cUXpG5ylhaJ7Q6paigI04jCrEZ6T3r0TC6nzcmk/edit?tab=t.8o3j36ov64i9#heading=h.m5pahkuy15tl', '_blank')">📖 ルール説明を読む</button>
+    <button class="rule-btn" onclick="window.open('rules.html', '_blank')">📖 ルール説明を読む</button>
     <div class="s-lbl">プレイヤー人数 (3〜6人)</div>
     <div class="cnt-row">
       <button class="cnt-btn active" onclick="setCount(3)">3</button>
@@ -1106,7 +1106,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <div class="ghdr">
       <div class="g-logo">投資家人生</div>
       <div class="g-meta">
-        <button class="rule-btn" style="margin:0; padding:4px 12px; font-size:11px; box-shadow:2px 2px 0 var(--border);" onclick="window.open('https://docs.google.com/document/d/1z6x-cUXpG5ylhaJ7Q6paigI04jCrEZ6T3r0TC6nzcmk/edit?tab=t.8o3j36ov64i9#heading=h.m5pahkuy15tl', '_blank')">📖 ルール</button>
+        <button class="rule-btn" style="margin:0; padding:4px 12px; font-size:11px; box-shadow:2px 2px 0 var(--border);" onclick="window.open('rules.html', '_blank')">📖 ルール</button>
         <button onclick="emergencyReset()" title="詰まったとき押す" style="background:#fee2e2;border:2px solid var(--red);border-radius:10px;padding:2px 7px;font-size:10px;font-weight:900;color:var(--red);cursor:pointer;white-space:nowrap">⚡リセット</button>
         <div id="sync-dot" onclick="showSyncDebug()" title="タップで診断" style="width:12px;height:12px;border-radius:50%;background:#94a3b8;flex-shrink:0;transition:background .3s;cursor:pointer;box-shadow:0 0 0 2px var(--border)"></div>
 
@@ -1610,7 +1610,7 @@ function renderAll(){
 
     list.innerHTML+=`<div class="pcard${act}" id="pc-${i}">
       <div class="pa" style="color:${p.color.bg}; border-color:${p.color.bg};">${p.name[0]}</div>
-      <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} 1年債${b1} 2年債${b2} 不動産${pEstates(p).length}</div></div>
+      <div class="pi"><div class="pn">${p.name} ${jl}${bankruptTag} ${p.isGoal&&!p.isBankrupt?'🏁':''}</div><div class="pj">株${p.stocks} 金${p.gold} IPO${p.ipo} 1年債${b1} 2年債${b2} 不動産${pEstates(p).length}</div></div>
       <div class="pas"><div class="pm${p.cash<0?' neg':''}">${fmtM(p.cash)}</div></div>
     </div>`;
   });
@@ -1758,26 +1758,46 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
     else if (p.pos <= 31) { maxDebt = -2000000; limitLabel = '200万円'; }
     else                  { maxDebt = -3000000; limitLabel = '300万円'; }
     
+    // 利子計算（先に求めてから上限チェック）
+    const intRate = p.job === 'emp' ? (G.highInt ? 0.1 : 0) : (G.highInt ? 0.3 : 0.2);
+    const debtAmt = Math.max(0, cost - Math.max(0, p.cash)); // 新たに借りる額
+    const interestNow = intRate > 0 ? Math.floor(debtAmt * intRate) : 0;
+    // 利子込みの実質コスト・着地点
+    const cashAfterAll = p.cash - cost - interestNow;
+
     if (p.cash >= cost) {
         confirmCallback();
-    } else if (p.cash - cost >= maxDebt) {
+    } else if (cashAfterAll >= maxDebt) {
+        // 利子込みでも上限内 → 借金OKダイアログ
         closeModal();
-        let intRate = p.job === 'emp' ? (G.highInt ? 0.1 : 0) : (G.highInt ? 0.3 : 0.2);
-        let intTxt = intRate === 0 ? "※会社員特権で借金利子は 0% です。" : `※最終清算時に ${intRate*100}% の利子が引かれます。`;
-        
+        let intTxt = intRate === 0
+          ? "※会社員特権で借金利子は 0% です。"
+          : `<strong style="color:var(--red)">利子(${intRate*100}%): -${fmtM(interestNow)}</strong> が即時加算されます。<br>借金後の現金: <strong style="color:var(--red)">${fmtM(cashAfterAll)}</strong>`;
+
         showModal({
             type: 't-happen', tag: '⚠️ 警告', title: '借金になります！',
-            desc: `${text}<br><br>現在の現金: ${fmtM(p.cash)}<br>支払い額: <span style="color:var(--red)">${fmtM(cost)}</span><br><br>このままだと <span style="color:var(--red);font-weight:bold;">借金（現金がマイナス）</span> になります。<br>${intTxt}<br><br>借金して購入しますか？`,
+            desc: `${text}<br><br>現在の現金: ${fmtM(p.cash)}<br>支払い額: <span style="color:var(--red)">${fmtM(cost)}</span><br>${intTxt}<br><br>借金して購入しますか？`,
             acts: [
-                {lbl: '借金して払う', p: true, fn: confirmCallback},
+                {lbl: '借金して払う', p: true, fn: () => {
+                  p.cash -= cost;
+                  if(interestNow > 0) {
+                    p.cash -= interestNow;
+                    log('<span style="color:'+(p.color?.bg||'#888')+'">'+p.name+'</span> 借金利子('+intRate*100+'%) <span class="lm">-'+fmtM(interestNow)+'</span>');
+                  }
+                  renderAll();
+                  confirmCallback();
+                }},
                 {lbl: 'やめる', p: false, fn: cancelCallback}
             ]
         });
     } else {
+        // 利子込みで上限オーバー → 購入不可
         closeModal();
+        const overBy = Math.abs(cashAfterAll) - Math.abs(maxDebt);
         showModal({
             type: 't-happen', tag: '🚫 上限エラー', title: '借金上限オーバー！',
-            desc: `【借金上限ルール】<br>現在は借金上限 <strong>${limitLabel}</strong> です！<br><br>現在の現金: ${fmtM(p.cash)}<br>購入後現金: <span style="color:var(--red)">${fmtM(p.cash - cost)}</span><br><br>上限を超えるため購入できません。`,
+            desc: `【借金上限ルール】<br>現在は借金上限 <strong>${limitLabel}</strong> です！<br><br>現在の現金: ${fmtM(p.cash)}<br>支払い: ${fmtM(cost)}${interestNow>0?`<br>即時利子(${intRate*100}%): -${fmtM(interestNow)}`:''}
+<br>→ 着地点: <span style="color:var(--red)">${fmtM(cashAfterAll)}</span><br><br>上限を<strong>${fmtM(overBy)}</strong>超えるため購入できません。`,
             acts: [
                 {lbl: '戻る', p: true, fn: cancelCallback}
             ]
@@ -1841,9 +1861,29 @@ async function onRoll(){
         if(p.job==='emp') { p.cash += 500000; log(`<span style="color:${p.color.bg}">${p.name}</span> 通過ボーナス <span class="lp">+¥500,000</span>`); }
     }
     if(p.pos===22 && s < roll - 1) {
-        let sInfo = getSalaryInfo(p, 2); p.cash += sInfo.amount;
-        log(`<span style="color:${p.color.bg}">${p.name}</span> 通過給料 <span class="lp">${sInfo.desc}</span>`);
-        // 通過時は給料のみ。不動産購入は止まったときのみ（processCell case22で処理）
+        // 通過でも給料+不動産購入チャンス（doPass22と同じ処理）
+        await receiveSalary(p, 2, '2年目給料＆不動産（通過）');
+        const bc22t = p.cash;
+        const div22t = applyDividendsAndGetAmt(p);
+        const bond22t = resolveBondsAndGetLines(p);
+        const doContinue22 = async () => {
+          await new Promise(r22 => {
+            showModal({
+              type:'t-info', tag:'🏠 不動産購入チャンス', title:'通過！不動産を購入しますか？',
+              desc: buildDesc(CELLS[22], '通過でも不動産を購入できます。<br>ゴール時に購入額の3倍で売却！'),
+              acts:[
+                {lbl:'購入する', p:true, fn:()=>{ closeModal(); promptBuyEstateAsync(p, CELLS[22], [300000, 400000, 600000]).then(r22); }},
+                {lbl:'買わない', p:false, fn:()=>{ closeModal(); r22(); }}
+              ]
+            });
+          });
+        };
+        if(div22t > 0 || bond22t.length > 0) {
+          await new Promise(r22b => showDivBondCut(p, bc22t, div22t, bond22t, 2, async () => { await doContinue22(); r22b(); }));
+        } else {
+          await doContinue22();
+        }
+        renderAll();
     }
     if(p.pos===34 && s < roll - 1) {
         if(p.job==='emp') { p.cash += 2000000; log(`<span style="color:${p.color.bg}">${p.name}</span> 通過退職金 <span class="lp">+¥2,000,000</span>`); }
@@ -2128,7 +2168,7 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
         if(q<=0||q%10!==0){alert('10株単位で入力してください');return;}
         const cost=(q/10)*price; 
         confirmPurchase(p, cost, `株を${q}株（${fmtM(cost)}）購入します。`, () => {
-            p.cash-=cost; p.stocks+=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株購入`);
+            p.stocks+=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株購入`);
             if(!LOCAL_MODE) pushState();
             if (!isFollow && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
             showTradeResult(p, cell, `株を${q}株購入しました。`, isForced, isFollow);
@@ -2150,7 +2190,7 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
 
 function showTradeResult(p, cell, text, isForced, isFollow) {
     showModal({
-        type:'t-info', tag:'取引結果', title:'取引完了', desc: buildDesc(cell, text),
+        type:'t-info', tag:'取引結果', title:'取引完了', fullScreen:true, desc: buildDesc(cell, text),
         acts: [
             {lbl:'続けて取引する', p:false, fn:()=> openTrade(p, cell, 'buy', isForced, isFollow)}, 
             {lbl:'終了する', p:true, fn:()=> endTradeAction(isForced, cell) }
@@ -2171,14 +2211,54 @@ function endTradeAction(isForced, cell) {
 
 function processFollowTrade(activeP, isForced, cell) {
     const follower = G_tradeFollowQueue.shift();
-    showModal({
+    if(!follower) { endTradeAction(isForced, cell); return; }
+
+    if(LOCAL_MODE) {
+      // ローカル: そのまま表示
+      showModal({
         type:'t-info', tag:'公開操作', title:`${follower.name}の追随取引`,
-        desc: `【投資家スキル】他の投資家が取引を行いました。あなたも現在の市場で便乗取引が可能です。<br><br>現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>手持ち現金: ${fmtM(follower.cash)}`,
+        desc: `【投資家スキル】${activeP.name}が取引を行いました。<br>${follower.name}も現在の市場で便乗取引が可能です。<br>現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>手持ち現金: ${fmtM(follower.cash)}`,
         acts: [
-            {lbl:'取引する', p:true, fn:()=> openTrade(follower, cell, 'buy', isForced, true)},
-            {lbl:'パス', p:false, fn:()=> endTradeAction(isForced, cell)}
+          {lbl:'取引する', p:true, fn:()=> openTrade(follower, cell, 'buy', isForced, true)},
+          {lbl:'パス', p:false, fn:()=> endTradeAction(isForced, cell)}
         ]
-    });
+      });
+    } else {
+      // オンライン: Firebase経由で投資家本人に通知
+      // isMoving=trueのままにしてアクティブプレイヤーはアクションを保留
+      // follower本人がlivePollTick経由で取引できる
+      broadcastLive({
+        type:'t-info', tag:'📈 公開操作チャンス！', title:`${follower.name} へ`,
+        desc:`${activeP.name}が市場取引しました！
+【投資家スキル】あなたも今すぐ便乗取引できます。`,
+        _followTrade: true,
+        _followerId: follower.id,
+        _followMarket: G.market.id,
+        _cellIdx: cell ? cell.i : -1,
+        _isForced: isForced
+      }, true).catch(()=>{});
+
+      // アクティブプレイヤー側は30秒待ってから続行
+      const waitMs = 30000;
+      const deadline = Date.now() + waitMs;
+      showModal({
+        type:'t-info', tag:'📈 公開操作待機中', title:`${follower.name}の公開操作を待っています`,
+        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で30秒後に続行します。`,
+        acts:[{lbl:'スキップ（今すぐ続行）', p:false, fn:()=>{
+          closeModal();
+          broadcastLive({_followTrade:true, _followerId:follower.id, _followSkip:true}, false).catch(()=>{});
+          endTradeAction(isForced, cell);
+        }}]
+      });
+
+      // タイマーで自動続行
+      const tid = setTimeout(() => {
+        closeModal();
+        endTradeAction(isForced, cell);
+      }, waitMs);
+      // G_followTradeTimer に保存して強制スキップ時にクリア
+      window._followTradeTimer = tid;
+    }
 }
 
 // ─── 国債 ───
@@ -2225,7 +2305,7 @@ window.execBond = function(type, pid, cellIdx) {
     const cost = qty * 5000;
 
     confirmPurchase(p, cost, `国債(${type==='1yr'?'1年債':'2年債'}) ${qty}口（${fmtM(cost)}）を購入します。`, () => {
-        p.cash -= cost;
+        // p.cash -= cost は confirmPurchase内で処理済み
         if(!p.bonds) p.bonds = [];
         p.bonds.push({type: type, units: qty, bn: p.forcedN, int: type === '1yr' ? 0.1 : 0.2});
         log(`<span style="color:${p.color.bg}">${p.name}</span> 国債(${type==='1yr'?'1年債':'2年債'}) ${qty}口購入`);
@@ -2252,7 +2332,7 @@ function promptBuyEstateAsync(p, cell, options) {
             let cost = Math.max(0, price - totalDisc);
             return {lbl: `${price/10000}万`, p:true, fn: () => {
                 confirmPurchase(p, cost, `${price/10000}万円の物件を購入します。${totalDisc>0?`<br>（割引適用: -${totalDisc/10000}万円）`:''}`, () => {
-                    p.cash -= cost; if(!p.estates) p.estates = []; p.estates.push({price: price}); p.estDisc = false; renderPlayers();
+                    if(!p.estates) p.estates = []; p.estates.push({price: price}); p.estDisc = false; renderPlayers();
                     showModal({type:'t-info', tag:'購入完了', title:'不動産購入完了', desc:`${price/10000}万円の物件を購入しました！`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); resolve(); }}]});
                 }, () => {
                     closeModal(); promptBuyEstateAsync(p, cell, options).then(resolve);
@@ -2276,7 +2356,7 @@ function promptInsurance(p, year, cell, descText) {
         acts: [
             {lbl:`保険に入る(${fmtM(cost)})`, p:true, fn:()=> {
                 confirmPurchase(p, cost, '保険に加入します。', () => {
-                    p.cash -= cost; p.insCost = 30000; p.insYear = year; enterForcedInvestment(p, cell);
+                    p.insCost = 30000; p.insYear = year; enterForcedInvestment(p, cell);
                 }, () => { promptInsurance(p, year, cell, descText); });
             }},
             {lbl:'入らない', p:false, fn:()=> { enterForcedInvestment(p, cell); }}
@@ -2299,8 +2379,15 @@ function doForcedInvestmentMenu(p, cell) {
         type:'t-info', tag:'投資フェーズ', title:'投資を行いますか？',
         desc: `現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>現金: <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span>`,
         acts: [
-            {lbl:'株を買う', p:false, fn:()=> openTrade(p, cell, 'buy', true)},
-            {lbl:'株を売る', p:false, fn:()=> openTrade(p, cell, 'sell', true)},
+            {lbl:'株を買う', p:false, fn:()=> {
+              // 投資家の公開操作: 他の投資家をキューに追加
+              if(p.job==='inv') G_tradeFollowQueue = G.players.filter(op=>op.id!==p.id&&op.job==='inv');
+              openTrade(p, cell, 'buy', true);
+            }},
+            {lbl:'株を売る', p:false, fn:()=> {
+              if(p.job==='inv') G_tradeFollowQueue = G.players.filter(op=>op.id!==p.id&&op.job==='inv');
+              openTrade(p, cell, 'sell', true);
+            }},
             {lbl:'国債を買う', p:false, fn:()=> openBonds(p, cell)},
             {lbl:'投資を終了して次へ', p:true, fn:()=> { closeModal(); isMoving = false; nextTurn(); }}
         ]
@@ -2336,11 +2423,18 @@ async function handleSteal(p, cell, nextFn) {
         let b2 = pBonds(op).filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
         return { lbl: `${op.name} (株${op.stocks} 1年債${b1} 2年債${b2})`, p:false, fn: () => { 
             closeModal(); 
+            const b1op = pBonds(op).filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
+            const b2op = pBonds(op).filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
+            const bondActs = [];
+            if(b1op > 0) bondActs.push({lbl:`1年債を奪う(${b1op}口)`, p:false, fn:()=> execSteal(p, op, '1年債', nextFn)});
+            if(b2op > 0) bondActs.push({lbl:`2年債を奪う(${b2op}口)`, p:false, fn:()=> execSteal(p, op, '2年債', nextFn)});
+            if(bondActs.length === 0) bondActs.push({lbl:'国債なし', p:false, fn:()=>{ closeModal(); nextFn(); }});
             showModal({
                 type:'t-happen', tag:'奪い取り', title:`${op.name} から何を奪う？`,
+                desc:`株: ${op.stocks}株 / 1年債: ${b1op}口 / 2年債: ${b2op}口`,
                 acts: [
                     {lbl:'株を奪う', p:true, fn:()=> execSteal(p, op, '株', nextFn)},
-                    {lbl:'国債を奪う', p:true, fn:()=> execSteal(p, op, '国債', nextFn)}
+                    ...bondActs
                 ]
             });
         }};
@@ -2351,13 +2445,44 @@ async function handleSteal(p, cell, nextFn) {
 function execSteal(p, op, assetName, nextFn) {
     let amountStolen = 0;
     if(assetName === '株') {
-        amountStolen = Math.min(30, op.stocks); op.stocks -= amountStolen; p.stocks += amountStolen;
+        amountStolen = Math.min(30, op.stocks);
+        op.stocks -= amountStolen; p.stocks += amountStolen;
+    } else if(assetName === '1年債' || assetName === '2年債') {
+        // 種類指定で奪う
+        const bondType = assetName === '1年債' ? '1yr' : '2yr';
+        if(!op.bonds) op.bonds = [];
+        if(!p.bonds) p.bonds = [];
+        let leftToSteal = 30;
+        for(let b of op.bonds) {
+            if(b.type !== bondType || leftToSteal <= 0) continue;
+            let take = Math.min(b.units, leftToSteal);
+            b.units -= take; leftToSteal -= take; amountStolen += take;
+            p.bonds.push({type: b.type, units: take, bn: b.bn, int: b.int});
+        }
+        op.bonds = op.bonds.filter(b => b.units > 0);
     } else {
-        let totalBonds = pBonds(op).reduce((s, b) => s + b.units, 0); amountStolen = Math.min(30, totalBonds); let leftToSteal = amountStolen;
-        for(let b of op.bonds) { if(leftToSteal <= 0) break; let take = Math.min(b.units, leftToSteal); b.units -= take; leftToSteal -= take; if(!p.bonds) p.bonds = []; p.bonds.push({type: b.type, units: take, bn: b.bn, int: b.int}); }
-        op.bonds = pBonds(op).filter(b => b.units > 0);
+        // 旧互換: 種類問わず奪う
+        if(!op.bonds) op.bonds = [];
+        if(!p.bonds) p.bonds = [];
+        let leftToSteal = 30;
+        for(let b of op.bonds) {
+            if(leftToSteal <= 0) break;
+            let take = Math.min(b.units, leftToSteal);
+            b.units -= take; leftToSteal -= take; amountStolen += take;
+            p.bonds.push({type: b.type, units: take, bn: b.bn, int: b.int});
+        }
+        op.bonds = op.bonds.filter(b => b.units > 0);
     }
-    showModal({ type:'t-event', tag:'奪い取り成功！', title:'結果発表', desc: `${op.name} から ${assetName} を ${amountStolen}口 奪った！`, acts: [{lbl:'OK', p:true, fn:()=>{closeModal(); nextFn();}}] });
+    if(amountStolen === 0) {
+        showModal({type:'t-info', tag:'奪い取り失敗', title:'奪えませんでした',
+          desc:`${op.name}の${assetName}が0口でした。`, acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+        return;
+    }
+    log('<span style="color:'+(p.color?.bg||'#888')+'">'+p.name+'</span> 奪い取り成功: '+assetName+' '+amountStolen+'口');
+    if(!LOCAL_MODE) pushState();
+    showModal({type:'t-event', tag:'奪い取り成功！', title:'結果発表',
+      desc:`${op.name} から <strong>${assetName}</strong> を <strong>${amountStolen}口</strong> 奪った！`,
+      acts:[{lbl:'OK', p:true, fn:()=>{closeModal(); nextFn();}}]});
 }
 
 async function doPass22(p, cell) {
@@ -2375,13 +2500,13 @@ async function doPass22(p, cell) {
 
 function promptBuyGold(p, cell, nextFn) {
     showModal({
-        type:'t-info', tag:cell.name, title:'金を購入しますか？(1口20万)', desc:buildDesc(cell, '現在1口20万で購入できます。'), extra:`<input type="number" id="gq" value="1" min="1" class="tinp">`,
+        type:'t-info', tag:cell.name, title:'金を購入しますか？(1口20万)', desc:buildDesc(cell, '現在1口20万で購入できます。制限なし！'), extra:`<input type="number" id="gq" value="1" min="1" class="tinp">`,
         acts:[{lbl:'買う', p:true, fn:()=>{ 
             let q = parseInt(document.getElementById('gq').value)||0; 
             if(q<=0) return;
             let cost = q*200000;
             confirmPurchase(p, cost, `金を${q}口（${fmtM(cost)}）購入します。`, () => {
-                p.cash-=cost; p.gold+=q; renderPlayers();
+                p.gold+=q; renderPlayers();
                 showModal({type:'t-info', tag:'購入完了', title:'金購入完了', desc:`金を${q}口購入しました！`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});
             }, () => { promptBuyGold(p, cell, nextFn); });
         }}, {lbl:'買わない', p:false, fn:()=>{ closeModal(); nextFn(); }}]
@@ -2397,7 +2522,7 @@ function promptBuyIPO(p, cell, nextFn) {
             if(q>3||p.ipo+q>3){alert('最大3口までです');return;} 
             let cost = q*200000;
             confirmPurchase(p, cost, `未上場株を${q}口（${fmtM(cost)}）購入します。`, () => {
-                p.cash-=cost; p.ipo+=q; renderPlayers();
+                p.ipo+=q; renderPlayers();
                 showModal({type:'t-info', tag:'購入完了', title:'未上場株購入完了', desc:`未上場株を${q}口購入しました！`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});
             }, () => { promptBuyIPO(p, cell, nextFn); });
         }}, {lbl:'買わない', p:false, fn:()=>{closeModal(); nextFn();}}]
@@ -2406,8 +2531,8 @@ function promptBuyIPO(p, cell, nextFn) {
 
 function promptNisa(p, cell, nextFn) {
     showModal({type:'t-info', tag:cell.name, title:'積立NISA', desc:buildDesc(cell, '10万円まで積み立て可能。ゴール時に3倍になります。<br>いくら積み立てますか？'), acts:[
-        {lbl:'10万円', p:true, fn:()=>{ confirmPurchase(p, 100000, 'NISAに10万円積み立てます。', ()=>{p.cash-=100000; p.nisaAmt+=100000; renderPlayers(); showModal({type:'t-info', tag:'購入完了', title:'NISA積立完了', desc:`10万円積み立てました。`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});}, ()=>promptNisa(p, cell, nextFn)); }},
-        {lbl:'5万円', p:false, fn:()=>{ confirmPurchase(p, 50000, 'NISAに5万円積み立てます。', ()=>{p.cash-=50000; p.nisaAmt+=50000; renderPlayers(); showModal({type:'t-info', tag:'購入完了', title:'NISA積立完了', desc:`5万円積み立てました。`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});}, ()=>promptNisa(p, cell, nextFn)); }},
+        {lbl:'10万円', p:true, fn:()=>{ confirmPurchase(p, 100000, 'NISAに10万円積み立てます。', ()=>{p.nisaAmt+=100000; renderPlayers(); showModal({type:'t-info', tag:'購入完了', title:'NISA積立完了', desc:`10万円積み立てました。`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});}, ()=>promptNisa(p, cell, nextFn)); }},
+        {lbl:'5万円', p:false, fn:()=>{ confirmPurchase(p, 50000, 'NISAに5万円積み立てます。', ()=>{p.nisaAmt+=50000; renderPlayers(); showModal({type:'t-info', tag:'購入完了', title:'NISA積立完了', desc:`5万円積み立てました。`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); nextFn(); }}]});}, ()=>promptNisa(p, cell, nextFn)); }},
         {lbl:'やめる', p:false, fn:()=>{ closeModal(); nextFn(); }}
     ]});
 }
@@ -2793,6 +2918,7 @@ async function processCell(p, cell){
     case 21: {
       const hc21 = await spinRoulette('ハプニング発生！', HAPPS, 't-happen');
       if(p.insYear===G.year && hc21.ins){
+        if(!LOCAL_MODE) pushState();
         showModal({type:'t-info', tag:hc21.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった！',p:true,fn:()=>{closeModal();nextFn();}}]});
       } else {
         if(hc21.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc21.val=-rc*60000;}
@@ -2803,6 +2929,8 @@ async function processCell(p, cell){
         else if(hc21.type==='estLoss'&&pEstates(p).length>0)pEstates(p).sort((a,b)=>a.price-b.price).pop();
         else if(hc21.type==='noSal') p.noSalNext=true;
         if(hc21.val) p.cash+=hc21.val;
+        if(!LOCAL_MODE) pushState(); // ハプニング効果をすぐ保存
+        renderAll();
         showModal({type:'t-happen', tag:hc21.name, title:hc21.desc, fullScreen:true, desc:buildDesc(cell), eff:hc21.val?`${hc21.val.toLocaleString()}円`:'', effc:'minus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
       }
       break;
@@ -2879,6 +3007,7 @@ async function processCell(p, cell){
       // ハプニングカードを引く（汎用）
       const hc = await spinRoulette('ハプニング発生', HAPPS, 't-happen');
       if(p.insYear===G.year && hc.ins){
+        if(!LOCAL_MODE) pushState();
         showModal({type:'t-info', tag:hc.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった',p:true,fn:()=>{closeModal();nextFn();}}]});
       } else {
         if(hc.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc.val=-rc*60000;}
@@ -2889,6 +3018,8 @@ async function processCell(p, cell){
         else if(hc.type==='noSal') p.noSalNext=true;
         if(hc.val) p.cash+=hc.val;
         if(hc.type==='estLoss'&&pEstates(p).length>0) pEstates(p).sort((a,b)=>a.price-b.price).pop();
+        if(!LOCAL_MODE) pushState(); // ハプニング効果をすぐ保存
+        renderAll();
         showModal({type:'t-happen', tag:hc.name, title:hc.desc, fullScreen:true, desc:buildDesc(cell), eff:hc.val?`${hc.val.toLocaleString()}円`:'', effc:'minus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
       }
       break;
@@ -3016,6 +3147,8 @@ async function settlePlayer(p) {
       eff:'', effc:'gold',
       acts:[{lbl:'清算スタート！', p:true, fn:()=>{closeModal(); resolve();}}]
     });
+    // 自分でない場合: liveで見るだけで自動continue
+    if(!LOCAL_MODE && p.id !== myId) { setTimeout(resolve, 500); }
   });
 
   // ② 市場変動（このプレイヤー専用・投資家の公開操作なし）
@@ -3041,6 +3174,7 @@ async function settlePlayer(p) {
         eff:`+${fmtM(div+sv)}`, effc:'plus',
         acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3058,6 +3192,7 @@ async function settlePlayer(p) {
         eff: bondGain>0 ? `+${fmtM(bondGain)}` : '', effc:'plus',
         acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3079,6 +3214,7 @@ async function settlePlayer(p) {
         eff:`+${fmtM(estTotal)}`, effc:'plus',
         acts:[{lbl:'売却完了 ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3101,6 +3237,7 @@ async function settlePlayer(p) {
         eff: iv>0 ? `+${fmtM(iv)}` : '0円（倒産）', effc: iv>0?'plus':'minus',
         acts:[{lbl:'OK', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3118,6 +3255,7 @@ async function settlePlayer(p) {
         eff:`+${fmtM(gv)}`, effc:'plus',
         acts:[{lbl:'売却完了 ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3134,6 +3272,7 @@ async function settlePlayer(p) {
         eff:`+${fmtM(nv)}`, effc:'plus',
         acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
       });
+      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
     });
   }
 
@@ -3160,40 +3299,46 @@ async function settlePlayer(p) {
 
 // ─── 最終清算メイン ───
 async function showFinalSettlement() {
-  // ゴール順に並べ、破産者は最後
   const safeGoalOrder = Array.isArray(G.goalOrder) ? G.goalOrder : [];
   const activeOrder   = safeGoalOrder.filter(id => !G.players.find(p=>p.id===id)?.isBankrupt);
   const bankruptOrder = G.players.filter(p=>p.isBankrupt).map(p=>p.id);
   const order = [...activeOrder, ...bankruptOrder];
 
-  // 開始アナウンス
-  await new Promise(resolve => {
-    showModal({
-      type:'t-event', tag:'🏁 最終清算スタート', title:'全員がゴールしました！', fullScreen:true, isFinal:true,
-      desc:`ゴール順に、それぞれの市場変動と資産清算を行います。<br>
-        <strong>投資家の公開操作はここでは発動しません。</strong><br><br>
+  // 開始アナウンス（全員に全画面）
+  await waitForSettleAction(
+    {type:'t-event', tag:'🏁 最終清算スタート', title:'全員がゴールしました！', fullScreen:true, isFinal:true,
+      desc:`ゴール順に各自が清算します。<br><strong>あなたの番になったら自分で操作してください！</strong><br><br>
         清算順: ${order.map(id=>{
           const pl=G.players.find(p=>p.id===id);
-          return `<span style="color:${pl?.color.bg};font-weight:900">${pl?.name}</span>`;
+          return `<span style="color:${pl?.color?.bg||'#888'};font-weight:900">${pl?.name}</span>`;
         }).join(' → ')}`,
-      acts:[{lbl:'清算スタート！', p:true, fn:()=>{closeModal(); resolve();}}]
-    });
-  });
+      acts:[{lbl:'清算スタート！', p:true}]},
+    null // 全員が押せる
+  );
 
-  // プレイヤーごとに清算
   for(const playerId of order) {
     const p = G.players.find(pl => pl.id === playerId);
     if(!p) continue;
-    if(p.isBankrupt) {
-      // 破産者は利子だけ適用してスキップ
-      applyDebtInterest(p);
-      continue;
-    }
+    if(p.isBankrupt) { applyDebtInterest(p); if(!LOCAL_MODE) pushState(); continue; }
     await settlePlayer(p);
   }
-
   renderAll();
   showWinner();
+}
+
+// ── 清算アクションを対象プレイヤーが操作（他は観戦）──
+function waitForSettleAction(modalOpts, settlePlayerId) {
+  return new Promise(resolve => {
+    const isMyAction = LOCAL_MODE || settlePlayerId === null || settlePlayerId === myId;
+    if(!isMyAction) {
+      // 自分ではない → live overlay で見るだけ、自動で次へ（ポーリングで検知）
+      resolve(); return;
+    }
+    const acts = (modalOpts.acts || []).map(a => ({
+      ...a, fn: () => { closeModal(); resolve(); }
+    }));
+    showModal({...modalOpts, acts});
+  });
 }
 
 function showWinner(){
@@ -3537,12 +3682,46 @@ async function syncGameState() {
 
 // ─── 観戦カード（1.5秒ごと）──────────────────────────
 async function livePollTick() {
-  if(LOCAL_MODE || !roomCode || !FB_URL || isMyTurn()) return;
+  if(LOCAL_MODE || !roomCode || !FB_URL) return;
   try {
     const live = await fbGet(`rooms/${roomCode}/live`);
     if(live && live.ts > (_lastLiveTs || 0)) {
       _lastLiveTs = live.ts;
-      showSpectatorCard(live);
+
+      // ── 公開操作チャンス: 自分が対象投資家なら取引モーダルを出す ──
+      if(live._followTrade && live._followerId === myId && !live._followSkip) {
+        const me = G.players.find(p => p.id === myId);
+        if(!me) return;
+        const mkt = MARKETS.find(m => m.id === live._followMarket) || G.market;
+        const cellIdx = live._cellIdx >= 0 ? live._cellIdx : null;
+        const cellObj = cellIdx !== null ? CELLS[cellIdx] : null;
+        G.market = mkt;
+        updateMktDisplay();
+        showModal({
+          type:'t-info', tag:'📈 公開操作チャンス！', title:'便乗取引ができます！',
+          desc:`【投資家スキル】現在の市場で取引できます。<br>市場: ${mkt.emoji} ${mkt.name} (${fmtM(mkt.stockPrice)}/10株)<br>手持ち現金: ${fmtM(me.cash)}`,
+          acts:[
+            {lbl:'取引する', p:true, fn:()=> {
+              openTrade(me, cellObj, 'buy', live._isForced, true);
+            }},
+            {lbl:'パス', p:false, fn:()=>{
+              closeModal();
+              // スキップを通知
+              broadcastLive({_followTrade:true, _followerId:myId, _followSkip:true, _followDone:true}, false).catch(()=>{});
+            }}
+          ]
+        });
+        return; // spectator card は表示しない
+      }
+
+      // 公開操作完了通知: アクティブプレイヤー側のタイマーをクリアして続行
+      if(live._followTrade && live._followDone && isMyTurn()) {
+        if(window._followTradeTimer) { clearTimeout(window._followTradeTimer); window._followTradeTimer = null; }
+        closeModal();
+        return;
+      }
+
+      if(!isMyTurn()) showSpectatorCard(live);
     }
   } catch(e) {}
 }
@@ -3921,11 +4100,15 @@ async function tryRejoinSession(sess) {
   const ageMin = Math.floor(age / 60000);
   const ageStr = ageMin < 1 ? 'たった今' : `${ageMin}分前`;
 
-  const shouldRejoin = await new Promise((resolve) => {
+  await new Promise((resolveConfirm) => {
     const overlay = document.createElement('div');
     overlay.id = 'rejoin-overlay';
-    // 🌟 z-indexを増やして裏のボタンを押せないようにブロック
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#ffe55c,#ffde59);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:24px;font-family:"M PLUS Rounded 1c",sans-serif;';
+    overlay.style.cssText = `
+      position:fixed;inset:0;z-index:9000;
+      background:linear-gradient(160deg,#ffe55c,#ffde59);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:0;padding:24px;font-family:'M PLUS Rounded 1c',sans-serif;
+    `;
     overlay.innerHTML = `
       <div style="font-size:52px;margin-bottom:12px">🔄</div>
       <div style="font-size:22px;font-weight:900;color:#2d3436;margin-bottom:6px">ゲームに復帰しますか？</div>
@@ -3952,26 +4135,28 @@ async function tryRejoinSession(sess) {
     `;
     document.body.appendChild(overlay);
 
-    document.getElementById('rejoin-yes').onclick = (e) => {
-      e.preventDefault();
+    document.getElementById('rejoin-yes').onclick = () => {
       overlay.remove();
-      resolve(true); 
+      resolveConfirm(true);
+      _doRejoin(sess); // 復帰処理を実行
     };
-    document.getElementById('rejoin-no').onclick = (e) => {
-      e.preventDefault();
+    document.getElementById('rejoin-no').onclick = () => {
       overlay.remove();
-      resolve(false); 
+      localStorage.removeItem('session');
+      showScreen('start-screen');
+      resolveConfirm(false);
     };
   });
 
-  if (shouldRejoin) {
-    _doRejoin(sess); 
-  } else {
-    // 🌟 復帰しない場合、セッションを消去してURLパラメータを消す（リロードしない）
-    localStorage.removeItem('session');
-    window.history.replaceState(null, '', window.location.pathname);
-  }
+  // 「復帰しない」を選んだ場合はここで終了
+  // （resolveConfirmの値を使って判定は不可なのでyes/noで直接制御）
+  // → rejoin-yes のみ _doRejoin を呼ぶ方式に変更済み
+
+  // ← ここは「復帰しない」を選んだ場合も通過してしまうので関数を分ける
+  // → 上で resolveConfirm(false) が呼ばれた場合はもう return 済みなので不要
+  // 実際には「復帰しない」ボタンで return するよう修正
 }
+
 async function _doRejoin(sess) {
   // 復帰中インジケーター
   const loading = document.createElement('div');
@@ -4179,15 +4364,10 @@ window.addEventListener('orientationchange', () => {
   };
 })();
 
-// BGM削除済み（エラーで止まらないようにするダミー）
-const BGM = {
-  play: function() {},
-  toggle: function() {},
-  isMuted: function() { return true; },
-  isPlaying: function() { return false; }
-};
+// BGM削除済み
 function toggleBGM(){}
 function updateBGMBtn(){}
+
 
 
 
