@@ -2166,6 +2166,8 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
     const cashAfterAll = p.cash - cost - interestNow;
 
     if (p.cash >= cost) {
+        p.cash -= cost; // 現金十分ルートでも代金を引く
+        renderAll();
         confirmCallback();
     } else if (cashAfterAll >= maxDebt) {
         // 利子込みでも上限内 → 借金OKダイアログ
@@ -2572,7 +2574,7 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
         confirmPurchase(p, cost, `株を${q}株（${fmtM(cost)}）購入します。`, () => {
             p.stocks+=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株購入`);
             if(!LOCAL_MODE) pushState();
-            if (!isFollow && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+            if (!isFollow && !isForced && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
             showTradeResult(p, cell, `株を${q}株購入しました。`, isForced, isFollow);
         }, () => { openTrade(p, cell, mode, isForced, isFollow); });
       }},
@@ -2582,7 +2584,7 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
         if(p.stocks<q){alert('株が足りません');return;}
         const inc=(q/10)*price; p.cash+=inc; p.stocks-=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株売却`);
         if(!LOCAL_MODE) pushState();
-        if (!isFollow && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+        if (!isFollow && !isForced && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
         showTradeResult(p, cell, `株を${q}株売却しました。`, isForced, isFollow);
       }},
       {lbl:'終了', p:false, fn:()=> endTradeAction(isForced, cell) }
@@ -2707,7 +2709,7 @@ window.execBond = function(type, pid, cellIdx) {
     const cost = qty * 5000;
 
     confirmPurchase(p, cost, `国債(${type==='1yr'?'1年債':'2年債'}) ${qty}口（${fmtM(cost)}）を購入します。`, () => {
-        // p.cash -= cost は confirmPurchase内で処理済み
+        // p.cash の引き落としは confirmPurchase 内で処理済み
         if(!p.bonds) p.bonds = [];
         p.bonds.push({type: type, units: qty, bn: p.forcedN, int: type === '1yr' ? 0.1 : 0.2});
         log(`<span style="color:${p.color.bg}">${p.name}</span> 国債(${type==='1yr'?'1年債':'2年債'}) ${qty}口購入`);
@@ -2782,12 +2784,10 @@ function doForcedInvestmentMenu(p, cell) {
         desc: `現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>現金: <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span>`,
         acts: [
             {lbl:'株を買う', p:false, fn:()=> {
-              // 投資家の公開操作: 他の投資家をキューに追加
-              if(p.job==='inv') G_tradeFollowQueue = G.players.filter(op=>op.id!==p.id&&op.job==='inv');
+              // 強制ストップ中は便乗取引なし（G_tradeFollowQueueをセットしない）
               openTrade(p, cell, 'buy', true);
             }},
             {lbl:'株を売る', p:false, fn:()=> {
-              if(p.job==='inv') G_tradeFollowQueue = G.players.filter(op=>op.id!==p.id&&op.job==='inv');
               openTrade(p, cell, 'sell', true);
             }},
             {lbl:'国債を買う', p:false, fn:()=> openBonds(p, cell)},
