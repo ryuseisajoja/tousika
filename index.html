@@ -1539,7 +1539,8 @@ const HAPPS = [
 
 let G = { pc:3, players:[], ci:0, turn:1, year:1, market: MARKETS[1], highInt: false, marketManip: null, goalOrder: [], version:0 };
 let isMoving = false;
-let G_tradeFollowQueue = []; 
+let G_tradeFollowQueue = [];
+let _pendingFollow = null; // オンライン時の便乗取引コンテキスト保存用
 
 const COLORS=[
   {bg:'#ff6b6b',tx:'#fff',nm:'赤'},{bg:'#4facfe',tx:'#fff',nm:'青'},{bg:'#4ade80',tx:'#2d3436',nm:'緑'},
@@ -1821,6 +1822,7 @@ function setCount(n){
 }
 
 async function startGame(){
+  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null;
   G.players=[]; G.ci=0; G.turn=1; G.year=1; G.pc=_pc; G.goalOrder=[]; // ← G.pcをプレイヤー数で更新
   document.getElementById('title-screen').style.display='none';
   document.getElementById('game-screen').style.display='block';
@@ -1868,7 +1870,7 @@ async function determineJobsRoulette() {
         📈 <strong>投資家</strong>：歩合給。市場操作・公開操作(便乗取引)が可能！<br>`, 
         extra: html, acts:[]});
         
-        let count = 0; let delay = 60;
+        let count = 0; let delay = 90;
         const spin = () => {
             for(let i=0;i<_pc;i++) {
                 document.getElementById(`job-slot-${i}`).textContent = Math.random() > 0.5 ? '🏢 会社員' : '📈 投資家';
@@ -1889,7 +1891,7 @@ async function determineJobsRoulette() {
                     btn.textContent = 'ゲームスタート！';
                     btn.onclick = () => { closeModal(); resolve(); };
                     macts.appendChild(btn);
-                }, 1000);
+                }, 1800);
             }
         }
         spin();
@@ -2072,7 +2074,7 @@ function renderAll(){
 }
 
 // ─── ワクワク演出 ───
-async function spinRoulette(title, items, typeClass) {
+async function spinRoulette(title, items, typeClass, finalDelay=2500, fixedResultId=null) {
   return new Promise(resolve => {
     showModal({
       type: typeClass, tag:'🎲 ルーレット', title: title, fullScreen:true,
@@ -2080,7 +2082,6 @@ async function spinRoulette(title, items, typeClass) {
       acts: []
     });
     const rBox = document.getElementById('r-box');
-    // ★ 開始時に同期データを送信（受信側が同じアニメーションを独立実行）
     broadcastLive({
       type: typeClass, tag:'🎰 ルーレット', title: title,
       _rouletteSync: true,
@@ -2088,30 +2089,31 @@ async function spinRoulette(title, items, typeClass) {
       startTs: Date.now()
     }, true).catch(()=>{});
 
-    let count = 0; let delay = 60;
+    let count = 0; let delay = 90;
     const spin = () => {
       const cur = items[Math.floor(Math.random()*items.length)];
       rBox.textContent = cur.name;
       count++;
-      if(count > 25) delay += 20;
-      if(count < 40) { setTimeout(spin, delay); }
+      if(count > 35) delay += 25;
+      if(count < 60) { setTimeout(spin, delay); }
       else {
-        const finalItem = items[Math.floor(Math.random()*items.length)];
+        const finalItem = fixedResultId
+          ? (items.find(i => i.id === fixedResultId) || items[Math.floor(Math.random()*items.length)])
+          : items[Math.floor(Math.random()*items.length)];
         rBox.textContent = finalItem.name; rBox.style.color='var(--gold)'; rBox.style.transform='scale(1.15)'; rBox.style.transition='all 0.2s';
-        // ★ 結果を送信
         broadcastLive({
           type: typeClass, tag:'🎰 結果！', title: title,
           desc: finalItem.name, eff: finalItem.name, effc:'gold',
           _rouletteFinal: true
         }, true).catch(()=>{});
-        setTimeout(() => { resolve(finalItem); }, 1500);
+        setTimeout(() => { resolve(finalItem); }, finalDelay);
       }
     };
     spin();
   });
 }
 
-async function rollDiceExcitement(title, desc) {
+async function rollDiceExcitement(title, desc, fixedRoll=null) {
    return new Promise(resolve => {
        showModal({
            type: 't-happen', tag:'🎲 勝負！', title: title, fullScreen:true,
@@ -2119,8 +2121,7 @@ async function rollDiceExcitement(title, desc) {
            acts: [{lbl:'サイコロを振る！', p:true, fn:() => {
                document.getElementById('macts').innerHTML = '';
                const die = document.getElementById('exc-die');
-               let c=0; let delay=50;
-               // ★ ルーレットと同じ方式で同期broadcast
+               let c=0; let delay=80;
                broadcastLive({
                  type:'t-happen', tag:'🎲 サイコロ勝負！', title: title,
                  _rouletteSync: true,
@@ -2131,10 +2132,10 @@ async function rollDiceExcitement(title, desc) {
                    const face = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
                    die.textContent = face;
                    c++;
-                   if(c>25) delay+=20;
-                   if(c<40) { setTimeout(spin, delay); }
+                   if(c>35) delay+=25;
+                   if(c<60) { setTimeout(spin, delay); }
                    else {
-                       const roll = Math.floor(Math.random()*6)+1;
+                       const roll = fixedRoll !== null ? fixedRoll : (Math.floor(Math.random()*6)+1);
                        die.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]; die.style.color='var(--red)'; die.style.transform='scale(1.3)';
                        broadcastLive({
                          type:'t-happen', tag:'🎲 結果！', title: title,
@@ -2229,7 +2230,7 @@ async function onRoll(){
     if(die)    die.textContent = f;
     if(mobDie) mobDie.textContent = f;
   },60);
-  await sleep(500); clearInterval(iv);
+  await sleep(900); clearInterval(iv);
   if(die)    die.classList.remove('spin');
   if(mobDie) mobDie.classList.remove('spin');
   const roll=Math.floor(Math.random()*6)+1;
@@ -2253,7 +2254,7 @@ async function onRoll(){
         activeEl.scrollIntoView({behavior:'smooth', block:'nearest'});
       }
     }
-    renderAll(); await sleep(250);
+    renderAll(); await sleep(450);
     
     // 強制ストップ判定 (10: 1年目, 31: 2年目)
     if(p.pos===10 || p.pos===31) break;
@@ -2376,7 +2377,7 @@ async function receiveSalary(p, year, textPrefix) {
             showModal({type:'t-event', tag:'給料日', title:'投資の成果は...？', fullScreen:true, desc: `${textPrefix}<br>投資家の給与はサイコロで決まります！<br>（出目 × ${fmtM(mult)}）`, extra:`<div id="sal-die" style="font-size:64px;text-align:center;margin-top:10px;">🎲</div>`, acts:[{lbl:'サイコロを振る', p:true, fn:()=> {
                 document.getElementById('macts').innerHTML = '';
                 const die = document.getElementById('sal-die');
-                let c=0; let delay=50;
+                let c=0; let delay=80;
                 // ★ 開始broadcast
                 broadcastLive({type:'t-happen', tag:'🎲 サイコロ振り中...', title:'投資家の給料！', desc:`出目 × ${fmtM(mult)}`}, true).catch(()=>{});
                 const spin = () => {
@@ -2384,8 +2385,8 @@ async function receiveSalary(p, year, textPrefix) {
                     die.textContent = face;
                     if(c % 3 === 0) broadcastLive({type:'t-happen', tag:'🎲 サイコロ振り中...', title:'投資家の給料！', desc: face+' ← 今ここ'}, true).catch(()=>{});
                     c++;
-                    if(c>15) delay+=20;
-                    if(c<25) { setTimeout(spin, delay); }
+                    if(c>20) delay+=25;
+                    if(c<38) { setTimeout(spin, delay); }
                     else {
                         const roll = Math.floor(Math.random()*6)+1;
                         die.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]; die.style.color = 'var(--red)'; die.style.transform = 'scale(1.2)';
@@ -2394,7 +2395,7 @@ async function receiveSalary(p, year, textPrefix) {
                         log(`<span style="color:${p.color.bg}">${p.name}</span> 投資利益 <span class="lp">+${fmtM(s)}</span>`);
                         setTimeout(() => {
                             showModal({type:'t-event', tag:'給料日', title:'投資の成果！', fullScreen:true, desc: `出目は ${roll}！<br>${roll} × ${fmtM(mult)} = ${fmtM(s)}`, eff:`+${fmtM(s)}`, effc:'plus', acts:[{lbl:'受け取る', p:true, fn:()=>{closeModal(); resolve(s);}}]});
-                        }, 1000);
+                        }, 1800);
                     }
                 }
                 spin();
@@ -2607,7 +2608,11 @@ function endTradeAction(isForced, cell) {
     let activeP = G.players[G.ci];
     if (G_tradeFollowQueue.length > 0) {
         processFollowTrade(activeP, isForced, cell);
+    } else if (!LOCAL_MODE && !isMyTurn()) {
+        // オンライン: 便乗側デバイスは nextTurn を呼ばずアクティブ側に完了を通知
+        broadcastLive({_followTrade:true, _followerId:myId, _followDone:true}, false).catch(()=>{});
     } else {
+        _pendingFollow = null;
         if (isForced) doForcedInvestmentMenu(activeP, cell);
         else nextTurn();
     }
@@ -2631,6 +2636,7 @@ function processFollowTrade(activeP, isForced, cell) {
       // オンライン: Firebase経由で投資家本人に通知
       // isMoving=trueのままにしてアクティブプレイヤーはアクションを保留
       // follower本人がlivePollTick経由で取引できる
+      _pendingFollow = { isForced, cell }; // _followDone 受信時に使うコンテキスト保存
       broadcastLive({
         type:'t-info', tag:'📈 公開操作チャンス！', title:`${follower.name} へ`,
         desc:`${activeP.name}が市場取引しました！
@@ -3319,21 +3325,31 @@ async function processCell(p, cell){
       else { showModal({type:'t-info', tag:cell.name, title:'投資家は対象外', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); } break;
     case 21: {
       const hc21 = await spinRoulette('ハプニング発生！', HAPPS, 't-happen');
-      if(p.insYear===G.year && hc21.ins){
+      // bondCrisis は保険対象外（ins:falseだが明示チェック）
+      if(p.insYear===G.year && hc21.ins && hc21.type !== 'bondCrisis'){
         if(!LOCAL_MODE) pushState();
         showModal({type:'t-info', tag:hc21.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった！',p:true,fn:()=>{closeModal();nextFn();}}]});
       } else {
-        if(hc21.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc21.val=-rc*60000;}
-        else if(hc21.type==='taxInv'&&p.job==='emp') hc21.val=0;
-        else if(hc21.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hc21.val=-200000;
-        else if(hc21.type==='bondCrisis'){if(!p.bonds)p.bonds=[];{let bl=Math.floor(p.bonds.length/3);p.bonds.splice(0,bl);}}
-        else if(hc21.type==='bankFail'){if(p.cash>100000)p.cash=100000;}
-        else if(hc21.type==='estLoss'&&pEstates(p).length>0)pEstates(p).sort((a,b)=>a.price-b.price).pop();
-        else if(hc21.type==='noSal') p.noSalNext=true;
-        if(hc21.val) p.cash+=hc21.val;
-        if(!LOCAL_MODE) pushState(); // ハプニング効果をすぐ保存
+        const hc21v = {...hc21}; // 配列を汚染しないコピー
+        if(hc21v.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc21v.val=-rc*60000;}
+        else if(hc21v.type==='taxInv'&&p.job==='emp') hc21v.val=0;
+        else if(hc21v.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hc21v.val=-200000;
+        else if(hc21v.type==='bondCrisis'){
+          if(!p.bonds)p.bonds=[];
+          const tot21=p.bonds.reduce((s,b)=>s+b.units,0); let rem21=Math.floor(tot21/3);
+          for(const b of p.bonds){if(rem21<=0)break;const t=Math.min(b.units,rem21);b.units-=t;rem21-=t;}
+          p.bonds=p.bonds.filter(b=>b.units>0); hc21v.val=0;
+        }
+        else if(hc21v.type==='bankFail'){if(p.cash>100000)p.cash=100000; hc21v.val=0;}
+        else if(hc21v.type==='estLoss'&&pEstates(p).length>0){pEstates(p).sort((a,b)=>b.price-a.price).splice(0,1); hc21v.val=0;}
+        else if(hc21v.type==='noSal') { p.noSalNext=true; hc21v.val=0; }
+        if(hc21v.val) p.cash+=hc21v.val;
+        if(!LOCAL_MODE) pushState();
         renderAll();
-        showModal({type:'t-happen', tag:hc21.name, title:hc21.desc, fullScreen:true, desc:buildDesc(cell), eff:hc21.val?`${hc21.val.toLocaleString()}円`:'', effc:'minus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
+        const insNote21 = hc21v.ins ? '' : '<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外</small>';
+        showModal({type:'t-happen', tag:hc21v.name, title:hc21v.desc, fullScreen:true,
+          desc:buildDesc(cell, insNote21), eff:hc21v.val&&hc21v.val!==0?`${hc21v.val.toLocaleString()}円`:'', effc:'minus',
+          acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
       }
       break;
     }
@@ -3408,21 +3424,31 @@ async function processCell(p, cell){
     case 29: {
       // ハプニングカードを引く（汎用）
       const hc = await spinRoulette('ハプニング発生', HAPPS, 't-happen');
-      if(p.insYear===G.year && hc.ins){
+      // bondCrisis は保険対象外（明示チェック）
+      if(p.insYear===G.year && hc.ins && hc.type !== 'bondCrisis'){
         if(!LOCAL_MODE) pushState();
         showModal({type:'t-info', tag:hc.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった',p:true,fn:()=>{closeModal();nextFn();}}]});
       } else {
-        if(hc.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc.val=-rc*60000;}
-        else if(hc.type==='taxInv'&&p.job==='emp') hc.val=0;
-        else if(hc.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hc.val=-200000;
-        else if(hc.type==='bondCrisis'){if(!p.bonds)p.bonds=[];{let bl=Math.floor(p.bonds.length/3);p.bonds.splice(0,bl);}}
-        else if(hc.type==='bankFail'){if(p.cash>100000)p.cash=100000;}
-        else if(hc.type==='noSal') p.noSalNext=true;
-        if(hc.val) p.cash+=hc.val;
-        if(hc.type==='estLoss'&&pEstates(p).length>0) pEstates(p).sort((a,b)=>a.price-b.price).pop();
-        if(!LOCAL_MODE) pushState(); // ハプニング効果をすぐ保存
+        const hcv = {...hc}; // 配列を汚染しないコピー
+        if(hcv.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hcv.val=-rc*60000;}
+        else if(hcv.type==='taxInv'&&p.job==='emp') hcv.val=0;
+        else if(hcv.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hcv.val=-200000;
+        else if(hcv.type==='bondCrisis'){
+          if(!p.bonds)p.bonds=[];
+          const totH=p.bonds.reduce((s,b)=>s+b.units,0); let remH=Math.floor(totH/3);
+          for(const b of p.bonds){if(remH<=0)break;const t=Math.min(b.units,remH);b.units-=t;remH-=t;}
+          p.bonds=p.bonds.filter(b=>b.units>0); hcv.val=0;
+        }
+        else if(hcv.type==='bankFail'){if(p.cash>100000)p.cash=100000; hcv.val=0;}
+        else if(hcv.type==='noSal') { p.noSalNext=true; hcv.val=0; }
+        if(hcv.val) p.cash+=hcv.val;
+        if(hcv.type==='estLoss'&&pEstates(p).length>0){pEstates(p).sort((a,b)=>b.price-a.price).splice(0,1);}
+        if(!LOCAL_MODE) pushState();
         renderAll();
-        showModal({type:'t-happen', tag:hc.name, title:hc.desc, fullScreen:true, desc:buildDesc(cell), eff:hc.val?`${hc.val.toLocaleString()}円`:'', effc:'minus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
+        const insNoteH = hcv.ins ? '' : '<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外</small>';
+        showModal({type:'t-happen', tag:hcv.name, title:hcv.desc, fullScreen:true,
+          desc:buildDesc(cell, insNoteH), eff:hcv.val&&hcv.val!==0?`${hcv.val.toLocaleString()}円`:'', effc:'minus',
+          acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
       }
       break;
     }
@@ -3473,7 +3499,12 @@ async function processCell(p, cell){
           if(hcF.type === 'scam') { const rc = await rollDiceExcitement('投資詐欺', 'サイコロの目×6万円支払う'); p.cash -= rc*60000; hcF.val = -rc*60000; }
           else if(hcF.type === 'taxInv' && p.job==='emp') hcF.val = 0;
           else if(hcF.type === 'taxInv' && (p.job==='inv' || p.job==='fre')) hcF.val = -200000;
-          else if(hcF.type === 'bondCrisis') { if(!p.bonds)p.bonds=[];{let bl=Math.floor(p.bonds.length/3);p.bonds.splice(0,bl);}}
+          else if(hcF.type === 'bondCrisis') {
+            if(!p.bonds)p.bonds=[];
+            const tot31=p.bonds.reduce((s,b)=>s+b.units,0); let rem31=Math.floor(tot31/3);
+            for(const b of p.bonds){if(rem31<=0)break;const t=Math.min(b.units,rem31);b.units-=t;rem31-=t;}
+            p.bonds=p.bonds.filter(b=>b.units>0);
+          }
           else if(hcF.type === 'bankFail') { if(p.cash > 100000) p.cash = 100000; }
           else if(hcF.type === 'estLoss' && pEstates(p).length>0) pEstates(p).sort((a,b)=>a.price-b.price).pop();
           else if(hcF.type === 'noSal') p.noSalNext = true;
@@ -3535,70 +3566,74 @@ function applyDebtInterest(p) {
 // ─── プレイヤー個別清算 ───
 async function settlePlayer(p) {
   const c = p.color;
+  const plan = (G.settlementPlan || {})[p.id] || {};
 
-  // ① まず誰の決算かを全員に知らせる
-  await new Promise(resolve => {
-    showModal({
-      type:'t-event', tag:'🏁 最終決算', fullScreen:true, isFinal:true,
-      title:`${p.name} の決算スタート！`,
-      desc:`<div style="text-align:center;padding:10px">
-        <div style="width:60px;height:60px;border-radius:50%;background:${c.bg};color:${c.tx};display:inline-flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;border:4px solid var(--border);margin-bottom:12px">${p.name[0]}</div><br>
-        <span style="font-size:14px;font-weight:900;color:${c.bg}">${p.name}</span> の全資産を清算します<br>
-        <span style="font-size:12px;color:var(--text2)">${p.job==='emp'?'🏢 会社員':p.job==='inv'?'📈 投資家':'💼 フリーター'}</span>
-      </div>`,
-      eff:'', effc:'gold',
-      acts:[{lbl:'清算スタート！', p:true, fn:()=>{closeModal(); resolve();}}]
-    });
-    // 自分でない場合: liveで見るだけで自動continue
-    if(!LOCAL_MODE && p.id !== myId) { setTimeout(resolve, 500); }
-  });
+  // ① 手番の引き渡しカード（そのプレイヤーが操作）
+  await waitForSettleAction({
+    type:'t-event', tag:'🏁 最終決算', fullScreen:true, isFinal:true,
+    title:`${p.name} の決算！`,
+    desc:`<div style="text-align:center;padding:16px">
+      <div style="width:72px;height:72px;border-radius:50%;background:${c.bg};color:${c.tx};
+        display:inline-flex;align-items:center;justify-content:center;
+        font-size:32px;font-weight:900;border:5px solid var(--border);
+        margin-bottom:14px;box-shadow:4px 4px 0 var(--border)">${p.name[0]}</div><br>
+      <div style="font-size:18px;font-weight:900;color:${c.bg};margin-bottom:6px">${p.name}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">${p.job==='emp'?'🏢 会社員':p.job==='inv'?'📈 投資家':'💼 フリーター'}</div>
+      <div style="background:#fffbeb;border:3px solid #fde047;border-radius:14px;
+        padding:12px 16px;font-size:14px;font-weight:900;color:#92400e;line-height:1.7">
+        📲 <strong style="color:${c.bg}">${p.name}</strong> さん、<br>
+        スマホ（画面）を受け取って<br>「清算スタート！」を押してください
+      </div>
+    </div>`,
+    eff:'', effc:'gold',
+    acts:[{lbl:`${p.name} の清算スタート！`, p:true}]
+  }, p.id);
 
-  // ② 市場変動（このプレイヤー専用・投資家の公開操作なし）
-  const market = await spinRoulette(`${p.name}の市場変動！`, MARKETS, 't-info');
+  // ② 市場変動（最終清算専用・ゆっくり4秒表示）
+  const market = await spinRoulette(`${p.name}の市場変動！`, MARKETS, 't-info', 4000, plan.marketId || null);
   G.market = market;
   updateMktDisplay();
+  await sleep(500);
 
-  // ② 株式清算（配当 + 売却）
+  // ③ 株式清算（配当 + 売却）
   if(p.stocks > 0) {
     const stocks = p.stocks;
     const div = Math.floor(stocks/10) * 1000 * (p.divMod || 1);
     const sv  = (stocks/10) * market.stockPrice;
     p.cash += div + sv; p.stocks = 0; p.divMod = 1;
     log(`<span style="color:${c.bg}">${p.name}</span> 株清算 <span class="lp">+${fmtM(div+sv)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type:'t-event', tag:`📈 ${p.name}・株式清算`, fullScreen:true, isFinal:true,
-        title:`${p.name} の株式清算 ${market.emoji}${market.name}`,
-        desc:`<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'><div style='width:24px;height:24px;border-radius:50%;background:${c.bg};color:${c.tx};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px'>${p.name[0]}</div><strong style='color:${c.bg}'>${p.name}</strong></div>保有: <strong>${stocks}株</strong><br>
-          株価: <strong>${fmtM(market.stockPrice)}/10株</strong><br>
-          配当金: <span class="lp">+${fmtM(div)}</span><br>
-          株売却: <span class="lp">+${fmtM(sv)}</span>`,
-        eff:`+${fmtM(div+sv)}`, effc:'plus',
-        acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type:'t-event', tag:`📈 ${p.name}・株式清算`, fullScreen:true, isFinal:true,
+      title:`${p.name} の株式清算 ${market.emoji}${market.name}`,
+      desc:`<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'>
+        <div style='width:24px;height:24px;border-radius:50%;background:${c.bg};color:${c.tx};
+          display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px'>${p.name[0]}</div>
+        <strong style='color:${c.bg}'>${p.name}</strong></div>
+        保有: <strong>${stocks}株</strong><br>
+        株価: <strong>${fmtM(market.stockPrice)}/10株</strong><br>
+        配当金: <span class="lp">+${fmtM(div)}</span><br>
+        株売却: <span class="lp">+${fmtM(sv)}</span>`,
+      eff:`+${fmtM(div+sv)}`, effc:'plus',
+      acts:[{lbl:'受け取る ✓', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ③ 国債清算
+  // ④ 国債清算
   const preBondCash = p.cash;
   const bondMsgs = resolveBonds(p, true);
   const bondGain = p.cash - preBondCash;
   if(bondMsgs.length > 0) {
     log(`<span style="color:${c.bg}">${p.name}</span> 国債清算 <span class="lp">+${fmtM(bondGain)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type:'t-event', tag:`🏦 ${p.name}・国債清算`, fullScreen:true, isFinal:true,
-        title:'国債が満期になりました',
-        desc: bondMsgs.map(m=>`・${m}`).join('<br>'),
-        eff: bondGain>0 ? `+${fmtM(bondGain)}` : '', effc:'plus',
-        acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type:'t-event', tag:`🏦 ${p.name}・国債清算`, fullScreen:true, isFinal:true,
+      title:'国債が満期になりました',
+      desc: bondMsgs.map(m=>`・${m}`).join('<br>'),
+      eff: bondGain>0 ? `+${fmtM(bondGain)}` : '', effc:'plus',
+      acts:[{lbl:'受け取る ✓', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ④ 不動産清算
+  // ⑤ 不動産清算
   if(pEstates(p).length > 0) {
     const mult = p.estMult || 3;
     let estTotal = 0;
@@ -3608,105 +3643,115 @@ async function settlePlayer(p) {
     });
     p.cash += estTotal; p.estates = [];
     log(`<span style="color:${c.bg}">${p.name}</span> 不動産清算 <span class="lp">+${fmtM(estTotal)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type:'t-event', tag:`🏠 ${p.name}・不動産清算`, fullScreen:true, isFinal:true,
-        title:'不動産をゴール時価格で売却',
-        desc: estLines.join('<br>'),
-        eff:`+${fmtM(estTotal)}`, effc:'plus',
-        acts:[{lbl:'売却完了 ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type:'t-event', tag:`🏠 ${p.name}・不動産清算`, fullScreen:true, isFinal:true,
+      title:'不動産をゴール時価格で売却',
+      desc: estLines.join('<br>'),
+      eff:`+${fmtM(estTotal)}`, effc:'plus',
+      acts:[{lbl:'売却完了 ✓', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ⑤ 未上場株（IPO）判定
+  // ⑥ 未上場株（IPO）判定
   if(p.ipo > 0) {
     const ipoCount = p.ipo;
-    const roll = await rollDiceExcitement(`${p.name} IPO判定`, `${ipoCount}口の未上場株の行方は...！`);
+    const roll = await rollDiceExcitement(`${p.name} IPO判定`, `${ipoCount}口の未上場株の行方は...！`, plan.ipoRoll || null);
     closeModal();
+    await sleep(600);
     const iv = roll===6 ? ipoCount*20000000 : roll===5 ? ipoCount*2000000 : 0;
     p.cash += iv; p.ipo = 0;
     if(iv > 0) log(`<span style="color:${c.bg}">${p.name}</span> IPO 🎲${roll} <span class="lp">+${fmtM(iv)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type: iv>0?'t-event':'t-happen', fullScreen:true,
-        tag:`🚀 ${p.name}・IPO結果 🎲${roll}`,
-        title: roll===6 ? '🦄 ユニコーン企業！！' : roll===5 ? '🚀 上場成功！' : '💀 倒産...',
-        desc: roll===6 ? `${ipoCount}口がユニコーン企業に！夢の2000倍！`
-              : roll===5 ? `${ipoCount}口が上場成功！10倍に！`
-              : `${ipoCount}口の投資が全て水の泡...`,
-        eff: iv>0 ? `+${fmtM(iv)}` : '0円（倒産）', effc: iv>0?'plus':'minus',
-        acts:[{lbl:'OK', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type: iv>0?'t-event':'t-happen', fullScreen:true,
+      tag:`🚀 ${p.name}・IPO結果 🎲${roll}`,
+      title: roll===6 ? '🦄 ユニコーン企業！！' : roll===5 ? '🚀 上場成功！' : '💀 倒産...',
+      desc: roll===6 ? `${ipoCount}口がユニコーン企業に！夢の2000倍！`
+            : roll===5 ? `${ipoCount}口が上場成功！10倍に！`
+            : `${ipoCount}口の投資が全て水の泡...`,
+      eff: iv>0 ? `+${fmtM(iv)}` : '0円（倒産）', effc: iv>0?'plus':'minus',
+      acts:[{lbl:'OK', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ⑥ 金（ゴールド）清算
+  // ⑦ 金（ゴールド）清算
   if(p.gold > 0) {
     const goldCount = p.gold;
     const gp = {deflation:500000, stable:200000, inflation:100000}[market.id] || 200000;
     const gv = goldCount * gp; p.cash += gv; p.gold = 0;
     log(`<span style="color:${c.bg}">${p.name}</span> 金清算 <span class="lp">+${fmtM(gv)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type:'t-event', tag:`🥇 ${p.name}・金清算`, fullScreen:true, isFinal:true,
-        title:`${market.emoji}${market.name}相場で金を売却`,
-        desc:`${goldCount}口 × ${fmtM(gp)}/口`,
-        eff:`+${fmtM(gv)}`, effc:'plus',
-        acts:[{lbl:'売却完了 ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type:'t-event', tag:`🥇 ${p.name}・金清算`, fullScreen:true, isFinal:true,
+      title:`${market.emoji}${market.name}相場で金を売却`,
+      desc:`${goldCount}口 × ${fmtM(gp)}/口`,
+      eff:`+${fmtM(gv)}`, effc:'plus',
+      acts:[{lbl:'売却完了 ✓', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ⑦ 積立NISA満期
+  // ⑧ 積立NISA満期
   if(p.nisaAmt > 0) {
     const nisaAmt = p.nisaAmt;
     const nv = nisaAmt * 3; p.cash += nv; p.nisaAmt = 0;
     log(`<span style="color:${c.bg}">${p.name}</span> NISA満期 <span class="lp">+${fmtM(nv)}</span>`);
-    await new Promise(resolve => {
-      showModal({
-        type:'t-event', tag:`💹 ${p.name}・NISA満期`, fullScreen:true, isFinal:true,
-        title:'積立NISAが3倍で満期！',
-        desc:`積立額 ${fmtM(nisaAmt)} → 3倍で受け取り`,
-        eff:`+${fmtM(nv)}`, effc:'plus',
-        acts:[{lbl:'受け取る ✓', p:true, fn:()=>{renderAll();closeModal(); resolve();}}]
-      });
-      if(!LOCAL_MODE && p.id !== myId) setTimeout(resolve, 800);
-    });
+    await waitForSettleAction({
+      type:'t-event', tag:`💹 ${p.name}・NISA満期`, fullScreen:true, isFinal:true,
+      title:'積立NISAが3倍で満期！',
+      desc:`積立額 ${fmtM(nisaAmt)} → 3倍で受け取り`,
+      eff:`+${fmtM(nv)}`, effc:'plus',
+      acts:[{lbl:'受け取る ✓', p:true, fn:()=>renderAll()}]
+    }, p.id);
   }
 
-  // ⑧ 借金利子
+  // ⑨ 借金利子
   const preInterestCash = p.cash;
   applyDebtInterest(p);
   const interestPaid = preInterestCash - p.cash;
 
-  // ⑨ このプレイヤーのサマリー
+  // ⑩ このプレイヤーのサマリー（次のプレイヤーへ渡す）
   renderAll();
-  await new Promise(resolve => {
-    showModal({
-      type:'t-event', tag:`✅ ${p.name} 清算完了`, fullScreen:true, isFinal:true,
-      title:`✅ ${p.name} の決算完了`,
-      desc:`<div style="text-align:center;margin:8px 0">
-          <div style="font-size:28px;font-weight:900;color:${c.bg}">${fmtM(p.cash)}</div>
-          ${interestPaid>0?`<div style="font-size:12px;color:var(--red);margin-top:4px">借金利子 -${fmtM(interestPaid)}</div>`:''}
-        </div>`,
-      eff:'', effc:'gold',
-      acts:[{lbl:'次のプレイヤーへ →', p:true, fn:()=>{closeModal(); resolve();}}]
-    });
-  });
+  await sleep(300);
+  await waitForSettleAction({
+    type:'t-event', tag:`✅ ${p.name} 清算完了`, fullScreen:true, isFinal:true,
+    title:`✅ ${p.name} の決算完了！`,
+    desc:`<div style="text-align:center;margin:8px 0">
+        <div style="font-size:32px;font-weight:900;color:${c.bg};margin-bottom:6px">${fmtM(p.cash)}</div>
+        ${interestPaid>0?`<div style="font-size:13px;color:var(--red);margin-top:4px">（借金利子 -${fmtM(interestPaid)} 引き後）</div>`:''}
+        <div style="margin-top:14px;background:#f0fdf4;border:2px solid #4ade80;border-radius:12px;padding:10px;font-size:13px;font-weight:900;color:#166534">
+          ✓ ${p.name} の清算が完了しました！<br>次のプレイヤーへ画面を渡してください
+        </div>
+      </div>`,
+    eff:'', effc:'gold',
+    acts:[{lbl:'次のプレイヤーへ →', p:true}]
+  }, p.id);
 }
 
 // ─── 最終清算メイン ───
 async function showFinalSettlement() {
+  if(window._settlementStarted) return; // 二重起動防止
+  window._settlementStarted = true;
+
   const safeGoalOrder = Array.isArray(G.goalOrder) ? G.goalOrder : [];
   const activeOrder   = safeGoalOrder.filter(id => !G.players.find(p=>p.id===id)?.isBankrupt);
   const bankruptOrder = G.players.filter(p=>p.isBankrupt).map(p=>p.id);
   const order = [...activeOrder, ...bankruptOrder];
 
-  // 開始アナウンス（全員に全画面）
+  // オンライン: 乱数をトリガーデバイスで事前計算してFirebaseへ保存（他デバイスと結果を統一）
+  if(!LOCAL_MODE && !G.settlementPlan) {
+    G.settlementPlan = {};
+    G.settledPlayers = [];
+    for(const playerId of order) {
+      const p = G.players.find(pl => pl.id === playerId);
+      if(!p || p.isBankrupt) continue;
+      const market = MARKETS[Math.floor(Math.random() * MARKETS.length)];
+      const ipoRoll = p.ipo > 0 ? (Math.floor(Math.random() * 6) + 1) : 0;
+      G.settlementPlan[playerId] = { marketId: market.id, ipoRoll };
+    }
+    G.settlementPhase = true;
+    await pushState(); // 全デバイスへ同期
+    await sleep(1200); // 他デバイスが受信するまで待機
+  }
+
+  // 開始アナウンス（全員に全画面・各自で押す）
   await waitForSettleAction(
     {type:'t-event', tag:'🏁 最終清算スタート', title:'全員がゴールしました！', fullScreen:true, isFinal:true,
       desc:`ゴール順に各自が清算します。<br><strong>あなたの番になったら自分で操作してください！</strong><br><br>
@@ -3721,23 +3766,58 @@ async function showFinalSettlement() {
   for(const playerId of order) {
     const p = G.players.find(pl => pl.id === playerId);
     if(!p) continue;
-    if(p.isBankrupt) { applyDebtInterest(p); if(!LOCAL_MODE) pushState(); continue; }
-    await settlePlayer(p);
+
+    if(LOCAL_MODE || p.id === myId) {
+      // 自分のプレイヤー → 清算操作を実行してFirebaseへ同期
+      if(p.isBankrupt) {
+        applyDebtInterest(p);
+      } else {
+        await settlePlayer(p);
+      }
+      if(!LOCAL_MODE) {
+        G.settledPlayers = [...(G.settledPlayers || []), playerId];
+        await pushState();
+      }
+    } else {
+      // 他プレイヤーのデバイス → Firebase経由で完了を待つ
+      await waitForPlayerSettlement(playerId);
+      // Firebase から最新状態を取得して G.players を更新
+      try {
+        const gs = await fbGet(`rooms/${roomCode}/gameState`);
+        if(gs) {
+          Object.assign(G, gs);
+          G.players = _restorePlayers(gs.players);
+          if(G.market?.id) G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
+          renderAll();
+        }
+      } catch(e) {}
+    }
   }
   renderAll();
   showWinner();
 }
 
-// ── 清算アクションを対象プレイヤーが操作（他は観戦）──
+// 他プレイヤーの清算完了をFirebase同期で待つ
+function waitForPlayerSettlement(playerId) {
+  return new Promise(resolve => {
+    if((G.settledPlayers || []).includes(playerId)) { resolve(); return; }
+    window._waitSettleId = playerId;
+    window._waitSettleResolve = resolve;
+  });
+}
+
+// ── 清算アクションを対象プレイヤーが操作（他デバイスは waitForPlayerSettlement で待機）──
 function waitForSettleAction(modalOpts, settlePlayerId) {
   return new Promise(resolve => {
     const isMyAction = LOCAL_MODE || settlePlayerId === null || settlePlayerId === myId;
-    if(!isMyAction) {
-      // 自分ではない → live overlay で見るだけ、自動で次へ（ポーリングで検知）
-      resolve(); return;
-    }
+    if(!isMyAction) { resolve(); return; }
     const acts = (modalOpts.acts || []).map(a => ({
-      ...a, fn: () => { closeModal(); resolve(); }
+      ...a,
+      fn: () => {
+        if(a.fn) a.fn(); // 元のfn（renderAll等）を先に実行
+        closeModal();
+        resolve();
+      }
     }));
     showModal({...modalOpts, acts});
   });
@@ -4073,14 +4153,14 @@ function _showSyncedRoulette(live) {
 
   // 同じペースでスピン
   if(_rouletteAnimTimer) clearInterval(_rouletteAnimTimer);
-  let count = 0; let delay = 60;
+  let count = 0; let delay = 90;
   const rBox = document.getElementById('r-box-sync');
 
   const spin = () => {
     if(!rBox) return;
     rBox.textContent = items[Math.floor(Math.random()*items.length)] || '？';
     count++;
-    if(count > 25) delay += 20;
+    if(count > 35) delay += 25;
     if(count < 40) { _rouletteAnimTimer = setTimeout(spin, delay); }
     // 40回で止まる（結果は _rouletteFinal で受け取る）
   };
@@ -4198,6 +4278,18 @@ async function syncGameState() {
       if(md) { md.style.opacity = '1'; md.style.pointerEvents = 'auto'; }
     }
 
+    // 清算フェーズ開始 → 非トリガーデバイスで showFinalSettlement を起動
+    if(gs.settlementPhase && !window._settlementStarted) {
+      showFinalSettlement(); // _settlementStarted フラグは関数内でセット
+    }
+
+    // waitForPlayerSettlement 待機中の解決チェック
+    if(window._waitSettleId && (G.settledPlayers || []).includes(window._waitSettleId)) {
+      const r = window._waitSettleResolve;
+      window._waitSettleId = null; window._waitSettleResolve = null;
+      if(r) r();
+    }
+
     if(gs.gameOver) {
       clearInterval(pollTimer);
       // finalRankings がある場合はそのデータで表示（自分で計算せずホストの結果を使う）
@@ -4253,14 +4345,19 @@ async function livePollTick() {
         return; // spectator card は表示しない
       }
 
-      // 公開操作完了通知: アクティブプレイヤー側のタイマーをクリアして続行
+      // 公開操作完了通知: アクティブプレイヤー側のタイマーをクリアして次の便乗者へ
       if(live._followTrade && live._followDone && isMyTurn()) {
         if(window._followTradeTimer) { clearTimeout(window._followTradeTimer); window._followTradeTimer = null; }
         closeModal();
+        if(_pendingFollow) {
+          const { isForced: _pIsForced, cell: _pCell } = _pendingFollow;
+          _pendingFollow = null;
+          endTradeAction(_pIsForced, _pCell);
+        }
         return;
       }
 
-      if(!isMyTurn()) showSpectatorCard(live);
+      if(!isMyTurn() && !window._settlementStarted) showSpectatorCard(live);
     }
   } catch(e) {}
 }
@@ -4518,6 +4615,7 @@ let _gameEntered = false;
 function enterGame() {
   if(_gameEntered) return;
   _gameEntered = true;
+  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null;
 
   // ① 全画面を隠す
   ['start-screen','firebase-screen','lobby-screen','waiting-screen','title-screen'].forEach(s => {
@@ -4935,7 +5033,7 @@ async function showTurnAnnounce(player) {
   document.body.appendChild(overlay);
 
   return new Promise(resolve => {
-    const dur = isMe ? 2200 : 1800;
+    const dur = isMe ? 4000 : 3200;
     setTimeout(() => {
       overlay.classList.add('out');
       setTimeout(() => { overlay.remove(); resolve(); }, 300);
