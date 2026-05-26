@@ -1501,9 +1501,19 @@ const PATH = [
 ];
 
 const MARKETS = [
-  {id:'deflation', name:'デフレ',   stockPrice:30000, emoji:'📉'},
-  {id:'stable',    name:'物価安定', stockPrice:50000, emoji:'📊'},
-  {id:'inflation', name:'インフレ', stockPrice:70000, emoji:'📈'},
+  {id:'severe_deflation', name:'深刻なデフレ',     stockPrice:20000, emoji:'🔻'},
+  {id:'deflation',        name:'デフレ',           stockPrice:30000, emoji:'📉'},
+  {id:'stable',           name:'市場安定',          stockPrice:50000, emoji:'📊'},
+  {id:'inflation',        name:'インフレ',          stockPrice:70000, emoji:'📈'},
+  {id:'hyperinflation',   name:'ハイパーインフレ',  stockPrice:80000, emoji:'💸'},
+];
+// 確率重み付きプール: 深刻なデフレ1/8・デフレ2/8・市場安定2/8・インフレ2/8・ハイパーインフレ1/8
+const MARKET_POOL = [
+  MARKETS[0],
+  MARKETS[1], MARKETS[1],
+  MARKETS[2], MARKETS[2],
+  MARKETS[3], MARKETS[3],
+  MARKETS[4],
 ];
 
 // 完全再現イベントカード
@@ -1537,7 +1547,7 @@ const HAPPS = [
   {name:'銀行破綻', ins:false, desc:'持っている現金が10万円まで保証。それ以上は10万円になる。', type:'bankFail'}
 ];
 
-let G = { pc:3, players:[], ci:0, turn:1, year:1, market: MARKETS[1], highInt: false, marketManip: null, goalOrder: [], version:0 };
+let G = { pc:3, players:[], ci:0, turn:1, year:1, market: MARKETS[2], highInt: false, marketManip: null, goalOrder: [], version:0 };
 let isMoving = false;
 let G_tradeFollowQueue = [];
 let _pendingFollow = null; // オンライン時の便乗取引コンテキスト保存用
@@ -2540,7 +2550,7 @@ async function checkMarket(p, cell){
                   {lbl:'変動させる', p:true, fn:async ()=> {
                       closeModal();
                       const oldMkt = G.market;
-                      const newMkt = await spinRoulette('市場が変動します...', MARKETS, 't-info');
+                      const newMkt = await spinRoulette('市場が変動します...', MARKET_POOL, 't-info');
                       showModal({
                           type:'t-info', tag:'市場選択', title:'どちらの市場で取引しますか？', fullScreen:true,
                           desc: buildDesc(cell, `旧: ${oldMkt.emoji} ${oldMkt.name} (${fmtM(oldMkt.stockPrice)})<br>新: ${newMkt.emoji} ${newMkt.name} (${fmtM(newMkt.stockPrice)})`),
@@ -2553,7 +2563,7 @@ async function checkMarket(p, cell){
               ]
           });
       } else {
-          const newMkt = await spinRoulette('市場が変動します...', MARKETS, 't-info');
+          const newMkt = await spinRoulette('市場が変動します...', MARKET_POOL, 't-info');
           G.market = newMkt; updateMktDisplay();
           openTrade(p, cell, 'buy');
       }
@@ -2777,7 +2787,7 @@ function promptInsurance(p, year, cell, descText) {
 function enterForcedInvestment(p, cell) {
     closeModal();
     isMoving = true; // 投資フェーズ中はsyncGameStateの割り込みをブロック
-    spinRoulette('強制ストップの市場変動...', MARKETS, 't-info').then(newMkt => {
+    spinRoulette('強制ストップの市場変動...', MARKET_POOL, 't-info').then(newMkt => {
         G.market = newMkt; updateMktDisplay();
         doForcedInvestmentMenu(p, cell);
     });
@@ -2960,7 +2970,7 @@ function calcLiquidationValue(p) {
   const sp = G.market.stockPrice;
   const stockVal  = (p.stocks / 10) * (sp / 2);
   const estateVal = pEstates(p).reduce((s,e) => s + e.price * 1.5, 0); // ゴール3倍の半値
-  const gp = {deflation:500000, stable:200000, inflation:100000}[G.market.id] || 200000;
+  const gp = {severe_deflation:600000, deflation:500000, stable:200000, inflation:100000, hyperinflation:50000}[G.market.id] || 200000;
   const goldVal   = p.gold * gp / 2;
   const ipoVal    = p.ipo  * 100000; // 購入額20万の半値
   return Math.floor(stockVal + estateVal + goldVal + ipoVal);
@@ -2998,7 +3008,7 @@ function declareBankruptcy(p) {
 // 借金超過だが資産売れば復帰可能 → 強制売却モーダル
 function showForcedSell(p, maxDebt, nextFn) {
   const sp = G.market.stockPrice;
-  const gp = {deflation:500000, stable:200000, inflation:100000}[G.market.id] || 200000;
+  const gp = {severe_deflation:600000, deflation:500000, stable:200000, inflation:100000, hyperinflation:50000}[G.market.id] || 200000;
 
   function buildSellPanel() {
     let rows = '';
@@ -3590,7 +3600,7 @@ async function settlePlayer(p) {
   }, p.id);
 
   // ② 市場変動（最終清算専用・ゆっくり4秒表示）
-  const market = await spinRoulette(`${p.name}の市場変動！`, MARKETS, 't-info', 4000, plan.marketId || null);
+  const market = await spinRoulette(`${p.name}の市場変動！`, MARKET_POOL, 't-info', 4000, plan.marketId || null);
   G.market = market;
   updateMktDisplay();
   await sleep(500);
@@ -3676,7 +3686,7 @@ async function settlePlayer(p) {
   // ⑦ 金（ゴールド）清算
   if(p.gold > 0) {
     const goldCount = p.gold;
-    const gp = {deflation:500000, stable:200000, inflation:100000}[market.id] || 200000;
+    const gp = {severe_deflation:600000, deflation:500000, stable:200000, inflation:100000, hyperinflation:50000}[market.id] || 200000;
     const gv = goldCount * gp; p.cash += gv; p.gold = 0;
     log(`<span style="color:${c.bg}">${p.name}</span> 金清算 <span class="lp">+${fmtM(gv)}</span>`);
     await waitForSettleAction({
@@ -3742,7 +3752,7 @@ async function showFinalSettlement() {
     for(const playerId of order) {
       const p = G.players.find(pl => pl.id === playerId);
       if(!p || p.isBankrupt) continue;
-      const market = MARKETS[Math.floor(Math.random() * MARKETS.length)];
+      const market = MARKET_POOL[Math.floor(Math.random() * MARKET_POOL.length)];
       const ipoRoll = p.ipo > 0 ? (Math.floor(Math.random() * 6) + 1) : 0;
       G.settlementPlan[playerId] = { marketId: market.id, ipoRoll };
     }
@@ -4597,7 +4607,7 @@ async function hostStartGame() {
     insCost:30000, divMod:1, estDisc:false, estMult:3, isGoal:false, isBankrupt:false
   }));
   G.pc = _pc; G.ci = 0; G.turn = 1; G.year = 1;
-  G.market = MARKETS[1]; G.goalOrder = []; G.version = 1;
+  G.market = MARKETS[2]; G.goalOrder = []; G.version = 1;
   G.highInt = false; G.marketManip = null;
 
   const ok = await fbPatch(`rooms/${roomCode}`, { started:true, gameState:G });
