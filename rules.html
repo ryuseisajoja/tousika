@@ -413,7 +413,7 @@ body{
         </div>
         <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
         <ul class="skill-list">
-          <li class="skill-item">🔍 <strong>公開操作</strong>：他の投資家が株売買をした際、自分もそのタイミングで株売買ができる。</li>
+          <li class="skill-item">🔍 <strong>公開操作（便乗取引）</strong>：投資家のターンに市場マス（マス3・5・8・11・13・16・20・22・24・27・30・33・34）に止まった際、他の投資家も同じ市場で株売買ができる（3分以内）。取引しなくても他の投資家に便乗チャンスは発生する。<br><span style="color:var(--red);font-size:11px">⚠️ 強制ストップ中の株売買では公開操作は発動しない。会社員のターンでは発動しない。</span></li>
           <li class="skill-item">🎮 <strong>市場操作</strong>：市場取引マス到達時、市場カードを事前確認し変動前後どちらかで取引可能。</li>
         </ul>
       </div>
@@ -553,7 +553,7 @@ body{
         <div class="ipo-row" style="background:#fefce8;border-color:#fde047">
           <div class="ipo-dice">🎲</div>
           <div class="ipo-result">出目6</div>
-          <div class="ipo-amount" style="color:var(--orange)">🦄 2,000万</div>
+          <div class="ipo-amount" style="color:var(--orange)">🦄 2,000万<br><small style="font-size:10px;color:var(--text2);font-weight:700">（購入額の100倍）</small></div>
         </div>
       </div>
     </div>
@@ -563,9 +563,11 @@ body{
       <div class="asset-detail">
         <strong>価格：</strong>1口20万円（制限なし）<br>
         <strong>判定：</strong>ゴール時の市場カード<br><br>
+        🔻 深刻なデフレ → 1口60万<br>
         📉 デフレ → 1口50万<br>
         📊 物価安定 → 1口20万<br>
-        📈 インフレ → 1口10万
+        📈 インフレ → 1口10万<br>
+        💸 ハイパーインフレ → 1口5万
       </div>
     </div>
     <div class="asset-card" style="border-color:var(--green);background:#f0fdf4">
@@ -583,25 +585,39 @@ body{
   <div style="margin-top:20px">
     <div style="font-size:14px;font-weight:900;margin-bottom:10px">📊 市場カード（株価）</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#eff6ff;border-color:#93c5fd">
+      <div class="info-box" style="flex:1;min-width:120px;text-align:center;background:#f5f3ff;border-color:#a78bfa">
+        <div style="font-size:20px;margin-bottom:4px">🔻</div>
+        <div style="font-weight:900">深刻なデフレ</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:#7c3aed">¥2,000<span style="font-size:12px;font-weight:700">/株</span></div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:#7c3aed;margin-top:2px">10株 = ¥20,000</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">10株単位で取引</div>
+      </div>
+      <div class="info-box" style="flex:1;min-width:120px;text-align:center;background:#eff6ff;border-color:#93c5fd">
         <div style="font-size:20px;margin-bottom:4px">📉</div>
         <div style="font-weight:900">デフレ</div>
         <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--blue)">¥3,000<span style="font-size:12px;font-weight:700">/株</span></div>
         <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--blue);margin-top:2px">10株 = ¥30,000</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">10株単位で取引</div>
       </div>
-      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#f0fdf4;border-color:#86efac">
+      <div class="info-box" style="flex:1;min-width:120px;text-align:center;background:#f0fdf4;border-color:#86efac">
         <div style="font-size:20px;margin-bottom:4px">📊</div>
         <div style="font-weight:900">物価安定</div>
         <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--green)">¥5,000<span style="font-size:12px;font-weight:700">/株</span></div>
         <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--green);margin-top:2px">10株 = ¥50,000</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">10株単位で取引</div>
       </div>
-      <div class="info-box" style="flex:1;min-width:140px;text-align:center;background:#fef2f2;border-color:#fca5a5">
+      <div class="info-box" style="flex:1;min-width:120px;text-align:center;background:#fef2f2;border-color:#fca5a5">
         <div style="font-size:20px;margin-bottom:4px">📈</div>
         <div style="font-weight:900">インフレ</div>
         <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--red)">¥7,000<span style="font-size:12px;font-weight:700">/株</span></div>
         <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--red);margin-top:2px">10株 = ¥70,000</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">10株単位で取引</div>
+      </div>
+      <div class="info-box" style="flex:1;min-width:120px;text-align:center;background:#fff7ed;border-color:#fb923c">
+        <div style="font-size:20px;margin-bottom:4px">💸</div>
+        <div style="font-weight:900">ハイパーインフレ</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:20px;font-weight:900;color:var(--orange)">¥8,000<span style="font-size:12px;font-weight:700">/株</span></div>
+        <div style="font-family:'Nunito',sans-serif;font-size:13px;font-weight:900;color:var(--orange);margin-top:2px">10株 = ¥80,000</div>
         <div style="font-size:11px;color:var(--text2);margin-top:2px">10株単位で取引</div>
       </div>
     </div>
@@ -806,6 +822,25 @@ body{
   <div class="info-box red" style="margin-top:14px">
     ⚠️ <strong>保険対象外のカードは保険では防げません。</strong>株価暴落・税金・詐欺・国債危機・銀行破綻などは保険があっても被害を受けます。
   </div>
+
+  <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:8px">📍 固有マス効果（カードではなくマス固有）</div>
+  <table class="card-table">
+    <tr>
+      <th>マス</th>
+      <th>名前</th>
+      <th>効果</th>
+    </tr>
+    <tr>
+      <td style="font-weight:900;font-family:'Nunito',sans-serif">39</td>
+      <td><span class="tag tag-noins">保険対象外</span>財政悪化</td>
+      <td>保有国債の<strong>総口数の半分</strong>を失う（端数切り捨て）</td>
+    </tr>
+    <tr>
+      <td style="font-weight:900;font-family:'Nunito',sans-serif">40</td>
+      <td><span class="tag tag-ins">保険対象</span>株価大暴落</td>
+      <td>保有株の<strong>半分</strong>が消滅する（端数切り捨て）</td>
+    </tr>
+  </table>
 </div>
 
 <!-- フッター -->
