@@ -1832,7 +1832,7 @@ function setCount(n){
 }
 
 async function startGame(){
-  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null;
+  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null; window._mySettlementActive = false;
   G.players=[]; G.ci=0; G.turn=1; G.year=1; G.pc=_pc; G.goalOrder=[]; // ← G.pcをプレイヤー数で更新
   document.getElementById('title-screen').style.display='none';
   document.getElementById('game-screen').style.display='block';
@@ -1859,35 +1859,35 @@ function assignJobs(count) {
 }
 
 async function determineJobsRoulette() {
+    // 職業をランダム割当 & プレイヤー順もシャッフル（開始順をランダム化）
     const jobs = Array(_pc).fill('emp').fill('inv', Math.ceil(_pc/2)).sort(()=>Math.random()-0.5);
-    for(let i=0;i<_pc;i++){
-        G.players[i].job = jobs[i];
-    }
-    
+    for(let i=0;i<_pc;i++) G.players[i].job = jobs[i];
+    G.players.sort(() => Math.random() - 0.5); // ← ターン順シャッフル
+
     let html = '<div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">';
     for(let i=0;i<_pc;i++) {
-        html += `<div style="display:flex; justify-content:space-between; font-size:16px; font-weight:bold; background:#f8fafc; padding:10px 16px; border-radius:8px; border:2px solid ${COLORS[i].bg}">
-            <span style="color:${COLORS[i].bg}">${G.players[i].name}</span>
+        html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:16px; font-weight:bold; background:#f8fafc; padding:10px 16px; border-radius:8px; border:2px solid ${G.players[i].color.bg}">
+            <span style="color:${G.players[i].color.bg}">${i+1}番目: ${G.players[i].name}</span>
             <span id="job-slot-${i}">❓❓❓</span>
         </div>`;
     }
     html += '</div>';
 
     return new Promise(resolve => {
-        showModal({type:'t-info', tag:'START', title:'職業の決定！', 
+        showModal({type:'t-info', tag:'START', title:'職業＆順番の決定！',
         desc: `【職業ごとの特殊能力】<br>
         🏢 <strong>会社員</strong>：固定給。借金利子(0%)免除。不動産10万円引き！<br>
-        📈 <strong>投資家</strong>：歩合給。市場操作・公開操作(便乗取引)が可能！<br>`, 
+        📈 <strong>投資家</strong>：歩合給。市場操作・公開操作(便乗取引)が可能！<br>`,
         extra: html, acts:[]});
-        
-        let count = 0; let delay = 90;
+
+        let count = 0; let delay = 65;
         const spin = () => {
             for(let i=0;i<_pc;i++) {
                 document.getElementById(`job-slot-${i}`).textContent = Math.random() > 0.5 ? '🏢 会社員' : '📈 投資家';
             }
             count++;
-            if(count > 30) delay += 20;
-            if(count < 45) {
+            if(count > 20) delay += 20;
+            if(count < 35) {
                 setTimeout(spin, delay);
             } else {
                 for(let i=0;i<_pc;i++) {
@@ -1896,6 +1896,11 @@ async function determineJobsRoulette() {
                 }
                 setTimeout(() => {
                     const macts = document.getElementById('macts');
+                    const firstP = G.players[0];
+                    const info = document.createElement('div');
+                    info.style.cssText = 'text-align:center;font-size:14px;font-weight:900;margin-bottom:10px;padding:8px 12px;background:#fffbeb;border:2px solid #fde047;border-radius:10px;';
+                    info.innerHTML = `🎲 最初のターン: <span style="color:${firstP.color.bg}">${firstP.name}</span>`;
+                    macts.appendChild(info);
                     const btn = document.createElement('button');
                     btn.className = 'mbtn mbtn-p';
                     btn.textContent = 'ゲームスタート！';
@@ -2099,13 +2104,13 @@ async function spinRoulette(title, items, typeClass, finalDelay=2500, fixedResul
       startTs: Date.now()
     }, true).catch(()=>{});
 
-    let count = 0; let delay = 90;
+    let count = 0; let delay = 65;
     const spin = () => {
       const cur = items[Math.floor(Math.random()*items.length)];
       rBox.textContent = cur.name;
       count++;
-      if(count > 35) delay += 25;
-      if(count < 60) { setTimeout(spin, delay); }
+      if(count > 25) delay += 25;
+      if(count < 45) { setTimeout(spin, delay); }
       else {
         const finalItem = fixedResultId
           ? (items.find(i => i.id === fixedResultId) || items[Math.floor(Math.random()*items.length)])
@@ -2131,7 +2136,7 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
            acts: [{lbl:'サイコロを振る！', p:true, fn:() => {
                document.getElementById('macts').innerHTML = '';
                const die = document.getElementById('exc-die');
-               let c=0; let delay=80;
+               let c=0; let delay=55;
                broadcastLive({
                  type:'t-happen', tag:'🎲 サイコロ勝負！', title: title,
                  _rouletteSync: true,
@@ -2142,8 +2147,8 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
                    const face = ['⚀','⚁','⚂','⚃','⚄','⚅'][Math.floor(Math.random()*6)];
                    die.textContent = face;
                    c++;
-                   if(c>35) delay+=25;
-                   if(c<60) { setTimeout(spin, delay); }
+                   if(c>25) delay+=25;
+                   if(c<45) { setTimeout(spin, delay); }
                    else {
                        const roll = fixedRoll !== null ? fixedRoll : (Math.floor(Math.random()*6)+1);
                        die.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]; die.style.color='var(--red)'; die.style.transform='scale(1.3)';
@@ -2222,6 +2227,7 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
 async function onRoll(){
   if(!isMyTurn()) return; // オンライン: 自分のターン以外は無視
   if(isMoving) return; isMoving=true;
+  G_tradeFollowQueue = []; // ターン開始時に前回の便乗キューをリセット
   const p=G.players[G.ci];
   document.getElementById('dice-area')?.classList.add('disabled');
   const mobDiceArea = document.getElementById('mob-dice-area');
@@ -2502,25 +2508,68 @@ function resolveBonds(p, isGoal=false) {
 
 // ─── モーダル＆市場 ───
 function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts, fullScreen=false, isFinal=false}){
+  // 前回のタイプライタータイマーをクリア
+  if(window._twTimer) { clearTimeout(window._twTimer); window._twTimer = null; }
+
   document.getElementById('mbox').className='mb '+type;
-  // ライブ共有（他プレイヤーに現在の画面を送信）
-  // hint-boxをdescHtmlから除去（受信側が自分のON/OFF設定で判断するため）
   const _descForBroadcast = (desc||'').replace(/<div class="hint-box"[\s\S]*?<\/div>\s*<\/div>/g,'').trim();
   broadcastLive({ type, tag, title, desc: _descForBroadcast.replace(/<[^>]+>/g,'').slice(0,200), descHtml: _descForBroadcast.slice(0,1500), eff, effc, _final: isFinal }, fullScreen).catch(()=>{});
-  const tagEl=document.getElementById('mtag'); tagEl.textContent=tag;
+
+  const tagEl = document.getElementById('mtag');
+  tagEl.textContent = tag;
   tagEl.style.color = type.includes('happen')?'var(--red)':type.includes('event')?'var(--gold)':'var(--blue)';
-  document.getElementById('mtitle').textContent=title;
-  document.getElementById('mdesc').innerHTML=desc;
-  document.getElementById('mextra').innerHTML=extra;
-  const effEl=document.getElementById('meff'); effEl.textContent=eff; effEl.className='meff '+effc;
-  const aBox=document.getElementById('macts'); aBox.innerHTML='';
-  acts.forEach(a=>{
-    const b=document.createElement('button'); b.className='mbtn '+(a.p?'mbtn-p':'mbtn-s');
-    b.textContent=a.lbl; b.onclick=a.fn; aBox.appendChild(b);
+
+  // desc・extra・eff は即時セット（eff は後でフェードイン）
+  const descEl = document.getElementById('mdesc');
+  descEl.innerHTML = desc;
+  descEl.style.opacity = '0';
+  descEl.style.transition = 'none';
+  document.getElementById('mextra').innerHTML = extra;
+  const effEl = document.getElementById('meff');
+  effEl.textContent = ''; effEl.className = 'meff ' + effc;
+
+  // ボタンは即時表示（ゲームスピード優先）
+  const aBox = document.getElementById('macts'); aBox.innerHTML = '';
+  acts.forEach(a => {
+    const b = document.createElement('button'); b.className = 'mbtn '+(a.p?'mbtn-p':'mbtn-s');
+    b.textContent = a.lbl; b.onclick = a.fn; aBox.appendChild(b);
   });
+
   document.getElementById('modal').classList.add('show');
+
+  // タイプライター（タイトル）
+  const titleEl = document.getElementById('mtitle');
+  titleEl.textContent = '';
+  const msPerChar = Math.max(18, Math.min(35, 600 / Math.max(1, title.length)));
+  let ti = 0;
+  const typeNext = () => {
+    if(ti < title.length) {
+      titleEl.textContent += title[ti++];
+      window._twTimer = setTimeout(typeNext, msPerChar);
+    }
+  };
+  typeNext();
+
+  // desc フェードイン（350ms後）
+  setTimeout(() => {
+    descEl.style.transition = 'opacity 0.4s ease';
+    descEl.style.opacity = '1';
+  }, 350);
+
+  // eff ポップイン（550ms後）
+  if(eff) {
+    setTimeout(() => {
+      effEl.textContent = eff;
+      effEl.style.animation = 'none';
+      void effEl.offsetWidth; // reflow
+      effEl.style.animation = 'popUp 0.35s cubic-bezier(.34,1.56,.64,1)';
+    }, 550);
+  }
 }
-function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+function closeModal(){
+  document.getElementById('modal').classList.remove('show');
+  if(window._twTimer) { clearTimeout(window._twTimer); window._twTimer = null; }
+}
 
 async function checkMarket(p, cell){
   if(cell.isMarket){
@@ -2572,6 +2621,10 @@ async function checkMarket(p, cell){
 
 function openTrade(p, cell, mode, isForced=false, isFollow=false){
   closeModal();
+  // 投資家のターンで市場マスに入った瞬間に便乗キューをセット（取引せず終了しても便乗チャンスは発生）
+  if (!isFollow && !isForced && p.job === 'inv') {
+    G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+  }
   const price = G.market.stockPrice;
   showModal({
     type:'t-info', tag:'市場取引', title:mode==='buy'?'株を買う':'株を売る', fullScreen:true,
@@ -2581,11 +2634,10 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
       {lbl:'株を買う', p:true, fn:()=>{
         const q = parseInt(document.getElementById('tq').value);
         if(q<=0||q%10!==0){alert('10株単位で入力してください');return;}
-        const cost=(q/10)*price; 
+        const cost=(q/10)*price;
         confirmPurchase(p, cost, `株を${q}株（${fmtM(cost)}）購入します。`, () => {
             p.stocks+=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株購入`);
             if(!LOCAL_MODE) pushState();
-            if (!isFollow && !isForced && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
             showTradeResult(p, cell, `株を${q}株購入しました。`, isForced, isFollow);
         }, () => { openTrade(p, cell, mode, isForced, isFollow); });
       }},
@@ -2595,7 +2647,6 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
         if(p.stocks<q){alert('株が足りません');return;}
         const inc=(q/10)*price; p.cash+=inc; p.stocks-=q; log(`<span style="color:${p.color.bg}">${p.name}</span> 株売却`);
         if(!LOCAL_MODE) pushState();
-        if (!isFollow && !isForced && p.job === 'inv') G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
         showTradeResult(p, cell, `株を${q}株売却しました。`, isForced, isFollow);
       }},
       {lbl:'終了', p:false, fn:()=> endTradeAction(isForced, cell) }
@@ -2659,11 +2710,11 @@ function processFollowTrade(activeP, isForced, cell) {
       }, true).catch(()=>{});
 
       // アクティブプレイヤー側は30秒待ってから続行
-      const waitMs = 30000;
+      const waitMs = 180000;
       const deadline = Date.now() + waitMs;
       showModal({
         type:'t-info', tag:'📈 公開操作待機中', title:`${follower.name}の公開操作を待っています`,
-        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で30秒後に続行します。`,
+        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で3分後に続行します。`,
         acts:[{lbl:'スキップ（今すぐ続行）', p:false, fn:()=>{
           closeModal();
           broadcastLive({_followTrade:true, _followerId:follower.id, _followSkip:true}, false).catch(()=>{});
@@ -2797,7 +2848,7 @@ function doForcedInvestmentMenu(p, cell) {
     closeModal();
     showModal({
         type:'t-info', tag:'投資フェーズ', title:'投資を行いますか？',
-        desc: `現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>現金: <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span>`,
+        desc: `現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>現金: <span class="${p.cash<0?'lm':''}">${fmtM(p.cash)}</span><br><small style="color:var(--red);font-weight:900">⚠️ 強制ストップ中は便乗取引（公開操作）なし</small>`,
         acts: [
             {lbl:'株を買う', p:false, fn:()=> {
               // 強制ストップ中は便乗取引なし（G_tradeFollowQueueをセットしない）
@@ -3490,7 +3541,7 @@ async function processCell(p, cell){
       G.year = 3; document.getElementById('yr-badge').textContent='3年目';
       if(!LOCAL_MODE) pushState(); // 強制ストップ状態を即保存
       // 全員が3年目に入ったらBGM切り替え
-      setTimeout(()=>{ const allYear3 = G.players.every(pl=>pl.isGoal||pl.isBankrupt||pl.forcedN>=2); if(allYear2||allYear3) {} }, 100);
+      // （allYear3 判定は将来BGM切り替え等に使う想定だったが現在未実装のため削除）
 
       // 配当・国債を計算（ハプニング前）
       const bc31 = p.cash;
@@ -3547,7 +3598,7 @@ async function processCell(p, cell){
       else showModal({type:'t-info', tag:cell.name, title:'国債なし', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
     case 36: promptBuyGold(p, cell, nextFn); break;
     case 38: p.cash+=100000; showModal({type:'t-event', tag:cell.name, title:cell.sub, desc:buildDesc(cell), eff:'+100,000円', effc:'plus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
-    case 39: if(!p.bonds)p.bonds=[];{let bl39=Math.floor(p.bonds.length/2);p.bonds.splice(0,bl39);} showModal({type:'t-happen', tag:cell.name, title:'国債を半分失う...', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
+    case 39: if(!p.bonds)p.bonds=[];{const tot39=p.bonds.reduce((s,b)=>s+b.units,0);let rem39=Math.floor(tot39/2);for(const b of p.bonds){if(rem39<=0)break;const t=Math.min(b.units,rem39);b.units-=t;rem39-=t;}p.bonds=p.bonds.filter(b=>b.units>0);} showModal({type:'t-happen', tag:cell.name, title:'国債を半分失う...', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
     case 41: p.cash-=300000; showModal({type:'t-happen', tag:cell.name, title:'支払い', desc:buildDesc(cell), eff:'-300,000円', effc:'minus', acts:[{lbl:'払う',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]}); break;
     case 42:
       p.isGoal = true;
@@ -3675,7 +3726,7 @@ async function settlePlayer(p) {
       type: iv>0?'t-event':'t-happen', fullScreen:true,
       tag:`🚀 ${p.name}・IPO結果 🎲${roll}`,
       title: roll===6 ? '🦄 ユニコーン企業！！' : roll===5 ? '🚀 上場成功！' : '💀 倒産...',
-      desc: roll===6 ? `${ipoCount}口がユニコーン企業に！夢の2000倍！`
+      desc: roll===6 ? `${ipoCount}口がユニコーン企業に！夢の100倍！`
             : roll===5 ? `${ipoCount}口が上場成功！10倍に！`
             : `${ipoCount}口の投資が全て水の泡...`,
       eff: iv>0 ? `+${fmtM(iv)}` : '0円（倒産）', effc: iv>0?'plus':'minus',
@@ -3779,11 +3830,13 @@ async function showFinalSettlement() {
 
     if(LOCAL_MODE || p.id === myId) {
       // 自分のプレイヤー → 清算操作を実行してFirebaseへ同期
+      window._mySettlementActive = true; // syncGameStateによるG.players上書きをブロック
       if(p.isBankrupt) {
         applyDebtInterest(p);
       } else {
         await settlePlayer(p);
       }
+      window._mySettlementActive = false;
       if(!LOCAL_MODE) {
         G.settledPlayers = [...(G.settledPlayers || []), playerId];
         await pushState();
@@ -4086,7 +4139,9 @@ async function broadcastLive(data, fullScreen=false) {
   if(LOCAL_MODE || !roomCode) return;
   // 決算は全員ターンに関わらず送信
   const isFinal = data._final === true;
-  if(!isMyTurn() && !isFinal) return;
+  // 便乗取引完了通知はフォロワー側（非アクティブ）から送るため例外を設ける
+  const isFollowNotif = !!(data._followDone || data._followSkip);
+  if(!isMyTurn() && !isFinal && !isFollowNotif) return;
   try {
     await fbSet(`rooms/${roomCode}/live`, {
       ...data, fullScreen, ts: Date.now(),
@@ -4243,6 +4298,7 @@ async function syncGameState() {
   if(_syncRunning){ _syncLastState='busy';              return; }
   if(_isPushing)  { _syncLastState='書き込み中';         return; } // ★ 書き込み中は読まない
   if(isMyTurn() && isMoving){ _syncLastState='自ターン移動中'; return; }
+  if(window._mySettlementActive){ _syncLastState='自分の清算処理中'; _dot('#fbbf24'); return; } // ★ 清算中はG.playersを上書きしない
 
   _syncRunning = true;
   _syncLastState = '通信中...';
@@ -4367,7 +4423,10 @@ async function livePollTick() {
         return;
       }
 
-      if(!isMyTurn() && !window._settlementStarted) showSpectatorCard(live);
+      // 通常観戦 OR 他プレイヤー清算を観戦中（大窓表示）
+      const _watching = (!isMyTurn() && !window._settlementStarted) ||
+                        (window._settlementStarted && !window._mySettlementActive && (live._final || live.fullScreen));
+      if(_watching) showSpectatorCard(live);
     }
   } catch(e) {}
 }
@@ -4599,7 +4658,9 @@ async function hostStartGame() {
   _pc = rawPlayers.length;
   const jobs = assignJobs(_pc);
 
-  G.players = rawPlayers.map((p,i) => ({
+  // プレイヤー順をシャッフルしてから色・職業を付与
+  const shuffledPlayers = rawPlayers.slice().sort(() => Math.random() - 0.5);
+  G.players = shuffledPlayers.map((p,i) => ({
     id:p.id, name:p.name, color:COLORS[i % COLORS.length],
     job: jobs[i],
     cash:100000, stocks:0, gold:0, estates:[], bonds:[], ipo:0, pos:0, skips:0,
@@ -4625,7 +4686,7 @@ let _gameEntered = false;
 function enterGame() {
   if(_gameEntered) return;
   _gameEntered = true;
-  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null;
+  window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null; window._mySettlementActive = false;
 
   // ① 全画面を隠す
   ['start-screen','firebase-screen','lobby-screen','waiting-screen','title-screen'].forEach(s => {
@@ -5086,7 +5147,7 @@ function showSpectatorCard(live) {
     const dsc  = document.getElementById('lo-desc');
     const eff  = document.getElementById('lo-eff');
     if(dot) dot.style.background = col;
-    if(who) { who.textContent = (live.playerName||'?') + ' のターン'; who.style.color = col; }
+    if(who) { who.textContent = (live.playerName||'?') + (live._final ? ' の清算中' : ' のターン'); who.style.color = col; }
     if(body) body.className = 'lo-body ' + type;
     if(tag) { tag.textContent = live.tag||''; tag.style.background = tagBg; }
     if(ttl) ttl.textContent = live.title||'';
@@ -5099,7 +5160,8 @@ function showSpectatorCard(live) {
     ov.classList.add('show');
     ov.onclick = (e) => { if(e.target===ov||e.target.classList.contains('lo-close')) hideLiveOverlay(); };
     clearTimeout(ov._hideTimer);
-    ov._hideTimer = setTimeout(() => hideLiveOverlay(), 25000);
+    // 最終清算中は次のブロードキャストが来るまで閉じない（120秒待機）
+    ov._hideTimer = setTimeout(() => hideLiveOverlay(), live._final ? 120000 : 25000);
   } else {
     // ── 小窓カード ──
     hideLiveOverlay();
