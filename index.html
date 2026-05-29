@@ -1470,17 +1470,17 @@ const CELLS = [
   {i:25, type:'event',  name:'宝くじ当選', sub:'+50万円', forced:false, info:'運も実力のうち！一獲千金のチャンス。'},
   {i:26, type:'ipo',    name:'未上場株', sub:'ゴールで判定', forced:false, info:'【金融知識】IPO株（未上場株）は、上場すれば何倍にも跳ね上がりますが、上場できず紙切れになるリスクもあります。'},
   {i:27, type:'tax',    name:'タントを買った', sub:'-20万円 / 市場', isMarket:true, forced:false, info:'車の購入で大きな支出。負債や維持費に注意。'},
-  {i:28, type:'estate', name:'不動産売却', sub:'購入額の5倍', forced:false, info:'地価高騰！所有している不動産を5倍の価格で利益確定できます。'},
+  {i:28, type:'event',  name:'不動産売却＋イベント', sub:'5倍売却/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、所有不動産を5倍で売却でき、その後市場取引も可能。'},
   {i:29, type:'happen', name:'ハプニング', sub:'カードを引く', forced:false, info:'予期せぬトラブルが発生します。'},
   {i:30, type:'event',  name:'イベントカード', sub:'市場取引', isMarket:true, forced:false, info:'イベント発生！その後、市場取引。'},
   {i:31, type:'forced', name:'強制ストップ', sub:'2年目終わり', forced:true, info:'2年目の決算。ハプニング発生後、給料を受け取ります。その後投資メニューが開きます。'},
   {i:32, type:'happen', name:'火災発生', sub:'最高額の不動産失う', forced:false, info:'災害リスク。保険に入っていればこの被害を防ぐことができます。'},
   {i:33, type:'event',  name:'遺産相続', sub:'+40万円 / 市場', isMarket:true, forced:false, info:'思いがけない大金が入ります。税金には注意。'},
   {i:34, type:'pass',   name:'【通過】退職金', sub:'会社員+200万 / 市場', isMarket:true, forced:false, info:'会社員であれば長年の勤務が報われ、大きな退職金が入ります。'},
-  {i:35, type:'bonds',  name:'国債を売れる', sub:'2倍の価格', forced:false, info:'安定資産の国債が価格上昇！買った時の2倍で売却できます。'},
+  {i:35, type:'event',  name:'国債売却＋イベント', sub:'2倍売却/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、国債を2倍で売却でき、その後市場取引も可能。転落会社員は「出世」で復帰のチャンス。'},
   {i:36, type:'goldbuy',name:'金を買える', sub:'ゴールで換金', forced:false, info:'【金融知識】金（ゴールド）は「有事の金」と呼ばれ、株価暴落時やデフレなど、お金の価値が不安定な時に価値が上がりやすい安全資産です。'},
   {i:37, type:'happen', name:'市場が荒れている', sub:'ハプニングを引く', forced:false, info:'金融ショックの予兆。ハプニングカードを引きます。'},
-  {i:38, type:'event',  name:'ふるさと納税', sub:'+10万円', forced:false, info:'【金融知識】応援したい自治体に寄付でき、実質負担2,000円で返礼品がもらえ、税金が控除されるお得な制度です。'},
+  {i:38, type:'event',  name:'ふるさと納税＋イベント', sub:'+10万/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、ふるさと納税で+10万、その後市場取引も可能。転落会社員は「出世」で復帰のチャンス。'},
   {i:39, type:'happen', name:'財政悪化', sub:'国債を半分失う', forced:false, info:'国の信用が低下し、保有している国債（国の借金）の価値が下がります。'},
   {i:40, type:'happen', name:'株価大暴落', sub:'持ち株半分失う', forced:false, info:'金融危機！保有している株の半分が紙切れになります。分散投資が重要です。'},
   {i:41, type:'tax',    name:'奨学金返済', sub:'-30万円', forced:false, info:'学生時代の借金の返済。現実の厳しさを知ります。'},
@@ -1524,7 +1524,7 @@ const EVTS = [
   {name:'配当金廃止', desc:'次の強制ストップでもらえる配当金が０円になる。（条件：株10口以上）', type:'nodiv', cond:'stocks10'},
   {name:'株主優待①', desc:'次年度の保険に1万円で加入できる。（条件：株10口以上）', type:'insDisc', cond:'stocks10'},
   {name:'株主優待②', desc:'不動産を買うとき10万円引きで購入可能。（条件：株10口以上）', type:'estDisc', cond:'stocks10'},
-  {name:'不動産価格上昇', desc:'不動産を購入金額の４倍で売ることができる。（条件：不動産保有）', type:'estBonus', cond:'estate'},
+  {name:'不動産価格上昇', desc:'不動産を購入金額の４倍で売れるカードを保有（好きな時に1回使える）。', type:'estBonus'},
   {name:'市場操作', desc:'プレイヤーを一人指定し、そのプレイヤーの次の市場取引の市場状態を指定できる。', type:'mktControl'},
   {name:'金利上昇', desc:'次ターン以降の借金利子：投資家30%・会社員10%になる。', type:'intUp'},
   {name:'マイナス金利政策', desc:'金利上昇状態であれば、金利上昇の効果が終了する。', type:'intDown'},
@@ -2223,6 +2223,25 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
     }
 }
 
+// ─── 保有カード「不動産価格上昇(4倍売却)」の使用確認（ターン開始時・任意・1回のみ）───
+function maybeUseEstSell4(p){
+  return new Promise(resolve => {
+    if(!p.estSell4 || pEstates(p).length === 0){ resolve(); return; }
+    const acts = pEstates(p).map((e, ei) => ({
+      lbl: `${fmtM(e.price)}の物件→${fmtM(e.price*4)}で売却`, p:true,
+      fn: () => {
+        const profit = e.price*4; p.cash += profit; pEstates(p).splice(ei,1);
+        p.estSell4 = false; // 1回で消費
+        log(`<span style="color:${p.color.bg}">${p.name}</span> 🎫不動産4倍売却 <span class="lp">+${fmtM(profit)}</span>`);
+        renderAll(); if(!LOCAL_MODE) pushState();
+        showModal({type:'t-event', tag:'🎫 4倍売却！', title:'不動産価格上昇を発動！', desc:'', eff:`+${fmtM(profit)}`, effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();resolve();}}]});
+      }
+    }));
+    acts.push({lbl:'今は使わない（温存）', p:false, fn:()=>{ closeModal(); resolve(); }});
+    showModal({type:'t-info', tag:'🎫 保有カード', title:'不動産価格上昇を使う？', desc:'保有中の「不動産価格上昇」で、不動産1件を<strong>4倍</strong>で売却できます（1回のみ）。<br>今使いますか？', acts});
+  });
+}
+
 // ─── 移動 ───
 async function onRoll(){
   if(!isMyTurn()) return; // オンライン: 自分のターン以外は無視
@@ -2232,7 +2251,10 @@ async function onRoll(){
   document.getElementById('dice-area')?.classList.add('disabled');
   const mobDiceArea = document.getElementById('mob-dice-area');
   if(mobDiceArea) { mobDiceArea.style.opacity='0.4'; mobDiceArea.style.pointerEvents='none'; }
-  
+
+  // 保有カード「不動産価格上昇(4倍売却)」をターン開始時に使うか確認（任意・1回のみ）
+  await maybeUseEstSell4(p);
+
   if(p.skips>0){ p.skips--; log(`<span style="color:${p.color.bg}">${p.name}</span> 😴 休み`); await sleep(500); nextTurn(); return; }
   
   // PCとモバイル両方のサイコロを動かす
@@ -2305,7 +2327,7 @@ async function onRoll(){
         renderAll();
     }
     if(p.pos===34 && s < roll - 1) {
-        if(p.job==='emp') { p.cash += 2000000; log(`<span style="color:${p.color.bg}">${p.name}</span> 通過退職金 <span class="lp">+¥2,000,000</span>`); }
+        if(p.job==='emp') { p.cash += 2000000; p.gotRetire = true; log(`<span style="color:${p.color.bg}">${p.name}</span> 通過退職金 <span class="lp">+¥2,000,000</span>`); }
     }
     if(p.pos===42) break;
   }
@@ -2507,13 +2529,15 @@ function resolveBonds(p, isGoal=false) {
 
 
 // ─── モーダル＆市場 ───
-function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts, fullScreen=false, isFinal=false}){
+function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', acts, fullScreen=false, isFinal=false, suppressBroadcast=false}){
   // 前回のタイプライタータイマーをクリア
   if(window._twTimer) { clearTimeout(window._twTimer); window._twTimer = null; }
 
   document.getElementById('mbox').className='mb '+type;
   const _descForBroadcast = (desc||'').replace(/<div class="hint-box"[\s\S]*?<\/div>\s*<\/div>/g,'').trim();
-  broadcastLive({ type, tag, title, desc: _descForBroadcast.replace(/<[^>]+>/g,'').slice(0,200), descHtml: _descForBroadcast.slice(0,1500), eff, effc, _final: isFinal }, fullScreen).catch(()=>{});
+  if(!suppressBroadcast) {
+    broadcastLive({ type, tag, title, desc: _descForBroadcast.replace(/<[^>]+>/g,'').slice(0,200), descHtml: _descForBroadcast.slice(0,1500), eff, effc, _final: isFinal }, fullScreen).catch(()=>{});
+  }
 
   const tagEl = document.getElementById('mtag');
   tagEl.textContent = tag;
@@ -2622,8 +2646,13 @@ async function checkMarket(p, cell){
 function openTrade(p, cell, mode, isForced=false, isFollow=false){
   closeModal();
   // 投資家のターンで市場マスに入った瞬間に便乗キューをセット（取引せず終了しても便乗チャンスは発生）
-  if (!isFollow && !isForced && p.job === 'inv') {
-    G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+  if (!isFollow && !isForced) {
+    if (p.job === 'inv') {
+      G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+    } else {
+      // 会社員・フリーターの取引では便乗発動しない（古いキューも念のクリア）
+      G_tradeFollowQueue = [];
+    }
   }
   const price = G.market.stockPrice;
   showModal({
@@ -2667,10 +2696,12 @@ function showTradeResult(p, cell, text, isForced, isFollow) {
 function endTradeAction(isForced, cell) {
     closeModal();
     let activeP = G.players[G.ci];
-    if (G_tradeFollowQueue.length > 0) {
+    // 便乗取引はアクティブプレイヤーが投資家のときのみ発動
+    if (G_tradeFollowQueue.length > 0 && activeP?.job === 'inv') {
         processFollowTrade(activeP, isForced, cell);
     } else if (!LOCAL_MODE && !isMyTurn()) {
         // オンライン: 便乗側デバイスは nextTurn を呼ばずアクティブ側に完了を通知
+        window._myFollowTradeActive = false; // 取引中フラグ解除
         broadcastLive({_followTrade:true, _followerId:myId, _followDone:true}, false).catch(()=>{});
     } else {
         _pendingFollow = null;
@@ -2704,27 +2735,27 @@ function processFollowTrade(activeP, isForced, cell) {
 【投資家スキル】あなたも今すぐ便乗取引できます。`,
         _followTrade: true,
         _followerId: follower.id,
+        _followActiveId: activeP.id, // 招待の発行元（現在の手番＝投資家）。古い招待の誤発動防止に使う
         _followMarket: G.market.id,
         _cellIdx: cell ? cell.i : -1,
         _isForced: isForced
       }, true).catch(()=>{});
 
-      // アクティブプレイヤー側は30秒待ってから続行
-      const waitMs = 180000;
+      // アクティブプレイヤー側は5分待ってから続行
+      const waitMs = 300000;
       const deadline = Date.now() + waitMs;
       showModal({
         type:'t-info', tag:'📈 公開操作待機中', title:`${follower.name}の公開操作を待っています`,
-        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で3分後に続行します。`,
-        acts:[{lbl:'スキップ（今すぐ続行）', p:false, fn:()=>{
-          closeModal();
-          broadcastLive({_followTrade:true, _followerId:follower.id, _followSkip:true}, false).catch(()=>{});
-          endTradeAction(isForced, cell);
-        }}]
+        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で5分後に続行します。`,
+        suppressBroadcast: true, // 招待をFirebaseで上書きしないよう broadcast を抑制
+        acts:[] // 市場マスに止まった側はスキップ不可（3分後に自動続行）
       });
 
       // タイマーで自動続行
       const tid = setTimeout(() => {
         closeModal();
+        // ★タイムアウト: /live の招待を即時消去（古い招待が他デバイスに残ってフリーズする原因を根絶）
+        broadcastLive({_followTrade:false, _followCleared:true}, false).catch(()=>{});
         endTradeAction(isForced, cell);
       }, waitMs);
       // G_followTradeTimer に保存して強制スキップ時にクリア
@@ -2793,45 +2824,93 @@ window.execBond = function(type, pid, cellIdx) {
 }
 
 // ─── 不動産・他ヘルパー ───
-function promptBuyEstateAsync(p, cell, options) {
+function promptBuyEstateAsync(p, cell, options, _discChoice=null) {
     return new Promise(resolve => {
+        // 株主優待②を持っていて、まだ使うか決めていない場合は先に確認
+        if(p.estDisc && _discChoice === null) {
+            showModal({
+                type:'t-info', tag:'🎫 株主優待②', title:'不動産割引を使いますか？',
+                desc:`株主優待②カードを持っています。<br><strong>今回の購入に-10万円</strong>の割引を使いますか？<br><small style="color:var(--text2)">「後で使う」を選ぶと次回以降の不動産購入でも使えます。</small>`,
+                acts:[
+                    {lbl:'今回使う（-10万円）', p:true,  fn:()=>{ closeModal(); promptBuyEstateAsync(p, cell, options, true).then(resolve); }},
+                    {lbl:'後で使う',            p:false, fn:()=>{ closeModal(); promptBuyEstateAsync(p, cell, options, false).then(resolve); }},
+                    {lbl:'不動産を買わない',    p:false, fn:()=>{ closeModal(); resolve(); }}
+                ]
+            });
+            return;
+        }
+
+        const useEstDisc = _discChoice === true;
         let jobDisc = p.job === 'emp' ? 100000 : 0;
-        let evtDisc = p.estDisc ? 100000 : 0;
+        let evtDisc = useEstDisc ? 100000 : 0;
         let totalDisc = jobDisc + evtDisc;
-        
+
+        let discNote = '';
+        if(p.job === 'emp' && jobDisc > 0) discNote += '会社員割引：-10万円';
+        if(useEstDisc) discNote += (discNote ? '・' : '') + '株主優待②：-10万円';
+        else if(p.estDisc) discNote += (discNote ? '<br>' : '') + '<span style="color:var(--orange);font-weight:900">🎫 株主優待②は温存中（次回以降に使えます）</span>';
+
         let acts = options.map(price => {
             let cost = Math.max(0, price - totalDisc);
             return {lbl: `${price/10000}万`, p:true, fn: () => {
                 confirmPurchase(p, cost, `${price/10000}万円の物件を購入します。${totalDisc>0?`<br>（割引適用: -${totalDisc/10000}万円）`:''}`, () => {
-                    if(!p.estates) p.estates = []; p.estates.push({price: price}); p.estDisc = false; renderPlayers();
+                    if(!p.estates) p.estates = []; p.estates.push({price: price});
+                    if(useEstDisc) p.estDisc = false; // 使った時だけ消費（後で使う選択時は温存）
+                    renderPlayers();
                     showModal({type:'t-info', tag:'購入完了', title:'不動産購入完了', desc:`${price/10000}万円の物件を購入しました！`, acts:[{lbl:'次へ', p:true, fn:()=> { closeModal(); resolve(); }}]});
                 }, () => {
-                    closeModal(); promptBuyEstateAsync(p, cell, options).then(resolve);
+                    closeModal(); promptBuyEstateAsync(p, cell, options, _discChoice).then(resolve);
                 });
             }};
         });
         acts.push({lbl: '買わない', p:false, fn: () => { closeModal(); resolve(); }});
         showModal({
             type: 't-info', tag: cell.name, title: '不動産を購入しますか？',
-            desc: buildHint('estate') + buildDesc(cell, `ゴール時に3倍で売却できます。<br>※会社員は常に10万円引き！${p.estDisc ? '<br><span style="color:red;font-weight:900;">※株主優待でさらに10万円引き！</span>' : ''}`),
+            desc: buildHint('estate') + buildDesc(cell, `ゴール時に3倍で売却できます。<br>※会社員は常に10万円引き！${discNote ? '<br>' + discNote : ''}`),
             acts: acts
         });
     });
 }
 
 function promptInsurance(p, year, cell, descText) {
-    const cost = p.insCost || 30000;
+    const hasInsDisc = p.insCost !== undefined && p.insCost < 30000;
+    const discCost   = hasInsDisc ? (p.insCost || 30000) : 30000;
+    const normalCost = 30000;
+
+    const acts = [];
+    if(hasInsDisc) {
+        // 株主優待①を使って割引加入
+        acts.push({lbl:`🎫 株主優待①で加入(${fmtM(discCost)})`, p:true, fn:()=> {
+            confirmPurchase(p, discCost, '株主優待①を使って保険に加入します。', () => {
+                p.insCost = 30000; // 株主優待①を消費
+                p.insYear = year;
+                enterForcedInvestment(p, cell);
+            }, () => { promptInsurance(p, year, cell, descText); });
+        }});
+        // 通常料金で加入（株主優待①は温存）
+        acts.push({lbl:`通常で加入(${fmtM(normalCost)})`, p:false, fn:()=> {
+            confirmPurchase(p, normalCost, '通常料金で保険に加入します（株主優待①は温存）。', () => {
+                // insCost は変えない → 次回以降も使える
+                p.insYear = year;
+                enterForcedInvestment(p, cell);
+            }, () => { promptInsurance(p, year, cell, descText); });
+        }});
+    } else {
+        acts.push({lbl:`保険に入る(${fmtM(normalCost)})`, p:true, fn:()=> {
+            confirmPurchase(p, normalCost, '保険に加入します。', () => {
+                p.insCost = 30000; p.insYear = year; enterForcedInvestment(p, cell);
+            }, () => { promptInsurance(p, year, cell, descText); });
+        }});
+    }
+    acts.push({lbl:'入らない', p:false, fn:()=> { enterForcedInvestment(p, cell); }});
+
+    const discHint = hasInsDisc
+        ? `<br><span style="color:var(--orange);font-weight:900">🎫 株主優待①あり：1万円で加入できます（温存も可）</span>`
+        : '';
     showModal({
         type:'t-forced', tag:'強制ストップ', title:`${year-1}年目終わり`,
-        desc: buildHint('insurance') + buildDesc(cell, descText),
-        acts: [
-            {lbl:`保険に入る(${fmtM(cost)})`, p:true, fn:()=> {
-                confirmPurchase(p, cost, '保険に加入します。', () => {
-                    p.insCost = 30000; p.insYear = year; enterForcedInvestment(p, cell);
-                }, () => { promptInsurance(p, year, cell, descText); });
-            }},
-            {lbl:'入らない', p:false, fn:()=> { enterForcedInvestment(p, cell); }}
-        ]
+        desc: buildHint('insurance') + buildDesc(cell, descText + discHint),
+        acts
     });
 }
 
@@ -3027,6 +3106,41 @@ function calcLiquidationValue(p) {
   return Math.floor(stockVal + estateVal + goldVal + ipoVal);
 }
 
+// ─── ハプニングカード 結果表示ヘルパー ───────────────────────────
+// cashBefore: 効果適用前のキャッシュ、insured: 保険で無効化された場合
+function showHappeningResult(p, hcv, cell, cashBefore, nextFn, insured=false) {
+  if(insured) {
+    // 保険適用時: いくらの損失を防いだか明示
+    const savedAmt = Math.abs(hcv.val || 0);
+    const savedStr = savedAmt > 0 ? `${fmtM(savedAmt)}の損失` : 'この被害';
+    showModal({
+      type:'t-info', tag:hcv.name, title:'🛡️ 保険で無効化！', fullScreen:true,
+      desc: buildDesc(cell, `<strong>${hcv.name}</strong> が発生しましたが<br>保険が発動し、<strong style="color:var(--green)">${savedStr}を0円に抑えました！</strong><br><small>${hcv.desc}</small>`),
+      eff:'±0円', effc:'plus',
+      acts:[{lbl:'助かった！',p:true,fn:()=>{closeModal();nextFn();}}]
+    });
+    return;
+  }
+  // 通常（即時損失済み）: 残高の変化を明示
+  const cashAfter  = p.cash;
+  const diff       = cashAfter - cashBefore;
+  const diffAbs    = Math.abs(diff);
+  const diffLabel  = diff === 0 ? '' : (diff < 0 ? `-${fmtM(diffAbs)}` : `+${fmtM(diffAbs)}`);
+  const cashLine   = diff !== 0
+    ? `<div style="margin-top:8px;padding:8px 12px;background:#fee2e2;border-radius:10px;font-size:13px;font-weight:900">
+        残高 ${fmtM(cashBefore)} → <span style="color:var(--red)">${fmtM(cashAfter)}</span>
+        <span style="color:var(--red);font-size:15px;margin-left:6px">(${diffLabel})</span>
+       </div>`
+    : '';
+  const insNote = hcv.ins ? '' : '<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外</small>';
+  showModal({
+    type:'t-happen', tag:hcv.name, title:hcv.name, fullScreen:true,
+    desc: buildDesc(cell, `${hcv.desc}${insNote}${cashLine}`),
+    eff: diffLabel, effc:'minus',
+    acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]
+  });
+}
+
 // 強制支払い後に破産判定 → 破産なら退場、借金超過なら強制売却を促す
 function afterForcedPayment(p, nextFn) {
   const maxDebt = getMaxDebt(p);
@@ -3210,9 +3324,28 @@ function showForcedSell(p, maxDebt, nextFn) {
   }, 50);
 }
 
+// ─── 併設マス(28/35/38)：イベントカード処理の後に「元の効果」を実行し、最後に市場取引へ ───
+function comboOriginalThenMarket(p, cell){
+  const after = () => checkMarket(p, cell); // 元効果の後に市場取引
+  if(cell.i===28){ // 不動産5倍売却
+    let ev=0; pEstates(p).forEach(e=>{const v=e.price*5; p.cash+=v; ev+=v;}); p.estates=[];
+    if(ev>0){ if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'不動産売却', title:'不動産5倍売却！', desc:buildDesc(cell), eff:`+${ev.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();after();}}]}); }
+    else after();
+  } else if(cell.i===35){ // 国債2倍売却
+    if(!p.bonds)p.bonds=[]; let bv=0; p.bonds.forEach(b=>{bv+=b.units*5000*2;}); p.cash+=bv; p.bonds=[];
+    if(bv>0){ if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'国債売却', title:'国債2倍売却！', desc:buildDesc(cell), eff:`+${bv.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();after();}}]}); }
+    else after();
+  } else if(cell.i===38){ // ふるさと納税+10万
+    p.cash+=100000; if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'ふるさと納税', title:'+10万円', desc:buildDesc(cell), eff:'+100,000円', effc:'plus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();after();}}]});
+  } else after();
+}
+
 // ─── 全マスの効果処理 ───
 async function processCell(p, cell){
-  const nextFn = () => checkMarket(p, cell);
+  // 28/35/38 は「イベントカード＋元の効果＋市場取引」を併設。イベント処理後に元効果→市場の順で実行
+  const nextFn = (cell.i===28 || cell.i===35 || cell.i===38)
+    ? () => comboOriginalThenMarket(p, cell)
+    : () => checkMarket(p, cell);
 
   switch(cell.i){
     case 0: nextFn(); break;
@@ -3223,8 +3356,17 @@ async function processCell(p, cell){
     case 3:
     case 11:
     case 16:
-    case 30: {
-      const ec = await spinRoulette('イベントカードを引く', EVTS, 't-event');
+    case 30:
+    case 28:
+    case 35:
+    case 38: {
+      // フリーター時のみ「出世」カードの出現率UP（約30%）。転落した会社員の復帰チャンスにもなる
+      let _evtDeck = EVTS;
+      if(p.job === 'fre') {
+        const _promo = EVTS.find(e => e.type === 'promo');
+        if(_promo) _evtDeck = EVTS.concat([_promo, _promo, _promo, _promo]); // 出世5/17 ≈ 30%
+      }
+      const ec = await spinRoulette('イベントカードを引く', _evtDeck, 't-event');
       
       // ── 条件チェック ──
       const totalBondUnits = pBonds(p).reduce((s,b)=>s+b.units, 0);
@@ -3252,8 +3394,8 @@ async function processCell(p, cell){
         let tot=0;
         G.players.forEach(op=>{
           if(op.id!==p.id){
-            const take=Math.min(Math.max(0,op.cash), ec.val);
-            op.cash-=take; p.cash+=take; tot+=take;
+            // 借金中の投資家も含め全員から徴収（残高不足でも強制deduct）
+            op.cash -= ec.val; p.cash += ec.val; tot += ec.val;
           }
         });
         ec.val=tot;
@@ -3267,23 +3409,32 @@ async function processCell(p, cell){
           p.cash+=200000; ec.val=200000;
           showModal({type:'t-event', tag:'出世！', title:'課長に昇進！🎉', desc:buildDesc(cell, ec.desc), eff:'+200,000円', effc:'plus', acts:[{lbl:'やった！',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
         } else if(p.job==='fre') {
-          p.job='emp'; renderAll();
-          showModal({type:'t-event', tag:'出世！', title:'会社員に復帰！🎉', desc:buildDesc(cell, 'フリーターから会社員に昇格！今後は会社員として給料・ボーナスを受け取れます。'), eff:'会社員に復帰！', effc:'plus', acts:[{lbl:'やった！',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
+          p.job='emp';
+          // 退職金マス(34)を既に通過済みで復帰した場合は、退職金200万を一時金として支給（遅い復帰でも価値が出る）
+          let _retireNote = '';
+          if(p.pos > 34 && !p.gotRetire){ p.cash += 2000000; p.gotRetire = true; _retireNote = '<br><strong style="color:var(--green)">退職金マスを過ぎての復職のため、再就職一時金200万円を支給！</strong>'; }
+          renderAll(); if(!LOCAL_MODE) pushState();
+          showModal({type:'t-event', tag:'出世！', title:'会社員に復帰！🎉', desc:buildDesc(cell, 'フリーターから会社員に昇格！今後は会社員として給料・ボーナスを受け取れます。'+_retireNote), eff: _retireNote? '再就職一時金 +2,000,000円':'会社員に復帰！', effc:'plus', acts:[{lbl:'やった！',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
         } else {
           showModal({type:'t-info', tag:'出世', title:'投資家は効果なし', desc:buildDesc(cell, ec.desc), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
         }
 
       } else if(ec.type === 'estBonus') {
+        // 保有カード化：今すぐ売る or 保有して後で好きな時に使える（1回のみ）
         const estActs = pEstates(p).map((e, ei) => ({
-          lbl: `${fmtM(e.price)}の物件 → ${fmtM(e.price*4)}で売却`, p:true,
+          lbl: `今すぐ${fmtM(e.price)}の物件→${fmtM(e.price*4)}で売却`, p:true,
           fn: () => {
             const profit = e.price*4; p.cash+=profit; pEstates(p).splice(ei,1);
             log(`<span style="color:${p.color.bg}">${p.name}</span> 不動産4倍売却 <span class="lp">+${fmtM(profit)}</span>`);
+            if(!LOCAL_MODE) pushState();
             showModal({type:'t-event', tag:'売却完了！', title:'4倍で売却！', desc:'', eff:`+${fmtM(profit)}`, effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();nextFn();}}]});
           }
         }));
-        estActs.push({lbl:'売らない', p:false, fn:()=>{closeModal();nextFn();}});
-        showModal({type:'t-event', tag:'不動産価格上昇！', title:'どの物件を4倍で売りますか？', desc:buildDesc(cell, ec.desc), acts:estActs}); break;
+        estActs.push({lbl:'🎫 保有して後で使う', p: pEstates(p).length===0, fn:()=>{
+          p.estSell4 = true; renderAll(); if(!LOCAL_MODE) pushState();
+          showModal({type:'t-event', tag:'🎫 カード保有', title:'不動産価格上昇を保有！', desc:buildDesc(cell, '好きなタイミングで不動産1件を<strong>4倍</strong>で売却できます（1回のみ）。<br>自分のターン開始時に使うか選べます。'), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+        }});
+        showModal({type:'t-event', tag:'不動産価格上昇！', title: pEstates(p).length? '今売る？保有する？' : 'カードを保有', desc:buildDesc(cell, ec.desc), acts:estActs}); break;
 
       } else if(ec.type === 'mktControl') {
         // プレイヤー指定 → 次の市場取引の市場を操作できる
@@ -3389,9 +3540,10 @@ async function processCell(p, cell){
       // bondCrisis は保険対象外（ins:falseだが明示チェック）
       if(p.insYear===G.year && hc21.ins && hc21.type !== 'bondCrisis'){
         if(!LOCAL_MODE) pushState();
-        showModal({type:'t-info', tag:hc21.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった！',p:true,fn:()=>{closeModal();nextFn();}}]});
+        showHappeningResult(p, hc21, cell, p.cash, nextFn, true);
       } else {
-        const hc21v = {...hc21}; // 配列を汚染しないコピー
+        const hc21v = {...hc21};
+        const cashBefore21 = p.cash; // 効果適用前を記録
         if(hc21v.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hc21v.val=-rc*60000;}
         else if(hc21v.type==='taxInv'&&p.job==='emp') hc21v.val=0;
         else if(hc21v.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hc21v.val=-200000;
@@ -3407,10 +3559,7 @@ async function processCell(p, cell){
         if(hc21v.val) p.cash+=hc21v.val;
         if(!LOCAL_MODE) pushState();
         renderAll();
-        const insNote21 = hc21v.ins ? '' : '<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外</small>';
-        showModal({type:'t-happen', tag:hc21v.name, title:hc21v.desc, fullScreen:true,
-          desc:buildDesc(cell, insNote21), eff:hc21v.val&&hc21v.val!==0?`${hc21v.val.toLocaleString()}円`:'', effc:'minus',
-          acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
+        showHappeningResult(p, hc21v, cell, cashBefore21, nextFn, false);
       }
       break;
     }
@@ -3456,10 +3605,7 @@ async function processCell(p, cell){
     case 25: p.cash+=500000; showModal({type:'t-event', tag:cell.name, title:'宝くじ当選', desc:buildDesc(cell), eff:'+500,000円', effc:'plus', acts:[{lbl:'やったー！',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
     case 26: promptBuyIPO(p, cell, nextFn); break;
     case 27: p.cash-=200000; showModal({type:'t-happen', tag:cell.name, title:'支払い', desc:buildDesc(cell), eff:'-200,000円', effc:'minus', acts:[{lbl:'払う',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]}); break;
-    case 28:
-      let ev=0; pEstates(p).forEach(e=>{const v=e.price*5; p.cash+=v; ev+=v;}); p.estates = [];
-      if(ev>0) { showModal({type:'t-event', tag:cell.name, title:'不動産5倍売却！', desc:buildDesc(cell), eff:`+${ev.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();nextFn();}}]}); }
-      else { showModal({type:'t-info', tag:cell.name, title:'不動産なし', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); } break;
+    // case 28（不動産売却5倍）はイベントカード併設マスへ（上の event ブロック＋ comboOriginalThenMarket で処理）
     case 32: {
       // 火災発生：保険で無効、なければ最高額不動産を失う（固有効果）
       const insured32 = p.insYear === G.year;
@@ -3488,9 +3634,10 @@ async function processCell(p, cell){
       // bondCrisis は保険対象外（明示チェック）
       if(p.insYear===G.year && hc.ins && hc.type !== 'bondCrisis'){
         if(!LOCAL_MODE) pushState();
-        showModal({type:'t-info', tag:hc.name, title:'保険で無効化！', fullScreen:true, desc:buildDesc(cell, '保険が適用され、被害を0円に抑えました！'), eff:'±0円', acts:[{lbl:'助かった',p:true,fn:()=>{closeModal();nextFn();}}]});
+        showHappeningResult(p, hc, cell, p.cash, nextFn, true);
       } else {
-        const hcv = {...hc}; // 配列を汚染しないコピー
+        const hcv = {...hc};
+        const cashBeforeH = p.cash; // 効果適用前を記録
         if(hcv.type==='scam'){const rc=await rollDiceExcitement('投資詐欺',buildDesc(cell,'サイコロの目×6万円支払う'));p.cash-=rc*60000;hcv.val=-rc*60000;}
         else if(hcv.type==='taxInv'&&p.job==='emp') hcv.val=0;
         else if(hcv.type==='taxInv'&&(p.job==='inv'||p.job==='fre')) hcv.val=-200000;
@@ -3506,26 +3653,20 @@ async function processCell(p, cell){
         if(hcv.type==='estLoss'&&pEstates(p).length>0){pEstates(p).sort((a,b)=>b.price-a.price).splice(0,1);}
         if(!LOCAL_MODE) pushState();
         renderAll();
-        const insNoteH = hcv.ins ? '' : '<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外</small>';
-        showModal({type:'t-happen', tag:hcv.name, title:hcv.desc, fullScreen:true,
-          desc:buildDesc(cell, insNoteH), eff:hcv.val&&hcv.val!==0?`${hcv.val.toLocaleString()}円`:'', effc:'minus',
-          acts:[{lbl:'OK',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]});
+        showHappeningResult(p, hcv, cell, cashBeforeH, nextFn, false);
       }
       break;
     }
     case 40: {
-      // 株価大暴落：保険無効、持ち株半分を失う（固有効果）
-      const insured40 = p.insYear === G.year;
-      if(insured40) {
-        showModal({type:'t-info', tag:'📉 株価大暴落', title:'保険で無効化！',
-          desc:buildDesc(cell, '保険が適用され、株の被害を防ぎました！'),
-          eff:'±0円', acts:[{lbl:'助かった！',p:true,fn:()=>{closeModal();nextFn();}}]});
-      } else if(p.stocks > 0) {
+      // 株価大暴落（持ち株暴落）：保険対象外。保険に入っていても持ち株半分を失う。
+      if(p.stocks > 0) {
         const lost40 = Math.floor(p.stocks / 2);
         p.stocks -= lost40;
         const lostVal = (lost40/10) * G.market.stockPrice;
+        if(!LOCAL_MODE) pushState();
+        renderAll();
         showModal({type:'t-happen', tag:'📉 株価大暴落', title:`${lost40}株が紙切れに...`,
-          desc:buildDesc(cell, `保有${p.stocks + lost40}株 → 半分の${lost40}株が暴落で消滅！<br>残り: <strong>${p.stocks}株</strong><br><br>分散投資の大切さを学びました...`),
+          desc:buildDesc(cell, `保有${p.stocks + lost40}株 → 半分の${lost40}株が暴落で消滅！<br>残り: <strong>${p.stocks}株</strong><br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外（保険でも防げません）</small><br><br>分散投資の大切さを学びました...`),
           eff:`-${lost40}株（約${fmtM(lostVal)}相当）`, effc:'minus',
           acts:[{lbl:'...涙', p:true, fn:()=>{closeModal();nextFn();}}]});
       } else {
@@ -3552,10 +3693,14 @@ async function processCell(p, cell){
       // カット → その後ハプニング → 給料 → 保険
       const continueCase31 = async () => {
         const hcF = await spinRoulette('2年目終わり ハプニング！', HAPPS, 't-happen');
+        const cashBefore31H = p.cash; // 効果適用前を記録
         let hcDesc = hcF.desc;
         let hcInsured = (p.insYear === prevYear && hcF.ins);
         if(hcInsured) {
-          hcDesc = '保険で無効化！被害は0円です。';
+          const savedAmt = Math.abs(hcF.val || 0);
+          hcDesc = savedAmt > 0
+            ? `🛡️ 保険で無効化！${fmtM(savedAmt)}の損失を0円に抑えました。`
+            : '🛡️ 保険で無効化！被害は0円です。';
         } else {
           if(hcF.type === 'scam') { const rc = await rollDiceExcitement('投資詐欺', 'サイコロの目×6万円支払う'); p.cash -= rc*60000; hcF.val = -rc*60000; }
           else if(hcF.type === 'taxInv' && p.job==='emp') hcF.val = 0;
@@ -3570,6 +3715,12 @@ async function processCell(p, cell){
           else if(hcF.type === 'estLoss' && pEstates(p).length>0) pEstates(p).sort((a,b)=>a.price-b.price).pop();
           else if(hcF.type === 'noSal') p.noSalNext = true;
           if(hcF.val) p.cash += hcF.val;
+          // 即時損失を残高変化として表示
+          const diff31 = p.cash - cashBefore31H;
+          if(diff31 !== 0) {
+            const sign31 = diff31 < 0 ? `-${fmtM(Math.abs(diff31))}` : `+${fmtM(diff31)}`;
+            hcDesc += `<br><span style="color:var(--red);font-weight:900">残高 ${fmtM(cashBefore31H)} → ${fmtM(p.cash)} (${sign31})</span>`;
+          }
         }
         const maxDebt31 = getMaxDebt(p);
         const liq31 = calcLiquidationValue(p);
@@ -3590,15 +3741,20 @@ async function processCell(p, cell){
     }
     case 33: p.cash+=400000; showModal({type:'t-event', tag:cell.name, title:cell.sub, desc:buildDesc(cell), eff:'+400,000円', effc:'plus', acts:[{lbl:'ありがとう',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
     case 34: 
-      if(p.job==='emp') { p.cash+=2000000; showModal({type:'t-event', tag:cell.name, title:'退職金支給！', desc:buildDesc(cell), eff:'+2,000,000円', effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();nextFn();}}]}); }
+      if(p.job==='emp') { p.cash+=2000000; p.gotRetire = true; showModal({type:'t-event', tag:cell.name, title:'退職金支給！', desc:buildDesc(cell), eff:'+2,000,000円', effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();nextFn();}}]}); }
       else { showModal({type:'t-info', tag:cell.name, title:'投資家は対象外', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); } break;
-    case 35:
-      if(!p.bonds)p.bonds=[];let bv=0; p.bonds.forEach(b=>{bv+=b.units*5000*2;}); p.cash+=bv; p.bonds=[];
-      if(bv>0) showModal({type:'t-event', tag:cell.name, title:'国債2倍売却！', desc:buildDesc(cell), eff:`+${bv.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();nextFn();}}]});
-      else showModal({type:'t-info', tag:cell.name, title:'国債なし', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
+    // case 35（旧:国債売却2倍）・case 38（旧:ふるさと納税）はイベントカードマスへ転用（上の case 3/11/16/30/35/38 で処理）
     case 36: promptBuyGold(p, cell, nextFn); break;
-    case 38: p.cash+=100000; showModal({type:'t-event', tag:cell.name, title:cell.sub, desc:buildDesc(cell), eff:'+100,000円', effc:'plus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
-    case 39: if(!p.bonds)p.bonds=[];{const tot39=p.bonds.reduce((s,b)=>s+b.units,0);let rem39=Math.floor(tot39/2);for(const b of p.bonds){if(rem39<=0)break;const t=Math.min(b.units,rem39);b.units-=t;rem39-=t;}p.bonds=p.bonds.filter(b=>b.units>0);} showModal({type:'t-happen', tag:cell.name, title:'国債を半分失う...', desc:buildDesc(cell), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
+    case 39: {
+      if(!p.bonds)p.bonds=[];
+      const tot39=p.bonds.reduce((s,b)=>s+b.units,0);
+      if(tot39===0){ showModal({type:'t-info', tag:cell.name, title:'国債なし（影響なし）', desc:buildDesc(cell, '保有している国債が無いため被害はありません。'), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break; }
+      let rem39=Math.floor(tot39/2); const lost39=rem39;
+      for(const b of p.bonds){if(rem39<=0)break;const t=Math.min(b.units,rem39);b.units-=t;rem39-=t;}
+      p.bonds=p.bonds.filter(b=>b.units>0);
+      if(!LOCAL_MODE) pushState(); renderAll();
+      showModal({type:'t-happen', tag:cell.name, title:'国債を半分失う...', desc:buildDesc(cell, `保有国債 ${tot39}口 → ${lost39}口が失われました（残り${tot39-lost39}口）。<br><small style="color:var(--red);font-weight:900">⚠️ 保険対象外（保険でも防げません）</small>`), eff:`-${lost39}口`, effc:'minus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
+    }
     case 41: p.cash-=300000; showModal({type:'t-happen', tag:cell.name, title:'支払い', desc:buildDesc(cell), eff:'-300,000円', effc:'minus', acts:[{lbl:'払う',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]}); break;
     case 42:
       p.isGoal = true;
@@ -4386,7 +4542,15 @@ async function livePollTick() {
       _lastLiveTs = live.ts;
 
       // ── 公開操作チャンス: 自分が対象投資家なら取引モーダルを出す ──
-      if(live._followTrade && live._followerId === myId && !live._followSkip) {
+      // _followDone が立っている場合は自分が送った完了通知なので招待として扱わない
+      if(live._followTrade && live._followerId === myId && !live._followSkip && !live._followDone) {
+        // ★同一招待(ts)を処理済みなら再表示しない（二重操作・古い招待の再発火を防止）。
+        //   ※手番(gameState)と招待(live)は別チャンネル同期のため、G.ciとの厳格一致は使わない
+        //     （同期ラグで正規招待が誤って弾かれ「便乗が発動しない」原因になっていたため）
+        if(window._followInviteTs === live.ts) return;
+        // 期限切れ(5分超)の招待は無視（万一古い招待が残っていても誤発動を防ぐ安全弁）
+        if(live.ts && (Date.now() - live.ts) > 300000) return;
+        window._followInviteTs = live.ts;
         const me = G.players.find(p => p.id === myId);
         if(!me) return;
         const mkt = MARKETS.find(m => m.id === live._followMarket) || G.market;
@@ -4394,15 +4558,32 @@ async function livePollTick() {
         const cellObj = cellIdx !== null ? CELLS[cellIdx] : null;
         G.market = mkt;
         updateMktDisplay();
+        hideLiveOverlay();   // フルスクリーン観戦オーバーレイを閉じる
+        _hideSmallCard();    // 小カードも閉じる
+        window._myFollowTradeActive = true; // 取引中フラグ（観戦カード抑制）
         showModal({
           type:'t-info', tag:'📈 公開操作チャンス！', title:'便乗取引ができます！',
           desc:`【投資家スキル】現在の市場で取引できます。<br>市場: ${mkt.emoji} ${mkt.name} (${fmtM(mkt.stockPrice)}/10株)<br>手持ち現金: ${fmtM(me.cash)}`,
+          suppressBroadcast: true, // 招待データをFirebaseで上書きしない
           acts:[
-            {lbl:'取引する', p:true, fn:()=> {
-              openTrade(me, cellObj, 'buy', live._isForced, true);
+            {lbl:'取引する', p:true, fn:async ()=> {
+              // ★取引前に最新のgameStateを取り込む（アクティブ投資家の購入を反映）。
+              //   これをしないと、フォロワーのpushStateがversion衝突を起こし購入が消失する恐れがある。
+              try {
+                const gsF = await fbGet(`rooms/${roomCode}/gameState`);
+                if(gsF){
+                  lastVersion = Math.max(lastVersion||0, gsF.version||0);
+                  Object.assign(G, gsF);
+                  G.players = _restorePlayers(gsF.players);
+                }
+              } catch(e){}
+              G.market = mkt; updateMktDisplay(); // 便乗対象の市場を維持
+              const meNow = G.players.find(p=>p.id===myId) || me;
+              openTrade(meNow, cellObj, 'buy', live._isForced, true);
             }},
             {lbl:'パス', p:false, fn:()=>{
               closeModal();
+              window._myFollowTradeActive = false; // フラグ解除
               // スキップを通知
               broadcastLive({_followTrade:true, _followerId:myId, _followSkip:true, _followDone:true}, false).catch(()=>{});
             }}
@@ -4418,13 +4599,31 @@ async function livePollTick() {
         if(_pendingFollow) {
           const { isForced: _pIsForced, cell: _pCell } = _pendingFollow;
           _pendingFollow = null;
+          // フォロワーの取引結果（株購入など）をFirebaseから読み込んでから続行
+          // ※ syncGameState は isMyTurn()&&isMoving でブロックされるため直接読む
+          try {
+            const gs = await fbGet(`rooms/${roomCode}/gameState`);
+            if(gs && gs.version > (lastVersion || 0)) {
+              lastVersion = gs.version;
+              Object.assign(G, gs);
+              G.players = _restorePlayers(gs.players);
+              if(G.market?.id) G.market = MARKETS.find(m => m.id === G.market.id) || G.market;
+              renderAll();
+            }
+          } catch(e) {}
           endTradeAction(_pIsForced, _pCell);
         }
         return;
       }
 
+      // 自分宛の有効な招待が無い（取消・完了・別プレイヤー宛）のに便乗フラグが残っていれば解除（取り残し防止）
+      if(window._myFollowTradeActive && !(live._followTrade && live._followerId===myId && !live._followDone && !live._followSkip)) {
+        window._myFollowTradeActive = false;
+      }
+
       // 通常観戦 OR 他プレイヤー清算を観戦中（大窓表示）
-      const _watching = (!isMyTurn() && !window._settlementStarted) ||
+      // 便乗取引中は観戦カードを抑制する
+      const _watching = (!isMyTurn() && !window._settlementStarted && !window._myFollowTradeActive) ||
                         (window._settlementStarted && !window._mySettlementActive && (live._final || live.fullScreen));
       if(_watching) showSpectatorCard(live);
     }
@@ -5247,7 +5446,10 @@ window.showPlayerAssets = function(idx) {
     <div style="margin-top:6px;background:#f8fafc;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:900;color:#475569">
       🛡️ 保険: ${p.insYear===G.year?'<span style="color:var(--green)">✅ 加入中</span>':'<span style="color:var(--red)">❌ 未加入</span>'}
       　💹 NISA: ${p.nisaAmt>0?fmtM(p.nisaAmt):'なし'}
-    </div>`,
+    </div>
+    ${(p.estDisc || p.estSell4 || (p.insCost && p.insCost < 30000)) ? `<div style="margin-top:6px;background:#fffbeb;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:900;color:#92400e;border:2px solid #fde047">
+      🎫 保有カード：${[p.insCost&&p.insCost<30000?'①保険割引(1万円)':'', p.estDisc?'②不動産割引(-10万円)':'', p.estSell4?'不動産価格上昇(4倍売却)':''].filter(Boolean).join('　')}
+    </div>` : ''}`,
     acts:[{lbl:'閉じる', p:true, fn:closeModal}]
   });
 };
