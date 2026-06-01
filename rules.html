@@ -301,6 +301,9 @@ body{
   <div class="info-box" style="margin-top:12px">
     💡 <strong>コンセプト：</strong>知識・運・決断力が試される「超・実践型」金融ボードゲーム。株式・国債・不動産・金など実際の投資商品を疑似体験し、3年間で最も多くの総資産を築いたプレイヤーが勝利！
   </div>
+  <div class="info-box blue" style="margin-top:12px">
+    🤖 <strong>Bot（CPU）対戦：</strong>ローカルモードでは各プレイヤーをBotに設定でき、1人でもCPUと対戦可能。強さは「かんたん／ふつう／つよい」から選べます。
+  </div>
 </div>
 
 <!-- 2. 勝利条件 -->
@@ -315,7 +318,7 @@ body{
   <p style="font-size:14px;font-weight:700;line-height:1.8">ゲーム期間である<strong>3年（盤面3周）</strong>が終了した時点で、<strong>総資産が最も多いプレイヤー</strong>の勝利！</p>
   <div class="win-box">
     <div style="font-size:13px;font-weight:900;color:var(--text2);margin-bottom:4px">💰 総資産の計算式</div>
-    <div class="win-formula">総資産 ＝ 手持ち現金 ＋ 株式評価額 ＋ 不動産評価額 － 借金総額</div>
+    <div class="win-formula">総資産 ＝ 現金 ＋ 株式 ＋ 不動産(×3) ＋ 国債 ＋ IPO ＋ 金 － 借金総額</div>
   </div>
 </div>
 
@@ -413,7 +416,7 @@ body{
         </div>
         <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
         <ul class="skill-list">
-          <li class="skill-item">🔍 <strong>公開操作（便乗取引）</strong>：投資家のターンに市場マス（マス3・5・8・11・13・16・20・22・24・27・30・33・34）に止まった際、他の投資家も同じ市場で株売買ができる（3分以内）。取引しなくても他の投資家に便乗チャンスは発生する。<br><span style="color:var(--red);font-size:11px">⚠️ 強制ストップ中の株売買では公開操作は発動しない。会社員のターンでは発動しない。</span></li>
+          <li class="skill-item">🔍 <strong>公開操作（便乗取引）</strong>：投資家のターンに市場マス（マス3・5・8・11・13・16・20・22・24・27・28・30・33・34・35・38）に止まった際、他の投資家も同じ市場で株売買ができる（5分以内）。取引しなくても他の投資家に便乗チャンスは発生する。<br><span style="color:var(--red);font-size:11px">⚠️ 強制ストップ中の株売買では公開操作は発動しない。会社員のターンでは発動しない。</span></li>
           <li class="skill-item">🎮 <strong>市場操作</strong>：市場取引マス到達時、市場カードを事前確認し変動前後どちらかで取引可能。</li>
         </ul>
       </div>
@@ -429,16 +432,18 @@ body{
         </div>
       </div>
       <div class="job-body">
-        <div class="info-box red" style="margin-bottom:10px;font-size:12px">⚠️ <strong>19マス目（AIに職を奪われる）</strong>に会社員が止まるとフリーターに転職。</div>
+        <div class="info-box red" style="margin-bottom:10px;font-size:12px">⚠️ <strong>19マス目（AIに職を奪われる）</strong>に会社員が止まるとフリーターに転落。</div>
         <div class="job-salary">
-          <div class="job-salary-title">💴 給料</div>
+          <div class="job-salary-title">💴 給料（2年目以降のみ・ギグ収入）</div>
           <div class="salary-row"><span>1年目</span><span style="color:var(--red);font-weight:900">なし</span></div>
-          <div class="salary-row"><span>2年目</span><span class="salary-amt">10万円</span></div>
-          <div class="salary-row"><span>3年目</span><span class="salary-amt">20万円</span></div>
+          <div class="salary-row"><span>2年目</span><span class="salary-amt">サイコロ × 10万円</span></div>
+          <div class="salary-row"><span>3年目</span><span class="salary-amt">サイコロ × 10万円</span></div>
         </div>
         <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
         <ul class="skill-list">
-          <li class="skill-item" style="color:var(--text2)">なし（イベントカード「出世」で会社員に復帰可能）</li>
+          <li class="skill-item">🚀 <strong>未上場株が得意</strong>：IPOを<strong>1口10万（半額）・最大5口</strong>で買え、判定が有利（🎲4で上場・5〜6でユニコーン）。</li>
+          <li class="skill-item">🛡️ <strong>保険料が半額</strong>：年1万円で加入できる。</li>
+          <li class="skill-item">🎫 <strong>出世しやすい</strong>：イベントカード「出世」の出現率がUP。会社員に復帰でき、退職金マス通過後の復帰なら<strong>再就職一時金200万</strong>を受け取る。</li>
         </ul>
       </div>
     </div>
@@ -519,8 +524,8 @@ body{
       <div class="asset-name">国債</div>
       <div class="asset-detail">
         <strong>1口：</strong>5,000円（10口単位）<br><br>
-        <strong>1年債：</strong>次の強制ストップで満期。利子10%（途中解約不可）<br><br>
-        <strong>2年債：</strong>1年目のみ購入可。次の強制ストップで利子20%。その次で満期＋利子20%（途中解約不可）
+        <strong>1年債：</strong>次の強制ストップで満期。<strong>利子25%</strong>。毎決算で現金化でき流動的（途中解約不可）<br><br>
+        <strong>2年債：</strong>1年目のみ購入可。次の強制ストップで利子30%、その次で満期＋利子30%（<strong>合計+60%</strong>）。2決算ロックの代わり高利回り
       </div>
     </div>
     <div class="asset-card" style="border-color:var(--orange);background:#fff7ed">
@@ -538,6 +543,7 @@ body{
       <div class="asset-detail">
         <strong>価格：</strong>1口20万円（3口まで）<br>
         <strong>判定：</strong>ゴール時にサイコロ<br>
+        <strong style="color:var(--orange)">💼フリーターは半額(10万)・5口・判定有利</strong>
       </div>
       <div class="ipo-table" style="margin-top:8px">
         <div class="ipo-row" style="background:#fef2f2;border-color:#fca5a5">
@@ -658,9 +664,9 @@ body{
 
   <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:10px">🛡️ 保険</div>
   <div class="info-box green">
-    <strong>保険料：</strong>年3万円（各年度のスタート時に加入を宣言して支払う）<br>
+    <strong>保険料：</strong>年3万円（<strong>フリーターは1万円</strong>）。各年度のスタート時に加入を宣言して支払う<br>
     <strong>効果：</strong>加入した年度内の「保険対象」ハプニング被害を<strong>0円</strong>に<br>
-    <strong>対象外：</strong>株価暴落・税金・投資詐欺などは保険では防げない
+    <strong>対象外：</strong>株価大暴落(40)・財政悪化(39)・信用収縮・税金・国債危機・銀行破綻、および<strong>マス31（2年目決算）のハプニング</strong>は防げない
   </div>
 
   <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:10px">💥 支払不能と破産</div>
@@ -707,12 +713,12 @@ body{
     <tr>
       <td><span class="badge" style="background:#e9d5ff;border-color:#d8b4fe">職業</span>出世</td>
       <td>会社員・フリーター</td>
-      <td>会社員→課長（+20万）・フリーター→会社員に復帰</td>
+      <td>会社員→課長（+20万）・フリーター→会社員に復帰（退職金マス通過後なら再就職一時金200万）</td>
     </tr>
     <tr>
       <td><span class="badge" style="background:#fed7aa;border-color:#fb923c">不動産</span>価格上昇</td>
-      <td>不動産保有</td>
-      <td>不動産を<strong>購入額の4倍</strong>で売れる</td>
+      <td>なし（保有カード）</td>
+      <td>カード入手時または強制ストップ到達時に、不動産1軒を<strong>購入額の4倍</strong>で売れる（1回）</td>
     </tr>
     <tr>
       <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>市場操作</td>
@@ -798,9 +804,9 @@ body{
       <td>次年度の給料が0円になる</td>
     </tr>
     <tr>
-      <td><span class="tag tag-noins">保険対象外</span>投資詐欺（ポンジ）</td>
+      <td><span class="tag tag-noins">保険対象外</span>信用収縮</td>
       <td style="color:var(--red);font-weight:900">防げない</td>
-      <td>サイコロの出目 × 6万円支払う</td>
+      <td>借金がある人のみ：現在の借金額の<strong>30%</strong>を追加で支払う</td>
     </tr>
     <tr>
       <td><span class="tag tag-noins">保険対象外</span>追徴課税</td>
@@ -820,7 +826,7 @@ body{
   </table>
 
   <div class="info-box red" style="margin-top:14px">
-    ⚠️ <strong>保険対象外のカードは保険では防げません。</strong>株価暴落・税金・詐欺・国債危機・銀行破綻などは保険があっても被害を受けます。
+    ⚠️ <strong>保険対象外のカードは保険では防げません。</strong>株価暴落・税金・信用収縮・国債危機・銀行破綻などは保険があっても被害を受けます。また<strong>マス31（2年目決算）の強制ハプニングも保険対象外</strong>です。
   </div>
 
   <div style="margin-top:16px;font-size:14px;font-weight:900;margin-bottom:8px">📍 固有マス効果（カードではなくマス固有）</div>
@@ -837,8 +843,8 @@ body{
     </tr>
     <tr>
       <td style="font-weight:900;font-family:'Nunito',sans-serif">40</td>
-      <td><span class="tag tag-ins">保険対象</span>株価大暴落</td>
-      <td>保有株の<strong>半分</strong>が消滅する（端数切り捨て）</td>
+      <td><span class="tag tag-noins">保険対象外</span>株価大暴落</td>
+      <td>保有株の<strong>半分</strong>が消滅する（端数切り捨て）／<strong>保険でも防げない</strong></td>
     </tr>
   </table>
 </div>
