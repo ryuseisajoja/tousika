@@ -1478,17 +1478,17 @@ const CELLS = [
   {i:25, type:'event',  name:'宝くじ当選', sub:'+50万円', forced:false, info:'運も実力のうち！一獲千金のチャンス。'},
   {i:26, type:'ipo',    name:'未上場株', sub:'ゴールで判定', forced:false, info:'【金融知識】IPO株（未上場株）は、上場すれば何倍にも跳ね上がりますが、上場できず紙切れになるリスクもあります。'},
   {i:27, type:'tax',    name:'タントを買った', sub:'-20万円 / 市場', isMarket:true, forced:false, info:'車の購入で大きな支出。負債や維持費に注意。'},
-  {i:28, type:'event',  name:'不動産売却＋イベント', sub:'5倍売却/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、所有不動産を5倍で売却でき、その後市場取引も可能。'},
+  {i:28, type:'event',  name:'不動産売却＋イベント', sub:'5倍売却＋カード', forced:false, info:'イベントカードを引き、所有不動産を5倍で売却できる。'},
   {i:29, type:'happen', name:'ハプニング', sub:'カードを引く', forced:false, info:'予期せぬトラブルが発生します。'},
   {i:30, type:'event',  name:'イベントカード', sub:'市場取引', isMarket:true, forced:false, info:'イベント発生！その後、市場取引。'},
   {i:31, type:'forced', name:'強制ストップ', sub:'2年目終わり', forced:true, info:'2年目の決算。ハプニング発生後、給料を受け取ります。その後投資メニューが開きます。'},
   {i:32, type:'happen', name:'火災発生', sub:'最高額の不動産失う', forced:false, info:'災害リスク。保険に入っていればこの被害を防ぐことができます。'},
   {i:33, type:'event',  name:'遺産相続', sub:'+40万円 / 市場', isMarket:true, forced:false, info:'思いがけない大金が入ります。税金には注意。'},
   {i:34, type:'pass',   name:'【通過】退職金', sub:'会社員+200万 / 市場', isMarket:true, forced:false, info:'会社員であれば長年の勤務が報われ、大きな退職金が入ります。'},
-  {i:35, type:'event',  name:'国債売却＋イベント', sub:'2倍売却/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、国債を2倍で売却でき、その後市場取引も可能。転落会社員は「出世」で復帰のチャンス。'},
+  {i:35, type:'event',  name:'国債売却＋イベント', sub:'2倍売却＋カード', forced:false, info:'イベントカードを引き、国債を2倍で売却できる。転落会社員は「出世」で復帰のチャンス。'},
   {i:36, type:'goldbuy',name:'金を買える', sub:'ゴールで換金', forced:false, info:'【金融知識】金（ゴールド）は「有事の金」と呼ばれ、株価暴落時やデフレなど、お金の価値が不安定な時に価値が上がりやすい安全資産です。'},
   {i:37, type:'happen', name:'市場が荒れている', sub:'ハプニングを引く', forced:false, info:'金融ショックの予兆。ハプニングカードを引きます。'},
-  {i:38, type:'event',  name:'ふるさと納税＋イベント', sub:'+10万/カード/市場', isMarket:true, forced:false, info:'イベントカードを引き、ふるさと納税で+10万、その後市場取引も可能。転落会社員は「出世」で復帰のチャンス。'},
+  {i:38, type:'event',  name:'ふるさと納税＋イベント', sub:'+10万＋カード', forced:false, info:'イベントカードを引き、ふるさと納税で+10万円。転落会社員は「出世」で復帰のチャンス。'},
   {i:39, type:'happen', name:'財政悪化', sub:'国債を半分失う', forced:false, info:'国の信用が低下し、保有している国債（国の借金）の価値が下がります。'},
   {i:40, type:'happen', name:'株価大暴落', sub:'持ち株半分失う', forced:false, info:'金融危機！保有している株の半分が紙切れになります。分散投資が重要です。'},
   {i:41, type:'tax',    name:'奨学金返済', sub:'-30万円', forced:false, info:'学生時代の借金の返済。現実の厳しさを知ります。'},
@@ -2114,7 +2114,7 @@ function renderAll(){
 }
 
 // ─── ワクワク演出 ───
-async function spinRoulette(title, items, typeClass, finalDelay=2500, fixedResultId=null) {
+async function spinRoulette(title, items, typeClass, finalDelay=1000, fixedResultId=null) {
   return new Promise(resolve => {
     showModal({
       type: typeClass, tag:'🎲 ルーレット', title: title, fullScreen:true,
@@ -2129,13 +2129,13 @@ async function spinRoulette(title, items, typeClass, finalDelay=2500, fixedResul
       startTs: Date.now()
     }, true).catch(()=>{});
 
-    let count = 0; let delay = 65;
+    let count = 0; let delay = 55;
     const spin = () => {
       const cur = items[Math.floor(Math.random()*items.length)];
       rBox.textContent = cur.name;
       count++;
-      if(count > 25) delay += 25;
-      if(count < 45) { setTimeout(spin, delay); }
+      if(count > 18) delay = Math.min(delay + 20, 200); // 後半は減速（上限0.2秒）
+      if(count < 28) { setTimeout(spin, delay); }
       else {
         const finalItem = fixedResultId
           ? (items.find(i => i.id === fixedResultId) || items[Math.floor(Math.random()*items.length)])
@@ -3500,7 +3500,7 @@ function showForcedSell(p, maxDebt, nextFn) {
 
 // ─── 併設マス(28/35/38)：イベントカード処理の後に「元の効果」を実行し、最後に市場取引へ ───
 function comboOriginalThenMarket(p, cell){
-  const after = () => checkMarket(p, cell); // 元効果の後に市場取引
+  const after = () => nextTurn(); // 28/35/38 は市場取引なし。元効果の後はターン終了
   if(cell.i===28){ // 不動産5倍売却
     let ev=0; pEstates(p).forEach(e=>{const v=e.price*5; p.cash+=v; ev+=v;}); p.estates=[];
     if(ev>0){ if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'不動産売却', title:'不動産5倍売却！', desc:buildDesc(cell), eff:`+${ev.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();after();}}]}); }
@@ -3516,7 +3516,7 @@ function comboOriginalThenMarket(p, cell){
 
 // ─── 全マスの効果処理 ───
 async function processCell(p, cell){
-  // 28/35/38 は「イベントカード＋元の効果＋市場取引」を併設。イベント処理後に元効果→市場の順で実行
+  // 28/35/38 は「イベントカード＋元の効果」を併設（市場取引なし）。イベント処理後に元効果→ターン終了
   const nextFn = (cell.i===28 || cell.i===35 || cell.i===38)
     ? () => comboOriginalThenMarket(p, cell)
     : () => checkMarket(p, cell);
@@ -3985,7 +3985,7 @@ async function settlePlayer(p) {
   }, p.id);
 
   // ② 市場変動（最終清算専用・ゆっくり4秒表示）
-  const market = await spinRoulette(`${p.name}の市場変動！`, MARKET_POOL, 't-info', 4000, plan.marketId || null);
+  const market = await spinRoulette(`${p.name}の市場変動！`, MARKET_POOL, 't-info', 1000, plan.marketId || null);
   G.market = market;
   updateMktDisplay();
   await sleep(500);
