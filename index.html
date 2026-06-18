@@ -4734,6 +4734,9 @@ async function livePollTick() {
         if(window._followInviteTs === live.ts) return;
         // 期限切れ(5分超)の招待は無視（万一古い招待が残っていても誤発動を防ぐ安全弁）
         if(live.ts && (Date.now() - live.ts) > 300000) return;
+        // 安全策：現在の手番が投資家でない時は招待を無視（古い招待が別ターンに残っても誤発動しない）。
+        //   正規の便乗は「手番の投資家が取引中」なので必ず手番=投資家。job判定のみでG.ciの厳格一致は不要
+        if(G.players[G.ci]?.job !== 'inv') return;
         window._followInviteTs = live.ts;
         const me = G.players.find(p => p.id === myId);
         if(!me) return;
