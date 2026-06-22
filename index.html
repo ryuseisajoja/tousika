@@ -2423,6 +2423,12 @@ async function onRoll(){
   if(die)    die.textContent = face;
   if(mobDie) mobDie.textContent = face;
   log(`<span style="color:${p.color.bg}">${p.name}</span> 🎲 <strong>${roll}</strong>`);
+  // オンライン：他のプレイヤーにも出目を見せる
+  if(!LOCAL_MODE) broadcastLive({
+    type:'t-event', tag:'🎲 サイコロ', title:`${p.name} の出目`,
+    desc:`<div style="text-align:center"><div style="font-size:64px;line-height:1">${face}</div><div style="font-size:20px;font-weight:900;margin-top:6px">🎲 <strong>${roll}</strong> が出た！</div></div>`,
+    eff:`🎲 ${roll}`, effc:'gold'
+  }, false).catch(()=>{});
   
   for(let s=0;s<roll;s++){
     p.pos++;
@@ -2807,8 +2813,9 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
   closeModal();
   // 投資家のターンで市場マスに入った瞬間に便乗キューをセット（取引せず終了しても便乗チャンスは発生）
   if (!isFollow && !isForced) {
-    if (p.job === 'inv') {
-      G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv');
+    // 便乗の対象：他の投資家で、未ゴール＆便乗回数が2回未満の人。ゴール/清算中は便乗なし
+    if (p.job === 'inv' && !window._settlementStarted && !G.settlementPhase) {
+      G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv' && !op.isGoal && (op.followUsed||0) < 2);
     } else {
       // 会社員・フリーターの取引では便乗発動しない（古いキューも念のクリア）
       G_tradeFollowQueue = [];
@@ -2882,7 +2889,7 @@ function processFollowTrade(activeP, isForced, cell) {
         type:'t-info', tag:'公開操作', title:`${follower.name}の追随取引`,
         desc: `【投資家スキル】${activeP.name}が取引を行いました。<br>${follower.name}も現在の市場で便乗取引が可能です。<br>現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>手持ち現金: ${fmtM(follower.cash)}`,
         acts: [
-          {lbl:'取引する', p:true, fn:()=> openTrade(follower, cell, 'buy', isForced, true)},
+          {lbl:`取引する（便乗 残り${2-(follower.followUsed||0)}回）`, p:true, fn:()=> { follower.followUsed=(follower.followUsed||0)+1; openTrade(follower, cell, 'buy', isForced, true); }},
           {lbl:'パス', p:false, fn:()=> endTradeAction(isForced, cell)}
         ]
       });
@@ -2903,14 +2910,14 @@ function processFollowTrade(activeP, isForced, cell) {
         _isForced: isForced
       }, true).catch(()=>{});
 
-      // アクティブプレイヤー側は5分待ってから続行
-      const waitMs = 300000;
+      // アクティブプレイヤー側は30分待ってから続行
+      const waitMs = 1800000;
       const deadline = Date.now() + waitMs;
       showModal({
         type:'t-info', tag:'📈 公開操作待機中', title:`${follower.name}の公開操作を待っています`,
-        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で5分後に続行します。`,
+        desc:`${follower.name}（投資家）が取引を検討中です...<br>自動で30分後に続行します。`,
         suppressBroadcast: true, // 招待をFirebaseで上書きしないよう broadcast を抑制
-        acts:[] // 市場マスに止まった側はスキップ不可（3分後に自動続行）
+        acts:[] // 市場マスに止まった側はスキップ不可（30分後に自動続行）
       });
 
       // タイマーで自動続行
@@ -4732,14 +4739,16 @@ async function livePollTick() {
         //   ※手番(gameState)と招待(live)は別チャンネル同期のため、G.ciとの厳格一致は使わない
         //     （同期ラグで正規招待が誤って弾かれ「便乗が発動しない」原因になっていたため）
         if(window._followInviteTs === live.ts) return;
-        // 期限切れ(5分超)の招待は無視（万一古い招待が残っていても誤発動を防ぐ安全弁）
-        if(live.ts && (Date.now() - live.ts) > 300000) return;
-        // 安全策：現在の手番が投資家でない時は招待を無視（古い招待が別ターンに残っても誤発動しない）。
-        //   正規の便乗は「手番の投資家が取引中」なので必ず手番=投資家。job判定のみでG.ciの厳格一致は不要
-        if(G.players[G.ci]?.job !== 'inv') return;
+        // 期限切れ(30分超)の招待は無視（万一古い招待が残っていても誤発動を防ぐ安全弁。タイマーと同値）
+        if(live.ts && (Date.now() - live.ts) > 1800000) return;
         window._followInviteTs = live.ts;
         const me = G.players.find(p => p.id === myId);
         if(!me) return;
+        // 便乗はゲーム通して2回まで。使い切っていたら自動でパス通知
+        if((me.followUsed||0) >= 2){
+          broadcastLive({_followTrade:true, _followerId:myId, _followSkip:true, _followDone:true}, false).catch(()=>{});
+          return;
+        }
         const mkt = MARKETS.find(m => m.id === live._followMarket) || G.market;
         const cellIdx = live._cellIdx >= 0 ? live._cellIdx : null;
         const cellObj = cellIdx !== null ? CELLS[cellIdx] : null;
@@ -4750,7 +4759,7 @@ async function livePollTick() {
         window._myFollowTradeActive = true; // 取引中フラグ（観戦カード抑制）
         showModal({
           type:'t-info', tag:'📈 公開操作チャンス！', title:'便乗取引ができます！',
-          desc:`【投資家スキル】現在の市場で取引できます。<br>市場: ${mkt.emoji} ${mkt.name} (${fmtM(mkt.stockPrice)}/10株)<br>手持ち現金: ${fmtM(me.cash)}`,
+          desc:`【投資家スキル】現在の市場で取引できます。<br>市場: ${mkt.emoji} ${mkt.name} (${fmtM(mkt.stockPrice)}/10株)<br>手持ち現金: ${fmtM(me.cash)}<br><small>便乗 残り${2-(me.followUsed||0)}回</small>`,
           suppressBroadcast: true, // 招待データをFirebaseで上書きしない
           acts:[
             {lbl:'取引する', p:true, fn:async ()=> {
@@ -4766,6 +4775,7 @@ async function livePollTick() {
               } catch(e){}
               G.market = mkt; updateMktDisplay(); // 便乗対象の市場を維持
               const meNow = G.players.find(p=>p.id===myId) || me;
+              meNow.followUsed = (meNow.followUsed||0) + 1; // 便乗回数を消費（2回まで）
               openTrade(meNow, cellObj, 'buy', live._isForced, true);
             }},
             {lbl:'パス', p:false, fn:()=>{
