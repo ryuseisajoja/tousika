@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ルールブック｜投資家人生</title>
+<title>ルールブック｜ビリオンバトル（ビリバト）</title>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -37,6 +37,8 @@ body{
 .top-bar-logo span:nth-child(3){color:var(--green)}
 .top-bar-logo span:nth-child(4){color:var(--orange)}
 .top-bar-logo span:nth-child(5){color:var(--purple)}
+.top-bar-logo span:nth-child(6){color:var(--red)}
+.top-bar-logo span:nth-child(7){color:var(--blue)}
 .top-bar-sub{font-size:12px;font-weight:900;color:var(--text);background:rgba(255,255,255,.6);padding:3px 12px;border-radius:20px;border:2px solid var(--border)}
 .back-btn{
   margin-left:auto;
@@ -246,7 +248,7 @@ body{
 
 <div class="top-bar">
   <div class="top-bar-logo">
-    <span>投</span><span>資</span><span>家</span><span>人</span><span>生</span>
+    <span>ビ</span><span>リ</span><span>オ</span><span>ン</span><span>バ</span><span>ト</span><span>ル</span>
   </div>
   <div class="top-bar-sub">📖 公式ルールブック</div>
   <a class="back-btn" href="javascript:history.back()">← 戻る</a>
@@ -302,7 +304,26 @@ body{
     💡 <strong>コンセプト：</strong>知識・運・決断力が試される「超・実践型」金融ボードゲーム。株式・国債・不動産・金など実際の投資商品を疑似体験し、3年間で最も多くの総資産を築いたプレイヤーが勝利！
   </div>
   <div class="info-box blue" style="margin-top:12px">
+    🎮 <strong>2つの遊び方：</strong><br>
+    🌐 <strong>オンラインで遊ぶ</strong>…離れた友達とスマホ/PCで対戦。ホストが「ルームを作る」→表示された<strong>6桁のルームコード（またはURL）</strong>を共有し、他の人は「参加する」。全員そろったらホストが開始します。<br>
+    🖥️ <strong>ローカルで遊ぶ</strong>…1台の画面を囲んで対戦。空いた席を🤖Botにすれば1人でもプレイ可能です。
+  </div>
+  <div class="info-box blue" style="margin-top:12px">
     🤖 <strong>Bot（CPU）対戦：</strong>ローカルモードでは各プレイヤーをBotに設定でき、1人でもCPUと対戦可能。強さは「かんたん／ふつう／つよい」から選べます。
+  </div>
+  <div class="info-box green" style="margin-top:12px">
+    📊 <strong>リアル志向モード：</strong>ONにすると市場が「安定」寄りになり、暴落・高騰が出にくくなります。穏やかな相場でじっくり長期投資を体験したい時に。<br>
+    <strong>切り替え場所：</strong><br>
+    🖥️ ローカル＝ゲーム開始前の<strong>設定画面のトグル</strong>でON/OFF。<br>
+    🌐 オンライン＝<strong>待合室で「ホスト」が設定</strong>（全員に共有・反映されます）。
+    <table class="ratio-table" style="margin-top:10px">
+      <tr><th>相場</th><th>通常モード</th><th>リアル志向モード</th></tr>
+      <tr><td>📊 物価安定</td><td>25%</td><td><strong>50%</strong></td></tr>
+      <tr><td>📉 デフレ</td><td>25%</td><td>20%</td></tr>
+      <tr><td>📈 インフレ</td><td>25%</td><td>20%</td></tr>
+      <tr><td>🔻 深刻なデフレ</td><td>12.5%</td><td>5%</td></tr>
+      <tr><td>💸 ハイパーインフレ</td><td>12.5%</td><td>5%</td></tr>
+    </table>
   </div>
 </div>
 
@@ -416,7 +437,7 @@ body{
         </div>
         <div class="job-salary-title" style="margin-bottom:8px">⚡ 特殊能力</div>
         <ul class="skill-list">
-          <li class="skill-item">🔍 <strong>公開操作（便乗取引）</strong>：投資家のターンに市場マス（マス3・5・8・11・13・16・20・22・24・27・28・30・33・34・35・38）に止まった際、他の投資家も同じ市場で株売買ができる（5分以内）。取引しなくても他の投資家に便乗チャンスは発生する。<br><span style="color:var(--red);font-size:11px">⚠️ 強制ストップ中の株売買では公開操作は発動しない。会社員のターンでは発動しない。</span></li>
+          <li class="skill-item">🔍 <strong>公開操作（便乗取引）</strong>：投資家のターンに市場マス（マス3・5・8・11・13・16・20・22・24・30・33・34）に止まった際、他の投資家も同じ市場で株売買ができる。各投資家は<strong>ゲーム通して2回まで</strong>（「取引する／パス」を選択でき、取引した時だけ消費）。<br><span style="color:var(--red);font-size:11px">⚠️ 強制ストップ中・ゴール後（清算中）は発動しない。会社員のターンでは発動しない。オンラインの検討時間は30分。</span></li>
           <li class="skill-item">🎮 <strong>市場操作</strong>：市場取引マス到達時、市場カードを事前確認し変動前後どちらかで取引可能。</li>
         </ul>
       </div>
@@ -525,7 +546,8 @@ body{
       <div class="asset-detail">
         <strong>1口：</strong>5,000円（10口単位）<br><br>
         <strong>1年債：</strong>次の強制ストップで満期。<strong>利子25%</strong>。毎決算で現金化でき流動的（途中解約不可）<br><br>
-        <strong>2年債：</strong>1年目のみ購入可。次の強制ストップで利子30%、その次で満期＋利子30%（<strong>合計+60%</strong>）。2決算ロックの代わり高利回り
+        <strong>2年債：</strong>1年目のみ購入可。次の強制ストップで利子30%、その次で満期＋利子30%（<strong>合計+60%</strong>）。2決算ロックの代わり高利回り<br><br>
+        <strong>🏦 国債好調マス(27)：</strong>止まると保有国債<strong>1口につき2万円</strong>のボーナス！（株のマス14の国債版）
       </div>
     </div>
     <div class="asset-card" style="border-color:var(--orange);background:#fff7ed">
@@ -723,7 +745,7 @@ body{
     <tr>
       <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>市場操作</td>
       <td>なし</td>
-      <td>指定した相手の次の市場取引の市場状態を指定できる</td>
+      <td>引いた人が「対象プレイヤー」と「市場状態」を指定。対象の次の市場取引はその市場に固定（この取引限り・1回。取引後は元の市場に戻る）</td>
     </tr>
     <tr>
       <td><span class="badge" style="background:#bae6fd;border-color:#38bdf8">妨害</span>金利上昇</td>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>投資家人生 — 金融すごろく | Team 金融すごろく（YouKey College）</title>
+<title>ビリオンバトル（ビリバト） — 金融すごろく | Team 金融すごろく（YouKey College）</title>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -197,7 +197,9 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 /* ===== START SCREEN ===== */
 #start-screen {
   background: linear-gradient(160deg, #ffe55c 0%, #ffde59 40%, #ffd13a 100%) !important;
-  overflow: hidden;
+  overflow-x: hidden;            /* 横はみ出しのみ抑制。縦はスクロール可（小さい画面対策） */
+  justify-content: flex-start;   /* 中央寄せだと上が切れて押せなくなるため上詰め */
+  padding-top: 28px;
 }
 #title-screen {
   background: linear-gradient(160deg, #ffe55c 0%, #ffde59 40%, #ffd13a 100%) !important;
@@ -209,6 +211,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 #title-screen.hidden { display: none !important; }
 .ss-bg {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  overflow: hidden;   /* 落下コインが縦スクロール領域を広げないように閉じ込める */
 }
 .ss-coin {
   position: absolute;
@@ -243,7 +246,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   margin-bottom: 10px; line-height: 1;
 }
 .ss-title span {
-  font-size: clamp(52px, 13vw, 100px);
+  font-size: clamp(38px, 9.5vw, 84px);
   font-weight: 900;
   text-shadow: 5px 5px 0 var(--border), -2px -2px 0 var(--border),
                2px -2px 0 var(--border), -2px 2px 0 var(--border);
@@ -256,6 +259,8 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ss-title span:nth-child(3){ animation-delay:.3s }
 .ss-title span:nth-child(4){ animation-delay:.4s }
 .ss-title span:nth-child(5){ animation-delay:.5s }
+.ss-title span:nth-child(6){ animation-delay:.6s }
+.ss-title span:nth-child(7){ animation-delay:.7s }
 .ss-sub {
   font-size: 14px; font-weight: 900; color: var(--text);
   background: rgba(255,255,255,.9); padding: 8px 24px;
@@ -291,6 +296,25 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ss-btn-icon { font-size: 36px; flex-shrink: 0; }
 .ss-btn-label { font-size: 18px; font-weight: 900; color: var(--text); }
 .ss-btn-desc  { font-size: 11px; font-weight: 700; color: var(--text2); margin-top: 2px; }
+
+/* 2列グリッド（チュートリアル・ルール・設定・ランキング） */
+.ss-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.ss-grid2 .ss-btn {
+  flex-direction: row; align-items: center; justify-content: center; text-align: center;
+  gap: 8px; padding: 11px 10px; box-shadow: 0 4px 0 var(--border);
+  animation: bounceIn .5s 1s ease both; opacity: 0;
+}
+.ss-grid2 .ss-btn .ss-btn-icon { font-size: 22px; }
+.ss-grid2 .ss-btn .ss-btn-label { font-size: 14px; white-space: nowrap; }
+/* 戻るボタン（オンライン/ローカルの各画面） */
+.back-link {
+  align-self: flex-start; background: rgba(255,255,255,.85);
+  border: 3px solid var(--border); border-radius: 14px;
+  padding: 8px 16px; font-size: 14px; font-weight: 900; cursor: pointer;
+  font-family: inherit; color: var(--text); box-shadow: 0 4px 0 var(--border);
+  transition: all .1s;
+}
+.back-link:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--border); }
 
 /* ===== LOBBY LOGO ===== */
 .lobby-logo {
@@ -554,6 +578,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ob-btn-blue  { background:var(--blue);color:#fff; }
 .ob-btn-gold  { background:var(--gold);color:#fff; }
 .ob-btn-gray  { background:#f1f5f9;color:var(--text); }
+.ob-btn-purple{ background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff; }
 .ob-or { color:var(--text2);font-size:13px;font-weight:900;margin:12px 0;position:relative; }
 .ob-or::before,.ob-or::after {
   content:'';position:absolute;top:50%;width:42%;height:2px;background:#e2e8f0;
@@ -693,7 +718,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   display:flex;gap:4px;margin-bottom:20px;
 }
 .op-maintitle span {
-  font-size:clamp(60px,14vw,120px);
+  font-size:clamp(42px,10.5vw,96px);
   font-weight:900;color:var(--c);
   opacity:0;
   animation: opPopUp .55s var(--d) cubic-bezier(.34,1.4,.64,1) both;
@@ -920,6 +945,76 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .hint-bar.on  .hint-bar-state { color:var(--green); }
 .hint-bar.off .hint-bar-state { color:var(--text2); }
 
+/* ─── チュートリアル ─── */
+#tutorial-overlay{ position:fixed;inset:0;z-index:9600;display:none;
+  background:rgba(45,52,54,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  align-items:center;justify-content:center;padding:16px; }
+#tutorial-overlay.open{ display:flex; }
+.tut-card{ background:#fff;border:4px solid var(--border);border-radius:24px;
+  box-shadow:8px 8px 0 var(--border);width:100%;max-width:440px;
+  padding:22px;display:flex;flex-direction:column;gap:14px;max-height:92vh; }
+.tut-dots{ display:flex;gap:6px;justify-content:center;flex-wrap:wrap; }
+.tut-dot{ width:8px;height:8px;border-radius:50%;background:#e2e8f0;border:2px solid var(--border);transition:all .2s; }
+.tut-dot.on{ background:var(--purple);width:22px;border-radius:8px; }
+.tut-body{ text-align:center;overflow-y:auto; }
+.tut-icon{ font-size:52px;line-height:1;margin-bottom:6px; }
+.tut-title{ font-size:20px;font-weight:900;margin-bottom:8px; }
+.tut-text{ font-size:14px;font-weight:700;color:var(--text2);line-height:1.85;text-align:left; }
+.tut-text strong{ color:var(--text); }
+.tut-illu{ background:#f8fafc;border:2px dashed #cbd5e1;border-radius:14px;padding:11px 13px;margin:10px 0 0;font-size:13px;font-weight:700;line-height:1.8;color:var(--text); }
+.tut-nav{ display:flex;gap:10px;align-items:center; }
+.tut-btn{ flex:1;border:3px solid var(--border);border-radius:14px;padding:11px;
+  font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;
+  box-shadow:0 4px 0 var(--border);transition:all .1s;background:#fff;color:var(--text); }
+.tut-btn:active{ transform:translateY(3px);box-shadow:0 1px 0 var(--border); }
+.tut-btn.primary{ background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff; }
+.tut-btn.go{ background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff; }
+.tut-btn:disabled{ opacity:.35;cursor:default; }
+.tut-skip-row{ display:flex;justify-content:space-between;align-items:center;gap:12px; }
+.tut-skip{ text-align:center;font-size:12px;font-weight:800;color:var(--text2);cursor:pointer;text-decoration:underline; }
+.tut-skip:first-child{ color:#7c3aed; }
+/* コーチ吹き出し */
+#coach-bubble{ position:fixed;left:50%;top:12px;transform:translateX(-50%) translateY(-160%);
+  z-index:9400;max-width:92%;
+  background:#fffbeb;border:3px solid var(--border);border-radius:16px;
+  box-shadow:4px 4px 0 var(--border);padding:10px 14px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;
+  transition:transform .35s cubic-bezier(.2,1.3,.5,1),opacity .25s;opacity:0;pointer-events:none; }
+#coach-bubble.show{ transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto; }
+.coach-face{ font-size:26px;flex-shrink:0; }
+.coach-txt{ font-size:13px;font-weight:800;line-height:1.55;color:var(--text); }
+.coach-x{ font-size:12px;font-weight:900;color:var(--text2);flex-shrink:0;align-self:flex-start; }
+
+/* ─── やりこみ（実績）─── */
+#achievements-panel{ position:fixed;inset:0;z-index:9500;display:none;background:rgba(45,52,54,.72);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px; }
+#achievements-panel.open{ display:flex; }
+.ach-box{ background:#fff;border:4px solid var(--border);border-radius:24px;box-shadow:8px 8px 0 var(--border);
+  width:100%;max-width:460px;max-height:90vh;display:flex;flex-direction:column;padding:20px; }
+.ach-title{ display:flex;align-items:center;font-size:19px;font-weight:900;margin-bottom:12px; }
+.ach-stats{ display:flex;gap:8px;margin-bottom:8px; }
+.ach-stat{ flex:1;background:#f8fafc;border:2px solid var(--border);border-radius:14px;padding:8px 6px;text-align:center; }
+.ach-stat-v{ font-family:'Nunito',sans-serif;font-size:16px;font-weight:900;color:var(--text); }
+.ach-stat-l{ font-size:10px;font-weight:700;color:var(--text2);margin-top:2px; }
+.ach-substat{ font-size:11px;font-weight:700;color:var(--text2);text-align:center;background:#fffbeb;border:2px dashed #fde047;border-radius:10px;padding:6px 8px;margin-bottom:12px;line-height:1.6; }
+.ach-list-wrap{ overflow-y:auto; }
+.ach-item{ display:flex;align-items:center;gap:12px;border:3px solid var(--border);border-radius:14px;padding:10px 12px;margin-bottom:8px;box-shadow:0 3px 0 var(--border); }
+.ach-item.on{ background:#f0fdf4; }
+.ach-item.off{ background:#f1f5f9;opacity:.75; }
+.ach-item-icon{ font-size:26px;flex-shrink:0;width:34px;text-align:center; }
+.ach-item-txt{ flex:1;min-width:0; }
+.ach-item-n{ font-size:14px;font-weight:900; }
+.ach-item-d{ font-size:11px;font-weight:700;color:var(--text2);line-height:1.5; }
+.ach-item-chk{ font-size:18px;font-weight:900;color:var(--green);flex-shrink:0; }
+.ach-toast{ position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140%);z-index:10000;
+  background:linear-gradient(135deg,#fffbeb,#fde047);border:3px solid var(--border);border-radius:16px;
+  box-shadow:4px 4px 0 var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;
+  transition:transform .4s cubic-bezier(.2,1.3,.5,1);max-width:92%; }
+.ach-toast.show{ transform:translateX(-50%) translateY(0); }
+.ach-toast-icon{ font-size:30px;flex-shrink:0; }
+.ach-toast-h{ font-size:11px;font-weight:900;color:#92400e; }
+.ach-toast-n{ font-size:15px;font-weight:900;color:var(--text); }
+
 /* ─── 設定パネル ─── */
 #settings-panel {
   position:fixed;inset:0;z-index:9500;
@@ -1055,7 +1150,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="op-scene" id="op-s3">
     <div class="op-subtitle">超実践型金融ボードゲーム</div>
     <div class="op-maintitle">
-      <span style="--c:#c0715a;--d:.05s">投</span><span style="--c:#5a82a0;--d:.18s">資</span><span style="--c:#5a8f6e;--d:.31s">家</span><span style="--c:#b8915a;--d:.44s">人</span><span style="--c:#8a6faa;--d:.57s">生</span>
+      <span style="--c:#c0715a;--d:.05s">ビ</span><span style="--c:#5a82a0;--d:.15s">リ</span><span style="--c:#5a8f6e;--d:.25s">オ</span><span style="--c:#b8915a;--d:.35s">ン</span><span style="--c:#8a6faa;--d:.45s">バ</span><span style="--c:#c0715a;--d:.55s">ト</span><span style="--c:#5a82a0;--d:.65s">ル</span>
     </div>
     <div class="op-tagline">— いざ、金融の世界へ —</div>
   </div>
@@ -1084,7 +1179,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="ss-logo">
     <div class="ss-badge">💰 FINANCIAL BOARD GAME 💰</div>
     <div class="ss-title">
-      <span style="color:#ff6b6b">投</span><span style="color:#4facfe">資</span><span style="color:#4ade80">家</span><span style="color:#ff9f43">人</span><span style="color:#d8b4fe">生</span>
+      <span style="color:#ff6b6b">ビ</span><span style="color:#4facfe">リ</span><span style="color:#4ade80">オ</span><span style="color:#ff9f43">ン</span><span style="color:#d8b4fe">バ</span><span style="color:#ff6b6b">ト</span><span style="color:#4facfe">ル</span>
     </div>
     <div class="ss-sub">知識・運・決断力が試される<br>超実践型金融ボードゲーム</div>
   </div>
@@ -1104,6 +1199,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
   <!-- ボタン -->
   <div class="ss-btns">
+    <!-- オンライン・ローカルは1列（全幅） -->
     <button class="ss-btn ss-btn-online" onclick="goOnlineMode()">
       <span class="ss-btn-icon">🌐</span>
       <div>
@@ -1118,22 +1214,27 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
         <div class="ss-btn-desc">同じ画面を囲んで1台で遊ぶ</div>
       </div>
     </button>
-    <!-- ルールブック・設定ボタン（横並び） -->
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="ss-btn" onclick="window.open('rules.html','_blank')" style="flex:1;min-width:0;background:linear-gradient(135deg,#fefce8,#fde047);animation-delay:1s;opacity:0">
-        <span class="ss-btn-icon" style="font-size:26px;flex-shrink:0">📖</span>
-        <div class="ss-btn-label" style="font-size:15px;white-space:nowrap">ルール</div>
+    <!-- その他は2列グリッド -->
+    <div class="ss-grid2">
+      <button class="ss-btn" onclick="openTutorial()" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">
+        <span class="ss-btn-icon">🎓</span>
+        <div class="ss-btn-label" style="color:#fff">遊び方</div>
       </button>
-      <button class="ss-btn" onclick="openSettings()" style="flex:1;min-width:0;background:linear-gradient(135deg,#f1f5f9,#e2e8f0);animation-delay:1.1s;opacity:0">
-        <span class="ss-btn-icon" style="font-size:26px;flex-shrink:0">⚙️</span>
-        <div class="ss-btn-label" style="font-size:15px;white-space:nowrap">設定</div>
+      <button class="ss-btn" onclick="openRanking()" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8)">
+        <span class="ss-btn-icon">🏆</span>
+        <div class="ss-btn-label">ランキング</div>
       </button>
-    </div>
-    <!-- ランキングボタン（全幅） -->
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button class="ss-btn" onclick="openRanking()" style="width:100%;background:linear-gradient(135deg,#fce7f3,#fbcfe8);animation-delay:1.2s;opacity:0">
-        <span class="ss-btn-icon" style="font-size:26px;flex-shrink:0">🏆</span>
-        <div class="ss-btn-label" style="font-size:15px;white-space:nowrap">ランキング</div>
+      <button class="ss-btn" onclick="window.open('rules.html','_blank')" style="background:linear-gradient(135deg,#fefce8,#fde047)">
+        <span class="ss-btn-icon">📖</span>
+        <div class="ss-btn-label">ルール</div>
+      </button>
+      <button class="ss-btn" onclick="openSettings()" style="background:linear-gradient(135deg,#f1f5f9,#e2e8f0)">
+        <span class="ss-btn-icon">⚙️</span>
+        <div class="ss-btn-label">設定</div>
+      </button>
+      <button class="ss-btn" onclick="openAchievements()" style="grid-column:1/-1;background:linear-gradient(135deg,#fef3c7,#fbbf24)">
+        <span class="ss-btn-icon">🎖️</span>
+        <div class="ss-btn-label">やりこみ・実績</div>
       </button>
     </div>
   </div>
@@ -1186,6 +1287,16 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
       <input class="ob-input" id="lobby-name" placeholder="プレイヤー名" maxlength="8">
     </div>
 
+    <!-- ランダムマッチ -->
+    <button class="ob-btn ob-btn-purple" onclick="randomMatch()" style="margin-bottom:6px;font-size:15px">
+      🎲 ランダムマッチで対戦
+    </button>
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-align:center;margin-bottom:12px;line-height:1.6">
+      知らない人と自動でマッチング。<br>2人以上集まればスタートできます。
+    </div>
+
+    <div class="ob-or">友達と遊ぶ</div>
+
     <!-- ルーム作成 -->
     <button class="ob-btn ob-btn-green" onclick="createRoom()" style="margin-bottom:8px;font-size:15px">
       🏠 ルームを作る
@@ -1215,6 +1326,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <button class="ob-btn ob-btn-blue" onclick="joinRoom()" style="font-size:15px">
       🚪 参加する →
     </button>
+    <button class="ob-btn ob-btn-gray" onclick="backToStart()" style="margin-top:10px">← タイトルに戻る</button>
   </div>
 </div>
 
@@ -1238,18 +1350,49 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
       <div class="hint-bar-toggle"></div>
     </div>
 
+    <!-- リアル志向モード（待合室・ホストが設定） -->
+    <div class="hint-bar off" id="real-bar-wait" onclick="toggleRealModeWait()" style="margin-bottom:12px">
+      <div class="hint-bar-icon">📊</div>
+      <div class="hint-bar-text">
+        <div class="hint-bar-label">リアル志向モード</div>
+        <div class="hint-bar-desc" id="real-bar-wait-desc">市場が安定寄りに。ホストが設定します</div>
+      </div>
+      <div class="hint-bar-state" id="real-bar-wait-state">OFF</div>
+      <div class="hint-bar-toggle"></div>
+    </div>
+
+    <!-- ランダムマッチ情報（公開ルームのみ表示） -->
+    <div id="mm-info" style="display:none;background:#f5f3ff;border:2px dashed #a78bfa;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:800;color:#6d28d9;text-align:center;line-height:1.6"></div>
+
     <div class="wp-list">
       <div class="wp-hd">👥 参加プレイヤー</div>
       <div id="wp-players"><div style="padding:14px;color:var(--text2)">参加者を待っています...</div></div>
     </div>
     <div id="host-start-area" style="display:none">
+      <div style="font-size:12px;font-weight:900;color:var(--text2);margin-bottom:6px;text-align:center">🤖 合計人数（足りない分はBotで補充）</div>
+      <div class="cnt-row" id="botfill-row" style="margin-bottom:10px">
+        <button class="cnt-btn active" onclick="setBotFillTarget(0)">なし</button>
+        <button class="cnt-btn" onclick="setBotFillTarget(2)">2</button>
+        <button class="cnt-btn" onclick="setBotFillTarget(3)">3</button>
+        <button class="cnt-btn" onclick="setBotFillTarget(4)">4</button>
+        <button class="cnt-btn" onclick="setBotFillTarget(5)">5</button>
+        <button class="cnt-btn" onclick="setBotFillTarget(6)">6</button>
+      </div>
+      <div style="font-size:12px;font-weight:900;color:var(--text2);margin-bottom:6px;text-align:center">🤖 Botの強さ</div>
+      <div class="cnt-row" id="botstrength-row" style="margin-bottom:6px">
+        <button class="cnt-btn" onclick="setBotLevelWait('easy')">かんたん</button>
+        <button class="cnt-btn active" onclick="setBotLevelWait('normal')">ふつう</button>
+        <button class="cnt-btn" onclick="setBotLevelWait('hard')">つよい</button>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:var(--text2);margin-bottom:10px;text-align:center;line-height:1.5">かんたん=現金の範囲／ふつう=ほどほど借金／<strong style="color:var(--red)">つよい=限界まで借金して投資</strong></div>
       <button class="ob-btn ob-btn-gold" id="start-btn" onclick="hostStartGame()" disabled>
-        ゲームを開始する（2〜6人）
+        ゲームを開始する
       </button>
     </div>
     <div id="guest-wait-msg" style="display:none;color:var(--text2);font-size:13px;font-weight:900;text-align:center;padding:10px">
       <span class="waiting-spinner"></span>ホストがゲームを開始するまでお待ちください
     </div>
+    <button class="ob-btn ob-btn-gray" onclick="leaveWaiting()" style="margin-top:10px">← 退出する</button>
   </div>
 </div>
 
@@ -1264,10 +1407,11 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="ss-logo">
     <div class="ss-badge">💰 FINANCIAL BOARD GAME 💰</div>
     <div class="ss-title">
-      <span style="color:#ff6b6b">投</span><span style="color:#4facfe">資</span><span style="color:#4ade80">家</span><span style="color:#ff9f43">人</span><span style="color:#d8b4fe">生</span>
+      <span style="color:#ff6b6b">ビ</span><span style="color:#4facfe">リ</span><span style="color:#4ade80">オ</span><span style="color:#ff9f43">ン</span><span style="color:#d8b4fe">バ</span><span style="color:#ff6b6b">ト</span><span style="color:#4facfe">ル</span>
     </div>
   </div>
   <div class="setup">
+    <button class="rule-btn" onclick="backToStart()" style="background:#fff">← タイトルに戻る</button>
     <button class="rule-btn" onclick="window.open('rules.html', '_blank')">📖 ルール説明を読む</button>
     <div class="s-lbl">プレイヤー人数 (3〜6人)</div>
     <div class="cnt-row">
@@ -1284,6 +1428,16 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
       <button class="cnt-btn active" onclick="setBotLevel('normal')">ふつう</button>
       <button class="cnt-btn" onclick="setBotLevel('hard')">つよい</button>
     </div>
+    <div class="s-lbl">📊 相場の荒れ方</div>
+    <div class="hint-bar off" id="real-bar-title" onclick="toggleRealMode()" style="margin:0 0 14px">
+      <div class="hint-bar-icon">📊</div>
+      <div class="hint-bar-text">
+        <div class="hint-bar-label">リアル志向モード</div>
+        <div class="hint-bar-desc">市場が安定寄りに（暴落・高騰が出にくい）。穏やかな相場でじっくり長期投資</div>
+      </div>
+      <div class="hint-bar-state" id="real-bar-title-state">OFF</div>
+      <div class="hint-bar-toggle"></div>
+    </div>
     <button class="go-btn" onclick="startGame()">ゲームスタート！ 🎲</button>
   </div>
 </div>
@@ -1291,7 +1445,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 <div id="game-screen">
   <div class="gwrap">
     <div class="ghdr">
-      <div class="g-logo">投資家人生</div>
+      <div class="g-logo">ビリオンバトル</div>
       <div class="g-meta">
         <button class="rule-btn" style="margin:0; padding:4px 12px; font-size:11px; box-shadow:2px 2px 0 var(--border);" onclick="window.open('rules.html', '_blank')">📖 ルール</button>
         <button onclick="openSettings()" title="設定" style="background:#f1f5f9;border:2px solid var(--border);border-radius:10px;padding:2px 8px;font-size:12px;font-weight:900;color:var(--text);cursor:pointer;white-space:nowrap">⚙️</button>
@@ -1398,6 +1552,33 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 
 
+<!-- ═══ チュートリアル ═══ -->
+<div id="tutorial-overlay">
+  <div class="tut-card">
+    <div class="tut-dots" id="tut-dots"></div>
+    <div class="tut-body" id="tut-body"></div>
+    <div class="tut-nav">
+      <button class="tut-btn" id="tut-prev" onclick="tutPrev()">← 戻る</button>
+      <button class="tut-btn primary" id="tut-next" onclick="tutNext()">次へ →</button>
+    </div>
+    <div class="tut-skip-row">
+      <span class="tut-skip" onclick="startTutorialPractice()">▶ 説明をとばして練習プレイ</span>
+      <span class="tut-skip" onclick="closeTutorial()">閉じる</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ やりこみ（実績）パネル ═══ -->
+<div id="achievements-panel">
+  <div class="ach-box">
+    <div class="ach-title">🎖️ やりこみ・実績
+      <button onclick="closeAchievements()" style="margin-left:auto;background:#f1f5f9;border:2px solid var(--border);border-radius:20px;padding:4px 14px;font-size:13px;font-weight:900;cursor:pointer;font-family:inherit">✕ 閉じる</button>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:10px">※ローカルプレイの記録をこの端末に保存します</div>
+    <div id="ach-body" class="ach-list-wrap"></div>
+  </div>
+</div>
+
 <!-- ═══ ランキングパネル ═══ -->
 <div id="ranking-panel">
   <div class="rp-box">
@@ -1477,7 +1658,7 @@ const CELLS = [
   {i:24, type:'tax',    name:'連帯保証人', sub:'友達破産-30万/市場', isMarket:true, forced:false, info:'他人の借金を肩代わりするリスク。保証人には要注意！'},
   {i:25, type:'event',  name:'宝くじ当選', sub:'+50万円', forced:false, info:'運も実力のうち！一獲千金のチャンス。'},
   {i:26, type:'ipo',    name:'未上場株', sub:'ゴールで判定', forced:false, info:'【金融知識】IPO株（未上場株）は、上場すれば何倍にも跳ね上がりますが、上場できず紙切れになるリスクもあります。'},
-  {i:27, type:'tax',    name:'タントを買った', sub:'-20万円 / 市場', isMarket:true, forced:false, info:'車の購入で大きな支出。負債や維持費に注意。'},
+  {i:27, type:'market', name:'国債好調', sub:'持ち国債数×2万', forced:false, info:'国債が好調！保有している国債1口につき2万円のボーナスがもらえます。'},
   {i:28, type:'event',  name:'不動産売却＋イベント', sub:'5倍売却＋カード', forced:false, info:'イベントカードを引き、所有不動産を5倍で売却できる。'},
   {i:29, type:'happen', name:'ハプニング', sub:'カードを引く', forced:false, info:'予期せぬトラブルが発生します。'},
   {i:30, type:'event',  name:'イベントカード', sub:'市場取引', isMarket:true, forced:false, info:'イベント発生！その後、市場取引。'},
@@ -1523,6 +1704,21 @@ const MARKET_POOL = [
   MARKETS[3], MARKETS[3],
   MARKETS[4],
 ];
+// リアル志向モード用プール: 安定50% / デフレ20% / インフレ20% / 深刻なデフレ5% / ハイパー5%
+const REAL_MARKET_POOL = [
+  MARKETS[0],
+  MARKETS[1], MARKETS[1], MARKETS[1], MARKETS[1],
+  MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2],
+  MARKETS[3], MARKETS[3], MARKETS[3], MARKETS[3],
+  MARKETS[4],
+];
+// 現在のモードに応じた市場プールを返す（リアル志向モードは安定寄り）
+// ★ ゲーム進行中は G.realMode を最優先（オンラインでも全端末で同じ相場になる）。
+//    ゲーム開始前（設定中）は端末ローカルの window._realMode を参照。
+function activeMarketPool(){
+  const r = (typeof G!=='undefined' && G && G.realMode!=null) ? G.realMode : window._realMode;
+  return r ? REAL_MARKET_POOL : MARKET_POOL;
+}
 
 // 完全再現イベントカード
 const EVTS = [
@@ -1668,6 +1864,179 @@ function closeSettings() {
   document.getElementById('settings-panel')?.classList.remove('open');
 }
 function toggleBeginner() { toggleBeginnerBar(); }
+
+// ─── リアル志向モード（ローカル設定画面）──────────────
+function toggleRealMode() {
+  window._realMode = !window._realMode;
+  _syncRealModeUI();
+  toast(window._realMode ? '📊 リアル志向モード ON（相場が安定寄り）' : '📊 リアル志向モード OFF（通常の相場）');
+}
+function _syncRealModeUI() {
+  const bar = document.getElementById('real-bar-title');
+  const st  = document.getElementById('real-bar-title-state');
+  if(bar) { bar.classList.toggle('on', !!window._realMode); bar.classList.toggle('off', !window._realMode); }
+  if(st)  st.textContent = window._realMode ? 'ON' : 'OFF';
+}
+
+// ─── リアル志向モード（オンライン待合室・ホストが設定）──────
+let _realModeWait = false;
+async function toggleRealModeWait() {
+  if(!isHost) { toast('📊 リアル志向モードはホストが設定します'); return; }
+  _realModeWait = !_realModeWait;
+  _syncRealModeWaitUI();
+  toast(_realModeWait ? '📊 リアル志向モード ON' : '📊 リアル志向モード OFF');
+  await fbPatch(`rooms/${roomCode}`, { realMode: _realModeWait });
+}
+function _syncRealModeWaitUI() {
+  const bar  = document.getElementById('real-bar-wait');
+  const st   = document.getElementById('real-bar-wait-state');
+  const desc = document.getElementById('real-bar-wait-desc');
+  if(bar) { bar.classList.toggle('on', !!_realModeWait); bar.classList.toggle('off', !_realModeWait); }
+  if(st)  st.textContent = _realModeWait ? 'ON' : 'OFF';
+  if(desc) desc.textContent = isHost
+    ? '市場が安定寄りに。タップで切り替え（ホスト）'
+    : (_realModeWait ? 'ON：相場が安定寄りです（ホスト設定）' : 'OFF：通常の相場です（ホスト設定）');
+}
+
+// ══════════════════════════════════════════════════════
+//  チュートリアル（スライド解説 → Bot練習プレイ）
+// ══════════════════════════════════════════════════════
+const TUT_SLIDES = [
+  { icon:'🎯', title:'ようこそ！ビリオンバトル（ビリバト）へ',
+    html:`このゲームの目的はシンプル。<br><strong>3年間（盤面を3周）</strong>で、<strong>総資産を一番多く</strong>増やした人が勝ちです。<br>
+    <div class="tut-illu">総資産 ＝ 現金 ＋ 株 ＋ 不動産(×3) ＋ 国債 ＋ 金 ＋ IPO － 借金</div>
+    給料を貯めるだけでは勝てません。<strong>投資</strong>で資産を増やしましょう💪` },
+  { icon:'🔄', title:'1ターンの流れ',
+    html:`自分の番が来たら…<br>
+    <div class="tut-illu">① 🎲 サイコロを振る<br>② 出た目だけコマを進める<br>③ 止まったマスの指示に従う</div>
+    マスによって「お金がもらえる」「カードを引く」「株を売買できる」など効果が違います。` },
+  { icon:'👔', title:'3つの職業',
+    html:`ゲーム開始時にランダムで決まります。<br>
+    <div class="tut-illu">🏢 <strong>会社員</strong>：給料が安定。借金の利子0%・不動産10万引き<br>
+    📈 <strong>投資家</strong>：給料は歩合制。市場操作・便乗取引ができる攻撃型<br>
+    💼 <strong>フリーター</strong>：会社員が「AIリストラ」で転落。IPOと保険が得意</div>` },
+  { icon:'💎', title:'投資商品いろいろ',
+    html:`増やし方は1つじゃない。自分に合う商品を選ぼう。<br>
+    <div class="tut-illu">📈 <strong>株</strong>：相場で価格が上下。配当ももらえる<br>
+    🏦 <strong>国債</strong>：手堅く利子。1年債/2年債<br>
+    🏠 <strong>不動産</strong>：ゴール時に購入額×3倍<br>
+    🥇 <strong>金</strong>・🚀 <strong>IPO</strong>・💹 <strong>積立NISA</strong> など</div>
+    💡 <strong>かんたん解説モード</strong>をONにすると、買うときに各商品の説明が出ます。` },
+  { icon:'🚦', title:'強制ストップ（決算）',
+    html:`各年の終わり（マス10・31・ゴール）は全員が止まる大事なポイント。<br>
+    <div class="tut-illu">💰 給料・株の配当をもらう<br>📈 株や国債を売り買いできる<br>📊 ここで市場カードを引いて相場が決まる</div>
+    ここで投資の成果が一気に現れます。` },
+  { icon:'🃏', title:'カードと保険',
+    html:`マスでカードを引くことがあります。<br>
+    <div class="tut-illu">🎊 <strong>イベント</strong>：臨時収入・出世などラッキー系<br>
+    ⚡ <strong>ハプニング</strong>：事故・暴落など痛手系</div>
+    ハプニングの一部は <strong>🛡️ 保険</strong>（年3万・各年のはじめに加入）で防げます。` },
+  { icon:'🌐', title:'遊び方は2通り',
+    html:`<div class="tut-illu">🌐 <strong>オンラインで遊ぶ</strong><br>離れた友達とスマホ/PCで対戦。ルームを作ってコードを共有、または参加。<br><br>
+    🖥️ <strong>ローカルで遊ぶ</strong><br>1台の画面を囲んで対戦。🤖Botを入れれば1人でも遊べます。</div>
+    📊 <strong>リアル志向モード</strong>は両方で選べます（暴落・高騰が出にくい安定相場）。` },
+  { icon:'🎲', title:'さっそく触ってみよう！',
+    html:`百聞は一見にしかず。<br><strong>🤖Bot相手の練習プレイ</strong>を始めましょう。<br>
+    <div class="tut-illu">・4人プレイ（あなた＝投資家＋Bot3人）<br>・💡かんたん解説モードON<br>・🦉コーチが「最初の取引」「便乗取引」などを実況解説</div>
+    本番ではないので気軽にどうぞ。下のボタンでスタート！` },
+];
+let _tutIdx = 0;
+function openTutorial(){ _tutIdx = 0; renderTutSlide(); document.getElementById('tutorial-overlay').classList.add('open'); }
+function closeTutorial(){ document.getElementById('tutorial-overlay').classList.remove('open'); }
+function tutPrev(){ if(_tutIdx > 0){ _tutIdx--; renderTutSlide(); } }
+function tutNext(){
+  if(_tutIdx < TUT_SLIDES.length - 1){ _tutIdx++; renderTutSlide(); }
+  else { startTutorialPractice(); }
+}
+function renderTutSlide(){
+  const s = TUT_SLIDES[_tutIdx];
+  document.getElementById('tut-body').innerHTML =
+    `<div class="tut-icon">${s.icon}</div><div class="tut-title">${s.title}</div><div class="tut-text">${s.html}</div>`;
+  document.getElementById('tut-dots').innerHTML =
+    TUT_SLIDES.map((_,i)=>`<div class="tut-dot ${i===_tutIdx?'on':''}"></div>`).join('');
+  document.getElementById('tut-prev').disabled = _tutIdx === 0;
+  const next = document.getElementById('tut-next');
+  const last = _tutIdx === TUT_SLIDES.length - 1;
+  next.textContent = last ? '🎲 練習プレイを始める' : '次へ →';
+  next.classList.toggle('go', last);
+  next.classList.toggle('primary', !last);
+  document.querySelector('.tut-body').scrollTop = 0;
+}
+
+// ─── ガイド付き練習プレイ（Bot戦・解説ON） ───
+function startTutorialPractice(){
+  closeTutorial();
+  window._realMode = false;
+  // かんたん解説モードを強制ON
+  BEGINNER_MODE = true;
+  try { localStorage.setItem('beginnerMode','true'); } catch(e){}
+  _syncBeginnerUI();
+  LOCAL_MODE = true;
+  showScreen('title-screen');         // start-screen など他画面を隠す
+  setBotLevel('easy');
+  setCount(4);                        // 4人プレイ（便乗取引を体験させるため。投資家が2人になる）
+  const names = ['あなた', 'Bot ミドリ', 'Bot キイロ', 'Bot アオ'];
+  for(let i=0;i<4;i++){ const ni=document.getElementById('ni-'+i); if(ni) ni.value = names[i]; }
+  const b0 = document.getElementById('bot-0'); if(b0) b0.checked = false; // あなたは人間
+  for(let i=1;i<4;i++){ const b=document.getElementById('bot-'+i); if(b) b.checked = true; }
+  window._tutorial = true;            // コーチ案内を有効化
+  window._tutRolled = false;          // サイコロ案内フラグ
+  window._tutMarketSeen = false;      // 市場取引の初回説明フラグ
+  window._tutFollowSeen = false;      // 便乗取引の初回説明フラグ
+  startGame();
+  setTimeout(()=>showCoach('🎲 まずは画面下の<strong>サイコロ</strong>をタップして進もう！ 出た目だけコマが進みます。', 9000), 1500);
+}
+
+// ─── チュートリアル: 市場マスでの取引コーチ（初回は詳しく、以降は相場に応じた助言） ───
+function marketAdvice(){
+  const pr = G.market ? G.market.stockPrice : 50000;
+  if(pr <= 30000) return `今は <strong>${G.market.emoji}${G.market.name}</strong>＝株が<strong style="color:#16a34a">安い</strong>局面。<strong>買い</strong>が有利です（安く仕込んで後で売る）。`;
+  if(pr >= 70000) return `今は <strong>${G.market.emoji}${G.market.name}</strong>＝株が<strong style="color:#dc2626">高い</strong>局面。持ち株があれば<strong>売り</strong>が有利です（高く売って利益確定）。`;
+  return `今は <strong>${G.market.emoji}${G.market.name}</strong>＝ふつうの相場。長期目線でコツコツ<strong>買い</strong>でもOK。`;
+}
+function tutorMarketCoach(p, isFollow){
+  if(!window._tutorial || !p || p.isBot || isFollow) return; // 人間の通常取引のときだけ
+  if(!window._tutMarketSeen){
+    window._tutMarketSeen = true;
+    showCoach('💹 <strong>市場マス</strong>に止まった！ここは株を売買できる場所。下の<strong>口数(10株単位)</strong>を入れて「株を買う／売る」。買った株は値上がりで売却益＋決算で配当ももらえるよ。<br>'+marketAdvice(), 13000);
+  } else {
+    showCoach('💹 また市場マス！ '+marketAdvice(), 9000);
+  }
+}
+// ─── チュートリアル: 便乗取引（公開操作）のコーチ ───
+function tutorFollowCoach(follower){
+  if(!window._tutorial || !follower || follower.isBot) return; // 人間が便乗できるときだけ
+  if(!window._tutFollowSeen){
+    window._tutFollowSeen = true;
+    showCoach('🤝 <strong>便乗取引（公開操作）</strong>のチャンス！ 他の投資家が取引したので、あなたも<strong>同じ相場で</strong>売買できます（ゲーム中2回まで）。'+marketAdvice(), 13000);
+  } else {
+    showCoach('🤝 便乗取引のチャンス！ '+marketAdvice(), 9000);
+  }
+}
+
+// ─── コーチ吹き出し ───
+let _coachTimer = null;
+function showCoach(html, ms){
+  let el = document.getElementById('coach-bubble');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'coach-bubble';
+    el.onclick = hideCoach;
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span class="coach-face">🦉</span><span class="coach-txt">${html}</span><span class="coach-x">✕</span>`;
+  // 再表示時にトランジションを効かせる
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  if(_coachTimer) clearTimeout(_coachTimer);
+  if(ms) _coachTimer = setTimeout(hideCoach, ms);
+}
+function hideCoach(){
+  const el = document.getElementById('coach-bubble');
+  if(el) el.classList.remove('show');
+  if(_coachTimer){ clearTimeout(_coachTimer); _coachTimer = null; }
+}
 
 function toggleBeginnerBar() {
   BEGINNER_MODE = !BEGINNER_MODE;
@@ -1853,6 +2222,9 @@ function setCount(n){
 async function startGame(){
   window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null; window._mySettlementActive = false;
   G.players=[]; G.ci=0; G.turn=1; G.year=1; G.pc=_pc; G.goalOrder=[]; // ← G.pcをプレイヤー数で更新
+  G.realMode = !!window._realMode; // ← リアル志向モードを確定（以後はGで一元管理）
+  // やりこみ実績用のゲーム内フラグをリセット
+  window._achUnicorn = false; window._achMaxEstates = 0;
   document.getElementById('title-screen').style.display='none';
   document.getElementById('game-screen').style.display='block';
   buildBoard(); 
@@ -1888,6 +2260,16 @@ async function determineJobsRoulette() {
     const jobs = Array(_pc).fill('emp').fill('inv', Math.ceil(_pc/2)).sort(()=>Math.random()-0.5);
     for(let i=0;i<_pc;i++) G.players[i].job = jobs[i];
     G.players.sort(() => Math.random() - 0.5); // ← ターン順シャッフル
+
+    // チュートリアル: 人間プレイヤーを必ず投資家にする（最初の取引・便乗取引を体験させるため）。
+    // 職業数は保持（他の投資家とジョブを入れ替え）するので、便乗できる別の投資家も残る。
+    if(window._tutorial){
+      const me = G.players.findIndex(pl => !pl.isBot);
+      if(me >= 0 && G.players[me].job !== 'inv'){
+        const other = G.players.findIndex((pl,idx)=> idx!==me && pl.job==='inv');
+        if(other >= 0){ G.players[me].job = 'inv'; G.players[other].job = 'emp'; }
+      }
+    }
 
     let html = '<div style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">';
     for(let i=0;i<_pc;i++) {
@@ -2074,7 +2456,7 @@ function renderAll(){
           <span style="background:var(--green);color:#fff;font-size:11px;font-weight:900;padding:3px 10px;border-radius:12px;border:2px solid var(--border)">💰 3年目給料</span>
         </div>`;
     } else {
-      turnAnn.innerHTML=`<span style="color:var(--orange); font-size:13px; display:block; margin-bottom:2px;">投資家人生</span><strong style="color:${curP.color?.bg||'#333'}; font-size:20px;">${curP.name}</strong> <span style="font-size:12px;">のターン</span>`;
+      turnAnn.innerHTML=`<span style="color:var(--orange); font-size:13px; display:block; margin-bottom:2px;">ビリオンバトル</span><strong style="color:${curP.color?.bg||'#333'}; font-size:20px;">${curP.name}</strong> <span style="font-size:12px;">のターン</span>`;
     }
   }
 
@@ -2222,6 +2604,7 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
             desc: `${text}<br><br>現在の現金: ${fmtM(p.cash)}<br>支払い額: <span style="color:var(--red)">${fmtM(cost)}</span><br>${intTxt}<br><br>借金して購入しますか？`,
             acts: [
                 {lbl: '借金して払う', p: true, fn: () => {
+                  p.everBorrowed = true; // やりこみ実績「無借金経営」用
                   p.cash -= cost;
                   if(interestNow > 0) {
                     p.cash -= interestNow;
@@ -2248,22 +2631,53 @@ function confirmPurchase(p, cost, text, confirmCallback, cancelCallback) {
     }
 }
 
-// ─── 保有カード「不動産価格上昇(4倍売却)」の使用確認（ターン開始時・任意・1回のみ）───
+// 不動産価格上昇カードを使って4倍売却するメニュー（使用は1回だが、その1回で複数物件を売却できる）
+// opts: { onDone()  売却 or 終了後に呼ぶ, onKeep()  1件も売らずに温存/保有を選んだとき, keepLabel }
+function sellEstates4xMenu(p, opts, total=0){
+  const ests = pEstates(p);
+  const summaryAndDone = () => {
+    if(!LOCAL_MODE) pushState();
+    showModal({type:'t-event', tag:'🎫 4倍売却！', title:'不動産価格上昇を発動！', desc:`売却合計 <span class="lp">+${fmtM(total)}</span>`, eff:`+${total.toLocaleString()}円`, effc:'plus', acts:[{lbl:'最高！', p:true, fn:()=>{ closeModal(); opts.onDone(); }}]});
+  };
+  if(ests.length === 0){
+    p.estSell4 = false; // 売り切った＝カード使用済み
+    if(total > 0) summaryAndDone(); else opts.onDone();
+    return;
+  }
+  const acts = ests.map((e, i) => ({
+    lbl: `${fmtM(e.price)}の物件 → ${fmtM(e.price*4)}で売却`, p: ests.length === 1,
+    fn: () => {
+      const v = e.price * 4; p.cash += v; ests.splice(i, 1);
+      log(`<span style="color:${p.color.bg}">${p.name}</span> 🎫不動産4倍売却 <span class="lp">+${fmtM(v)}</span>`);
+      renderAll(); if(!LOCAL_MODE) pushState();
+      sellEstates4xMenu(p, opts, total + v); // 残りを再表示（複数売却OK）
+    }
+  }));
+  if(ests.length >= 2){
+    acts.push({ lbl:`🎫 すべて4倍売却（${ests.length}件）`, p:true, fn:()=>{
+      let v=0; ests.forEach(e=> v += e.price*4); p.cash += v; p.estates = [];
+      log(`<span style="color:${p.color.bg}">${p.name}</span> 🎫不動産4倍売却(全${ests.length}件) <span class="lp">+${fmtM(v)}</span>`);
+      renderAll(); if(!LOCAL_MODE) pushState();
+      sellEstates4xMenu(p, opts, total + v);
+    }});
+  }
+  if(total > 0){
+    // 既に1件以上売却＝カード使用済み。終えると確定
+    acts.push({ lbl:'売却を終える', p:false, fn:()=>{ p.estSell4 = false; closeModal(); summaryAndDone(); }});
+  } else {
+    // まだ売っていない＝カードは温存/保有（保持）
+    acts.push({ lbl: opts.keepLabel || '今は使わない（温存）', p:false, fn:()=>{ closeModal(); opts.onKeep(); }});
+  }
+  showModal({type:'t-event', tag:'🎫 不動産価格上昇', title:'不動産を4倍で売る（複数OK）',
+    desc:`保有不動産を購入額の<strong>4倍</strong>で売却できます。売りたい物件を選んでください（<strong>複数OK・カード使用は1回</strong>）。${total>0?'<br>これまでの売却額: <span class="lp">+'+fmtM(total)+'</span>':''}`,
+    acts});
+}
+
+// ─── 保有カード「不動産価格上昇(4倍売却)」の使用確認（ターン開始時・任意・使用は1回／複数売却可）───
 function maybeUseEstSell4(p){
   return new Promise(resolve => {
     if(!p.estSell4 || pEstates(p).length === 0){ resolve(); return; }
-    const acts = pEstates(p).map((e, ei) => ({
-      lbl: `${fmtM(e.price)}の物件→${fmtM(e.price*4)}で売却`, p:true,
-      fn: () => {
-        const profit = e.price*4; p.cash += profit; pEstates(p).splice(ei,1);
-        p.estSell4 = false; // 1回で消費
-        log(`<span style="color:${p.color.bg}">${p.name}</span> 🎫不動産4倍売却 <span class="lp">+${fmtM(profit)}</span>`);
-        renderAll(); if(!LOCAL_MODE) pushState();
-        showModal({type:'t-event', tag:'🎫 4倍売却！', title:'不動産価格上昇を発動！', desc:'', eff:`+${fmtM(profit)}`, effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();resolve();}}]});
-      }
-    }));
-    acts.push({lbl:'今は使わない（温存）', p:false, fn:()=>{ closeModal(); resolve(); }});
-    showModal({type:'t-info', tag:'🎫 保有カード', title:'不動産価格上昇を使う？', desc:'保有中の「不動産価格上昇」で、不動産1件を<strong>4倍</strong>で売却できます（1回のみ）。<br>今使いますか？', acts});
+    sellEstates4xMenu(p, { onDone: resolve, onKeep: resolve, keepLabel:'今は使わない（温存）' });
   });
 }
 
@@ -2272,7 +2686,51 @@ function maybeUseEstSell4(p){
 // ═══════════════════════════════════════════
 // 現在モーダルを操作すべきプレイヤー（通常は手番。便乗取引/清算では対象者で上書き）
 function botActor(){ return window._botActorOverride || G.players[G.ci]; }
-function isBotActing(){ return LOCAL_MODE && !window._botPaused && !!botActor() && botActor().isBot; }
+// オンラインBot補充: ホスト端末ならオンラインでもBotを代行操作できる
+function botDriveAllowed(){ return LOCAL_MODE || (!LOCAL_MODE && isHost); }
+function isBotActing(){ return botDriveAllowed() && !window._botPaused && !!botActor() && botActor().isBot; }
+// オンライン: ホストが、現在の手番のBotを必要に応じて動かす（重複起動はisMoving等で抑止）
+function maybeDriveOnlineBot(){
+  if(LOCAL_MODE || !isHost) return;
+  if(isMoving || window._mySettlementActive) return;
+  const cur = G.players[G.ci];
+  if(cur && cur.isBot && !cur.isGoal) maybeBotTurn();
+}
+
+// ─── ホスト移譲（心拍ベース） ───────────────────────────
+// ホストが落ちてBotが止まるのを防ぐ。ホストは定期的に心拍を書き込み、
+// 心拍が一定時間途絶えたら「後継者（人間プレイヤーの先頭）」が引き継ぐ。
+function startHostDuties(){
+  if(LOCAL_MODE) return;
+  // Bot代行
+  if(window._botDriveInterval) clearInterval(window._botDriveInterval);
+  window._botDriveInterval = setInterval(maybeDriveOnlineBot, 1300);
+  // 心拍
+  if(window._hostBeatInterval) clearInterval(window._hostBeatInterval);
+  const beat = ()=>{ if(isHost && !LOCAL_MODE && roomCode) fbPatch(`rooms/${roomCode}`, { hostBeat: Date.now(), host: myId }).catch(()=>{}); };
+  beat();
+  window._hostBeatInterval = setInterval(beat, 4000);
+  maybeDriveOnlineBot();
+}
+function becomeHost(){
+  if(isHost || LOCAL_MODE) return;
+  isHost = true;
+  toast('👑 ホストを引き継ぎました（Bot代行を継続します）');
+  startHostDuties();
+}
+// 非ホスト端末が、ホストの生存を確認。途絶していれば後継者だけが引き継ぐ
+async function checkHostAlive(){
+  if(LOCAL_MODE || !roomCode || isHost || !FB_URL) return;
+  try{
+    const r = await fbGet(`rooms/${roomCode}`);
+    if(!r) return;
+    const stale = (Date.now() - (r.hostBeat || 0)) > 15000;
+    if(!stale) return;
+    // 後継者＝（ターン順で）現ホスト以外の人間プレイヤーの先頭。全端末が同じ判定をするので競合しない
+    const successor = (G.players || []).filter(p => !p.isBot && p.id !== r.host)[0];
+    if(successor && successor.id === myId) becomeHost();
+  }catch(e){}
+}
 
 // Botの操作テンポ（ms）。大きいほどゆっくり。window._botDelay で調整可能
 window._botDelay = window._botDelay || { roll: 700, think: 2000 };
@@ -2314,13 +2772,27 @@ function botRespond(){
   if(btn){ try{ btn.click(); }catch(e){} }
 }
 
+// 借金上限（年次で拡大）。負の下限（これ以上は借りられない）
+function botDebtFloor(p){ return p.pos<=10 ? -1000000 : p.pos<=31 ? -2000000 : -3000000; }
 // 借金上限内で支払えるか（confirmPurchaseと同じ上限ロジック）。借金は許容するが上限超えは買わない
 function botCanAfford(p, cost){
-  const maxDebt = p.pos<=10 ? -1000000 : p.pos<=31 ? -2000000 : -3000000;
   const intRate = p.job==='emp' ? 0 : 0.2;
   const debtAmt = Math.max(0, cost - Math.max(0, p.cash));
   const interest = Math.floor(debtAmt * intRate);
-  return (p.cash - cost - interest) >= maxDebt;
+  return (p.cash - cost - interest) >= botDebtFloor(p);
+}
+// その株価で、現金が floor を下回らない範囲で買える最大ロット数（1ロット=10株=price円・利子も考慮）
+function botAffordableLots(p, price, floor){
+  const intRate = p.job==='emp' ? 0 : 0.2;
+  let lots = 0;
+  while(lots < 300){
+    const cost = (lots+1) * price;
+    const debtAmt = Math.max(0, cost - Math.max(0, p.cash));
+    const interest = Math.floor(debtAmt * intRate);
+    if((p.cash - cost - interest) < floor) break;
+    lots++;
+  }
+  return lots;
 }
 
 // Botの行動方針（難易度: easy / normal / hard）
@@ -2331,23 +2803,31 @@ function botPickButton(btns){
   const find = kw => btns.find(b => kw.some(k => L(b).includes(k)));
 
   // 株取引（口数入力あり）
+  // ── 難易度は「借金してでも積極投資するか」で差別化 ──
+  //   easy   = 現金の範囲で少しだけ（借金しない・弱い）
+  //   normal = ほどほどに借金して投資（中程度）
+  //   hard   = 借金上限ギリギリまで投資（ガンガン借金スタイル＝強い）
   const tq = document.getElementById('tq');
   if(tq){
     const buy = find(['株を買う']), sell = find(['株を売る']), end = find(['終了']);
     const price = (G.market && G.market.stockPrice) || 50000;
-    let prob, qty;
-    if(lv==='easy'){ prob = p.job==='inv'?0.35:0.15; qty=10; }
-    else if(lv==='hard'){ prob = p.job==='inv'?0.95:0.7; qty = (p.job==='inv'?30:20); }
-    else { prob = p.job==='inv'?0.8:0.5; qty=10; }
-    let cost = (qty/10)*price;
-    // 安い相場(デフレ系)ほど買い増し意欲UP（hard）
-    if(lv==='hard' && price<=30000) prob = Math.min(1, prob+0.05);
-    // 借金上限を超えない範囲で購入（normal/hardは借金もOK、easyは現金内のみ）
-    const buyAffordable = (lv==='easy') ? (p.cash > cost*1.5) : botCanAfford(p, cost);
-    if(buy && buyAffordable && Math.random() < prob){ tq.value = qty; return buy; }
-    // 高値圏での利確（hardは積極的）
-    const sellProb = lv==='hard' ? (price>=70000?0.6:0.15) : (lv==='easy'?0.1:0.25);
-    if(sell && p.stocks>=10 && Math.random() < sellProb){ tq.value = Math.min(p.stocks, qty); return sell; }
+    const floorMax = botDebtFloor(p); // 借金できる下限（負の値）
+    let floor, prob, maxLots;
+    if(lv==='easy'){       floor = 0;                     prob = p.job==='inv'?0.4:0.2;  maxLots = 2;  }   // 借金なし
+    else if(lv==='hard'){  floor = floorMax;              prob = p.job==='inv'?0.97:0.85; maxLots = 99; }  // 限界まで借金
+    else {                 floor = Math.floor(floorMax/2); prob = p.job==='inv'?0.8:0.55; maxLots = 5;  }   // ほどほど借金
+    // 相場で意欲を補正：安い相場は買い増し、高い相場は買い控え
+    if(price <= 30000) prob = Math.min(1, prob + 0.1);
+    if(price >= 70000) prob = prob * 0.4;
+    let lots = Math.min(maxLots, botAffordableLots(p, price, floor));
+    if(lv==='easy') lots = Math.min(lots, Math.floor((p.cash * 0.6) / price)); // easyは手持ちの6割まで
+    if(buy && lots >= 1 && Math.random() < prob){ tq.value = lots * 10; return buy; }
+    // 高値圏での利確（hardは積極的にまとめて売る）
+    const sellProb = lv==='hard' ? (price>=70000?0.7:0.1) : (lv==='easy'?0.15:0.3);
+    if(sell && p.stocks>=10 && Math.random() < sellProb){
+      tq.value = Math.min(p.stocks, lv==='hard' ? p.stocks : 20);
+      return sell;
+    }
     return end || btns[btns.length-1];
   }
   // 取引結果：終了する
@@ -2423,10 +2903,15 @@ async function onRoll(){
   if(die)    die.textContent = face;
   if(mobDie) mobDie.textContent = face;
   log(`<span style="color:${p.color.bg}">${p.name}</span> 🎲 <strong>${roll}</strong>`);
+  // チュートリアル：はじめてサイコロを振ったらマス効果を案内（1回だけ）
+  if(window._tutorial && !window._tutRolled){
+    window._tutRolled = true;
+    setTimeout(()=>showCoach('🗺️ 止まったマスの指示に従おう。<strong>市場マス</strong>で株を売買、<strong>強制ストップ</strong>で給料や決算があるよ。', 9000), 1600);
+  }
   // オンライン：他のプレイヤーにも出目を見せる
   if(!LOCAL_MODE) broadcastLive({
     type:'t-event', tag:'🎲 サイコロ', title:`${p.name} の出目`,
-    desc:`<div style="text-align:center"><div style="font-size:64px;line-height:1">${face}</div><div style="font-size:20px;font-weight:900;margin-top:6px">🎲 <strong>${roll}</strong> が出た！</div></div>`,
+    desc:`${face} 🎲 ${roll} が出ました！`,
     eff:`🎲 ${roll}`, effc:'gold'
   }, false).catch(()=>{});
   
@@ -2511,6 +2996,8 @@ async function nextTurn(){
       tries++;
   }
   
+  // 市場操作で一時変更した市場を元に戻す（市場操作はその取引限り）
+  if(window._revertMarketAfter){ G.market = window._revertMarketAfter; window._revertMarketAfter = null; updateMktDisplay(); }
   G.ci = next; G.turn++; isMoving=false;
   document.getElementById('dice-area')?.classList.remove('disabled');
   renderAll();
@@ -2529,6 +3016,10 @@ async function nextTurn(){
   if(LOCAL_MODE) {
     if(_ann && _ann.then) _ann.then(()=> maybeBotTurn());
     else maybeBotTurn();
+  } else if(isHost && G.players[G.ci]?.isBot) {
+    // オンラインBot補充: 次の手番がBotなら、ホストが続けて代行（連続Botもチェーン）
+    if(_ann && _ann.then) _ann.then(()=> maybeDriveOnlineBot());
+    else maybeDriveOnlineBot();
   }
 }
 
@@ -2753,8 +3244,9 @@ function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', ac
     }, 550);
   }
 
-  // Bot自動応答：ローカルでBotが操作対象なら、表示中モーダルのボタンを自動選択
-  if(LOCAL_MODE && acts && acts.length > 0 && typeof scheduleBotResponse === 'function') scheduleBotResponse();
+  // Bot自動応答：Botが操作対象なら、表示中モーダルのボタンを自動選択
+  // （オンラインでもホストがBotを代行。botRespond側の isBotActing() ガードで人間のモーダルには反応しない）
+  if(botDriveAllowed() && acts && acts.length > 0 && typeof scheduleBotResponse === 'function') scheduleBotResponse();
 }
 function closeModal(){
   document.getElementById('modal').classList.remove('show');
@@ -2763,20 +3255,19 @@ function closeModal(){
 
 async function checkMarket(p, cell){
   if(cell.isMarket){
+      tutorMarketCoach(p); // チュートリアル: 市場マスでの取引を解説（初回詳しく/以降は相場助言）
       // 市場操作カードによる介入チェック
       if(G.marketManip && G.marketManip.targetId === p.id) {
         const manip = G.marketManip;
         G.marketManip = null;
+        const prevMarket = G.market; // 操作はこの取引限り → 取引後に元の市場へ戻す
+        const m = MARKETS.find(x => x.id === manip.marketId) || G.market; // 引いた人が指定済みの市場
+        G.market = m; updateMktDisplay();
+        window._revertMarketAfter = prevMarket; // この取引後に元の市場へ戻す
         showModal({
-          type:'t-happen', tag:'⚡ 市場操作発動！', title:`${manip.controllerName}が市場を操作します！`,
-          desc:`${p.name}の市場取引を${manip.controllerName}が支配します。<br><strong>${manip.controllerName}</strong>、使用する市場状態を選んでください。`,
-          acts: MARKETS.map(m => ({
-            lbl: `${m.emoji} ${m.name}（株${fmtM(m.stockPrice)}/10株）`, p:false,
-            fn: () => {
-              G.market = m; updateMktDisplay();
-              closeModal(); openTrade(p, cell, 'buy');
-            }
-          }))
+          type:'t-happen', tag:'⚡ 市場操作発動！', title:`${manip.controllerName}の市場操作！`,
+          desc:`${p.name}の市場が <strong>${m.emoji}${m.name}</strong> に固定されました（${manip.controllerName}が指定）。<br><small>※この取引のみ。終わると元の市場(${prevMarket.emoji}${prevMarket.name})に戻ります。</small>`,
+          acts:[{lbl:'取引する', p:true, fn:()=>{ closeModal(); openTrade(p, cell, 'buy'); }}]
         });
         return;
       }
@@ -2789,7 +3280,7 @@ async function checkMarket(p, cell){
                   {lbl:'変動させる', p:true, fn:async ()=> {
                       closeModal();
                       const oldMkt = G.market;
-                      const newMkt = await spinRoulette('市場が変動します...', MARKET_POOL, 't-info');
+                      const newMkt = await spinRoulette('市場が変動します...', activeMarketPool(), 't-info');
                       showModal({
                           type:'t-info', tag:'市場選択', title:'どちらの市場で取引しますか？', fullScreen:true,
                           desc: buildDesc(cell, `旧: ${oldMkt.emoji} ${oldMkt.name} (${fmtM(oldMkt.stockPrice)})<br>新: ${newMkt.emoji} ${newMkt.name} (${fmtM(newMkt.stockPrice)})`),
@@ -2802,7 +3293,7 @@ async function checkMarket(p, cell){
               ]
           });
       } else {
-          const newMkt = await spinRoulette('市場が変動します...', MARKET_POOL, 't-info');
+          const newMkt = await spinRoulette('市場が変動します...', activeMarketPool(), 't-info');
           G.market = newMkt; updateMktDisplay();
           openTrade(p, cell, 'buy');
       }
@@ -2815,6 +3306,7 @@ function openTrade(p, cell, mode, isForced=false, isFollow=false){
   if (!isFollow && !isForced) {
     // 便乗の対象：他の投資家で、未ゴール＆便乗回数が2回未満の人。ゴール/清算中は便乗なし
     if (p.job === 'inv' && !window._settlementStarted && !G.settlementPhase) {
+      // 便乗対象：他の投資家で未ゴール＆便乗2回未満（Bot含む。Botフォロワーはホストが代行）
       G_tradeFollowQueue = G.players.filter(op => op.id !== p.id && op.job === 'inv' && !op.isGoal && (op.followUsed||0) < 2);
     } else {
       // 会社員・フリーターの取引では便乗発動しない（古いキューも念のクリア）
@@ -2882,9 +3374,18 @@ function processFollowTrade(activeP, isForced, cell) {
     const follower = G_tradeFollowQueue.shift();
     if(!follower) { endTradeAction(isForced, cell); return; }
 
-    if(LOCAL_MODE) {
-      // ローカル: そのまま表示（便乗操作はfollowerが行う → Botの操作対象をfollowerに切替）
+    // オンラインでBotフォロワーは「ホストだけ」が代行する。
+    // ホスト以外の端末（＝アクティブが遠隔の人間）ではこのBotはスキップして次へ（ストール防止）。
+    if(!LOCAL_MODE && follower.isBot && !isHost) {
+      processFollowTrade(activeP, isForced, cell);
+      return;
+    }
+
+    if(LOCAL_MODE || (follower.isBot && isHost)) {
+      // ローカル / オンラインBot補充: その場で表示（便乗操作はfollowerが行う → 操作対象をfollowerに切替）
+      // Botフォロワーはホストが代行するため、オンラインでもブロードキャスト待ちにしない
       window._botActorOverride = follower;
+      tutorFollowCoach(follower); // チュートリアル: 便乗取引（公開操作）を解説（人間が便乗できるときだけ）
       showModal({
         type:'t-info', tag:'公開操作', title:`${follower.name}の追随取引`,
         desc: `【投資家スキル】${activeP.name}が取引を行いました。<br>${follower.name}も現在の市場で便乗取引が可能です。<br>現在の市場: ${G.market.emoji} ${G.market.name} (${fmtM(G.market.stockPrice)}/10株)<br>手持ち現金: ${fmtM(follower.cash)}`,
@@ -3087,7 +3588,7 @@ function promptInsurance(p, year, cell, descText) {
 function enterForcedInvestment(p, cell) {
     closeModal();
     isMoving = true; // 投資フェーズ中はsyncGameStateの割り込みをブロック
-    spinRoulette('強制ストップの市場変動...', MARKET_POOL, 't-info').then(newMkt => {
+    spinRoulette('強制ストップの市場変動...', activeMarketPool(), 't-info').then(newMkt => {
         G.market = newMkt; updateMktDisplay();
         doForcedInvestmentMenu(p, cell);
     });
@@ -3506,12 +4007,48 @@ function showForcedSell(p, maxDebt, nextFn) {
 }
 
 // ─── 併設マス(28/35/38)：イベントカード処理の後に「元の効果」を実行し、最後に市場取引へ ───
+// 不動産を5倍で売却するメニュー（どれを売るか選択・複数売却可）。マス28用
+function sellEstatesMenu(p, cell, onDone, total=0){
+  const ests = pEstates(p);
+  if(ests.length === 0){
+    if(total > 0){
+      if(!LOCAL_MODE) pushState();
+      showModal({type:'t-event', tag:'不動産売却', title:'不動産5倍売却！', desc:buildDesc(cell, `売却合計 <span class="lp">+${fmtM(total)}</span>`), eff:`+${total.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！', p:true, fn:()=>{ closeModal(); onDone(); }}]});
+    } else { onDone(); }
+    return;
+  }
+  const acts = ests.map((e, i) => ({
+    lbl: `${fmtM(e.price)}の物件 → ${fmtM(e.price*5)}で売却`, p: ests.length === 1,
+    fn: () => {
+      const v = e.price * 5; p.cash += v; ests.splice(i, 1);
+      log(`<span style="color:${p.color.bg}">${p.name}</span> 不動産5倍売却 <span class="lp">+${fmtM(v)}</span>`);
+      renderAll(); if(!LOCAL_MODE) pushState();
+      sellEstatesMenu(p, cell, onDone, total + v); // 残りを再表示（複数売却）
+    }
+  }));
+  if(ests.length >= 2){
+    acts.push({ lbl: `🏠 すべて売却（${ests.length}件）`, p:true, fn: () => {
+      let v = 0; ests.forEach(e => v += e.price * 5); p.cash += v; p.estates = [];
+      log(`<span style="color:${p.color.bg}">${p.name}</span> 不動産5倍売却(全${ests.length}件) <span class="lp">+${fmtM(v)}</span>`);
+      renderAll(); if(!LOCAL_MODE) pushState();
+      sellEstatesMenu(p, cell, onDone, total + v);
+    }});
+  }
+  acts.push({ lbl: total>0 ? '売却を終える' : '売却しない', p:false, fn: () => {
+    closeModal();
+    if(total > 0){
+      showModal({type:'t-event', tag:'不動産売却', title:'不動産5倍売却！', desc:buildDesc(cell, `売却合計 <span class="lp">+${fmtM(total)}</span>`), eff:`+${total.toLocaleString()}円`, effc:'plus', acts:[{lbl:'OK', p:true, fn:()=>{ closeModal(); onDone(); }}]});
+    } else { onDone(); }
+  }});
+  showModal({type:'t-event', tag:'🏠 不動産売却', title:'どの不動産を5倍で売る？',
+    desc: buildDesc(cell, `保有不動産を購入額の<strong>5倍</strong>で売却できます。売りたい物件を選んでください（複数可）。${total>0?'<br>これまでの売却額: <span class="lp">+'+fmtM(total)+'</span>':''}`),
+    acts });
+}
+
 function comboOriginalThenMarket(p, cell){
   const after = () => nextTurn(); // 28/35/38 は市場取引なし。元効果の後はターン終了
-  if(cell.i===28){ // 不動産5倍売却
-    let ev=0; pEstates(p).forEach(e=>{const v=e.price*5; p.cash+=v; ev+=v;}); p.estates=[];
-    if(ev>0){ if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'不動産売却', title:'不動産5倍売却！', desc:buildDesc(cell), eff:`+${ev.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();after();}}]}); }
-    else after();
+  if(cell.i===28){ // 不動産5倍売却（どれを売るか選択・複数可）
+    sellEstatesMenu(p, cell, after);
   } else if(cell.i===35){ // 国債2倍売却
     if(!p.bonds)p.bonds=[]; let bv=0; p.bonds.forEach(b=>{bv+=b.units*5000*2;}); p.cash+=bv; p.bonds=[];
     if(bv>0){ if(!LOCAL_MODE)pushState(); showModal({type:'t-event', tag:'国債売却', title:'国債2倍売却！', desc:buildDesc(cell), eff:`+${bv.toLocaleString()}円`, effc:'plus', acts:[{lbl:'大儲け！',p:true,fn:()=>{closeModal();after();}}]}); }
@@ -3601,35 +4138,31 @@ async function processCell(p, cell){
         }
 
       } else if(ec.type === 'estBonus') {
-        // 保有カード化：今すぐ売る or 保有して後で好きな時に使える（1回のみ）
-        const estActs = pEstates(p).map((e, ei) => ({
-          lbl: `今すぐ${fmtM(e.price)}の物件→${fmtM(e.price*4)}で売却`, p:true,
-          fn: () => {
-            const profit = e.price*4; p.cash+=profit; pEstates(p).splice(ei,1);
-            log(`<span style="color:${p.color.bg}">${p.name}</span> 不動産4倍売却 <span class="lp">+${fmtM(profit)}</span>`);
-            if(!LOCAL_MODE) pushState();
-            showModal({type:'t-event', tag:'売却完了！', title:'4倍で売却！', desc:'', eff:`+${fmtM(profit)}`, effc:'plus', acts:[{lbl:'最高！',p:true,fn:()=>{closeModal();nextFn();}}]});
-          }
-        }));
-        estActs.push({lbl:'🎫 保有して後で使う', p: pEstates(p).length===0, fn:()=>{
+        // 保有カード化：今すぐ売る（複数可）or 保有して後で使う（使用は1回）
+        const keepCard = () => {
           p.estSell4 = true; renderAll(); if(!LOCAL_MODE) pushState();
-          showModal({type:'t-event', tag:'🎫 カード保有', title:'不動産価格上昇を保有！', desc:buildDesc(cell, '不動産1件を<strong>4倍</strong>で売却できます（1回のみ）。<br><strong>強制ストップ到達時</strong>の投資フェーズで使えます。'), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
-        }});
-        showModal({type:'t-event', tag:'不動産価格上昇！', title: pEstates(p).length? '今売る？保有する？' : 'カードを保有', desc:buildDesc(cell, ec.desc), acts:estActs}); break;
+          showModal({type:'t-event', tag:'🎫 カード保有', title:'不動産価格上昇を保有！', desc:buildDesc(cell, '不動産を<strong>4倍</strong>で売却できます（使用は1回・複数物件OK）。<br><strong>強制ストップ到達時</strong>の投資フェーズで使えます。'), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+        };
+        if(pEstates(p).length === 0){ keepCard(); break; }
+        sellEstates4xMenu(p, { onDone: ()=> nextFn(), onKeep: keepCard, keepLabel:'🎫 保有して後で使う' }); break;
 
       } else if(ec.type === 'mktControl') {
-        // プレイヤー指定 → 次の市場取引の市場を操作できる
+        // プレイヤー指定 → 次の市場取引の市場を操作。引いた人がその場で「対象」と「市場状態」の両方を選ぶ
         const targets = G.players.filter(op=>op.id!==p.id);
         if(targets.length===0){showModal({type:'t-info',tag:'市場操作',title:'対象なし',desc:'他のプレイヤーがいません。',acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});break;}
-        const tActs = targets.map(op=>({
-          lbl: op.name, p:true,
-          fn:()=>{
-            G.marketManip={targetId:op.id, controllerId:p.id, controllerName:p.name};
-            showModal({type:'t-event', tag:'市場操作セット完了', title:'市場操作セット！',
-              desc:`${op.name}の次の市場取引で、${p.name}が市場状態を指定できます。`,
-              acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
-          }
-        }));
+        const pickMarket = (op) => {
+          showModal({type:'t-event', tag:'市場操作', title:`${op.name}の市場をどれにする？`,
+            desc:`${op.name}の次の市場取引を、選んだ市場状態に固定できます。`,
+            acts: MARKETS.map(m=>({lbl:`${m.emoji}${m.name}（株${fmtM(m.stockPrice)}/10株）`, p:false, fn:()=>{
+              G.marketManip={targetId:op.id, controllerId:p.id, marketId:m.id, controllerName:p.name};
+              if(!LOCAL_MODE) pushState();
+              showModal({type:'t-event', tag:'市場操作セット完了', title:'市場操作セット！',
+                desc:`${op.name}の次の市場取引は <strong>${m.emoji}${m.name}</strong> に固定されます（${p.name}が指定）。`,
+                acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+            }}))
+          });
+        };
+        const tActs = targets.map(op=>({ lbl: op.name, p:true, fn:()=>{ closeModal(); pickMarket(op); } }));
         showModal({type:'t-event', tag:'市場操作', title:'誰の市場を操作する？', desc:buildDesc(cell,ec.desc), acts:tActs}); break;
 
       } else if(ec.type === 'dbldiv') { p.divMod=2;
@@ -3787,7 +4320,14 @@ async function processCell(p, cell){
     case 24: p.cash-=300000; showModal({type:'t-happen', tag:cell.name, title:'友達が破産...', desc:buildDesc(cell), eff:'-300,000円', effc:'minus', acts:[{lbl:'払う',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]}); break;
     case 25: p.cash+=500000; showModal({type:'t-event', tag:cell.name, title:'宝くじ当選', desc:buildDesc(cell), eff:'+500,000円', effc:'plus', acts:[{lbl:'やったー！',p:true,fn:()=>{closeModal();nextFn();}}]}); break;
     case 26: promptBuyIPO(p, cell, nextFn); break;
-    case 27: p.cash-=200000; showModal({type:'t-happen', tag:cell.name, title:'支払い', desc:buildDesc(cell), eff:'-200,000円', effc:'minus', acts:[{lbl:'払う',p:true,fn:()=>{closeModal();afterForcedPayment(p,nextFn);}}]}); break;
+    case 27: {
+      const bu27 = (p.bonds||[]).reduce((s,b)=>s+(b.units||0),0);
+      const inc27 = bu27*20000; p.cash += inc27;
+      if(!LOCAL_MODE) pushState();
+      if(inc27>0) showModal({type:'t-event', tag:cell.name, title:`保有国債 ${bu27}口 × 2万円`, desc:buildDesc(cell), eff:`+${inc27.toLocaleString()}円`, effc:'plus', acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+      else showModal({type:'t-info', tag:cell.name, title:'国債を持っていないので影響なし', desc:buildDesc(cell, '国債を保有していないためボーナスはありません。'), acts:[{lbl:'OK',p:true,fn:()=>{closeModal();nextFn();}}]});
+      break;
+    }
     // case 28（不動産売却5倍）はイベントカード併設マスへ（上の event ブロック＋ comboOriginalThenMarket で処理）
     case 32: {
       // 火災発生：保険で無効、なければ最高額不動産を失う（固有効果）
@@ -3992,7 +4532,7 @@ async function settlePlayer(p) {
   }, p.id);
 
   // ② 市場変動（最終清算専用・ゆっくり4秒表示）
-  const market = await spinRoulette(`${p.name}の市場変動！`, MARKET_POOL, 't-info', 1000, plan.marketId || null);
+  const market = await spinRoulette(`${p.name}の市場変動！`, activeMarketPool(), 't-info', 1000, plan.marketId || null);
   G.market = market;
   updateMktDisplay();
   await sleep(500);
@@ -4063,6 +4603,7 @@ async function settlePlayer(p) {
     // フリーターは判定有利：🎲4で上場(200万/口)、🎲5〜6でユニコーン(2000万/口)
     const isFre = p.job === 'fre';
     const uni = isFre ? (roll>=5) : (roll===6);   // ユニコーン
+    if(uni) window._achUnicorn = true; // やりこみ実績「ユニコーンハンター」用
     const ipoOK = isFre ? (roll>=4) : (roll>=5);  // 上場以上
     const iv = uni ? ipoCount*20000000 : (ipoOK ? ipoCount*2000000 : 0);
     p.cash += iv; p.ipo = 0;
@@ -4136,6 +4677,9 @@ async function showFinalSettlement() {
   if(window._settlementStarted) return; // 二重起動防止
   window._settlementStarted = true;
 
+  // やりこみ実績「不動産王」用: 清算で不動産が現金化される前に最大保有数を記録
+  window._achMaxEstates = Math.max(0, ...G.players.map(p => (p.estates || []).length));
+
   const safeGoalOrder = Array.isArray(G.goalOrder) ? G.goalOrder : [];
   const activeOrder   = safeGoalOrder.filter(id => !G.players.find(p=>p.id===id)?.isBankrupt);
   const bankruptOrder = G.players.filter(p=>p.isBankrupt).map(p=>p.id);
@@ -4148,7 +4692,7 @@ async function showFinalSettlement() {
     for(const playerId of order) {
       const p = G.players.find(pl => pl.id === playerId);
       if(!p || p.isBankrupt) continue;
-      const market = MARKET_POOL[Math.floor(Math.random() * MARKET_POOL.length)];
+      const _mp = activeMarketPool(); const market = _mp[Math.floor(Math.random() * _mp.length)];
       const ipoRoll = p.ipo > 0 ? (Math.floor(Math.random() * 6) + 1) : 0;
       G.settlementPlan[playerId] = { marketId: market.id, ipoRoll };
     }
@@ -4173,10 +4717,10 @@ async function showFinalSettlement() {
     const p = G.players.find(pl => pl.id === playerId);
     if(!p) continue;
 
-    if(LOCAL_MODE || p.id === myId) {
-      // 自分のプレイヤー → 清算操作を実行してFirebaseへ同期
+    if(LOCAL_MODE || p.id === myId || (isHost && p.isBot)) {
+      // 自分のプレイヤー（またはオンラインBot補充ではホストが代行）→ 清算を実行してFirebaseへ同期
       window._mySettlementActive = true; // syncGameStateによるG.players上書きをブロック
-      window._botActorOverride = p; // ローカル: このプレイヤーがBotなら自動清算
+      window._botActorOverride = p; // このプレイヤーがBotなら自動清算（ホストが代行）
       if(p.isBankrupt) {
         applyDebtInterest(p);
       } else {
@@ -4244,6 +4788,9 @@ function showWinner(){
   `).join('');
   document.getElementById('wov').classList.add('show');
 
+  // ローカル: やりこみ実績・通算記録を保存
+  if(LOCAL_MODE) { try { recordLocalGameResult(sorted); } catch(e) { console.warn('ach record failed', e); } }
+
   // オンライン: gameOver フラグを Firebase に書き込んで全員に通知
   if(!LOCAL_MODE && roomCode && FB_URL) {
     G.gameOver = true;
@@ -4254,6 +4801,102 @@ function showWinner(){
     saveGameResult(sorted); // ランキングに記録
   }
 }
+
+// ═══════════════════════════════════════════
+//  やりこみ要素（ローカル）：実績・バッジ＋通算記録（この端末で共通）
+// ═══════════════════════════════════════════
+const ACH_KEY = 'tousika_ach_v1', STATS_KEY = 'tousika_stats_v1';
+const ACHIEVEMENTS = [
+  {id:'first',      icon:'🏁', name:'はじめの一歩',       desc:'ローカルで1ゲーム完走する'},
+  {id:'regular',    icon:'🎲', name:'常連プレイヤー',     desc:'ローカルで通算10ゲーム遊ぶ'},
+  {id:'millionaire',icon:'💰', name:'ミリオネア',         desc:'誰かが総資産1,000万円に到達'},
+  {id:'tycoon',     icon:'💸', name:'大富豪',             desc:'誰かが総資産3,000万円に到達'},
+  {id:'unicorn',    icon:'🦄', name:'ユニコーンハンター', desc:'IPOでユニコーン(×100)を的中'},
+  {id:'estate',     icon:'🏠', name:'不動産王',           desc:'不動産を3軒以上保有してゴール'},
+  {id:'noDebt',     icon:'🛡️', name:'無借金経営',         desc:'一度も借金せずに勝利する'},
+  {id:'winEmp',     icon:'🏢', name:'堅実経営',           desc:'会社員で勝利する'},
+  {id:'winInv',     icon:'📈', name:'投資の達人',         desc:'投資家で勝利する'},
+  {id:'winFre',     icon:'💼', name:'下剋上',             desc:'フリーターで勝利する'},
+  {id:'beatHard',   icon:'🤖', name:'AI撃破',             desc:'「つよい」Bot相手に人間が勝利'},
+];
+function loadAch(){ try { return JSON.parse(localStorage.getItem(ACH_KEY)) || {}; } catch(e){ return {}; } }
+function saveAch(a){ try { localStorage.setItem(ACH_KEY, JSON.stringify(a)); } catch(e){} }
+function loadStats(){ try { return Object.assign({games:0,best:0,wins:{emp:0,inv:0,fre:0},hardWins:0}, JSON.parse(localStorage.getItem(STATS_KEY))||{}); } catch(e){ return {games:0,best:0,wins:{emp:0,inv:0,fre:0},hardWins:0}; } }
+function saveStats(s){ try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch(e){} }
+
+function recordLocalGameResult(sorted){
+  if(!LOCAL_MODE) return;
+  sorted = sorted || [...G.players].sort((a,b)=> b.cash - a.cash);
+  const winner = sorted[0];
+  if(!winner) return;
+  const topAssets = winner.cash; // 清算後は cash = 総資産
+
+  // 通算記録
+  const stats = loadStats();
+  stats.games = (stats.games||0) + 1;
+  stats.best  = Math.max(stats.best||0, topAssets);
+  stats.wins  = stats.wins || {emp:0,inv:0,fre:0};
+  if(winner.job) stats.wins[winner.job] = (stats.wins[winner.job]||0) + 1;
+  const hadHardBot = (window._botLevel === 'hard') && G.players.some(p=>p.isBot);
+  const humanWon = !winner.isBot;
+  if(hadHardBot && humanWon) stats.hardWins = (stats.hardWins||0) + 1;
+  saveStats(stats);
+
+  // 実績の解禁
+  const ach = loadAch(); const newly = [];
+  const unlock = id => { if(!ach[id]){ ach[id] = Date.now(); newly.push(id); } };
+  unlock('first');
+  if(stats.games >= 10) unlock('regular');
+  if(sorted.some(p => p.cash >= 10000000)) unlock('millionaire');
+  if(sorted.some(p => p.cash >= 30000000)) unlock('tycoon');
+  if(window._achUnicorn) unlock('unicorn');
+  if((window._achMaxEstates||0) >= 3) unlock('estate');
+  if(!winner.everBorrowed) unlock('noDebt');
+  if(winner.job === 'emp') unlock('winEmp');
+  if(winner.job === 'inv') unlock('winInv');
+  if(winner.job === 'fre') unlock('winFre');
+  if(hadHardBot && humanWon) unlock('beatHard');
+  saveAch(ach);
+
+  if(newly.length) setTimeout(()=> showAchievementToast(newly), 900);
+}
+
+// 新規解禁の祝福トースト（順番に表示）
+function showAchievementToast(ids){
+  const defs = ids.map(id => ACHIEVEMENTS.find(a=>a.id===id)).filter(Boolean);
+  defs.forEach((a,i) => setTimeout(()=>{
+    const el = document.createElement('div');
+    el.className = 'ach-toast';
+    el.innerHTML = `<div class="ach-toast-icon">${a.icon}</div><div><div class="ach-toast-h">🎖️ 実績解除！</div><div class="ach-toast-n">${a.name}</div></div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(()=> el.classList.add('show'));
+    setTimeout(()=>{ el.classList.remove('show'); setTimeout(()=>el.remove(), 400); }, 3200);
+  }, i * 800));
+}
+
+// 実績パネル
+function openAchievements(){
+  const stats = loadStats(), ach = loadAch();
+  const unlocked = ACHIEVEMENTS.filter(a=>ach[a.id]).length;
+  const head = `
+    <div class="ach-stats">
+      <div class="ach-stat"><div class="ach-stat-v">${stats.games||0}</div><div class="ach-stat-l">プレイ数</div></div>
+      <div class="ach-stat"><div class="ach-stat-v">${fmtM(stats.best||0)}</div><div class="ach-stat-l">自己ベスト総資産</div></div>
+      <div class="ach-stat"><div class="ach-stat-v">${unlocked}/${ACHIEVEMENTS.length}</div><div class="ach-stat-l">実績</div></div>
+    </div>
+    <div class="ach-substat">🏢 会社員 ${stats.wins?.emp||0}勝 ／ 📈 投資家 ${stats.wins?.inv||0}勝 ／ 💼 フリーター ${stats.wins?.fre||0}勝 ／ 🤖 つよいBot撃破 ${stats.hardWins||0}回</div>`;
+  const list = ACHIEVEMENTS.map(a => {
+    const on = !!ach[a.id];
+    return `<div class="ach-item ${on?'on':'off'}">
+      <div class="ach-item-icon">${on?a.icon:'🔒'}</div>
+      <div class="ach-item-txt"><div class="ach-item-n">${on?a.name:'？？？'}</div><div class="ach-item-d">${a.desc}</div></div>
+      ${on?'<div class="ach-item-chk">✓</div>':''}
+    </div>`;
+  }).join('');
+  document.getElementById('ach-body').innerHTML = head + list;
+  document.getElementById('achievements-panel').classList.add('open');
+}
+function closeAchievements(){ document.getElementById('achievements-panel')?.classList.remove('open'); }
 
 // ═══════════════════════════════════════════
 //  ランキングシステム
@@ -4404,6 +5047,65 @@ function renderRanking(listEl, entries, tab) {
 // ═══════════════════════════════════════════
 
 let FB_URL = '';
+// ★★★ ここに Firebase Realtime Database の URL を入れると、オンラインは「設定なしで即接続」になります ★★★
+//   例: 'https://あなたのプロジェクト-default-rtdb.firebaseio.com'
+//   （空のままだと従来通り、初回だけ設定画面が出ます）
+const BAKED_FB_URL = 'https://financial-education-board-game-default-rtdb.firebaseio.com';
+// ★★★ 匿名認証用の Web API キー（Firebaseコンソール → プロジェクトの設定 → 全般 → ウェブAPIキー）★★★
+//   入れると「匿名サインイン」して、認証済みの人だけがDBを読み書きできるようになります。
+//   （空のままだと認証なしで動作します）
+const FB_API_KEY = 'AIzaSyDjqAcRD77FevV3eZDJDDqRvnRtLILSzwQ';
+let _fbToken = null, _fbTokenExp = 0, _fbRefresh = null, _fbAuthInflight = null;
+// 匿名サインイン（トークンが無効/期限切れなら取り直す。残り60秒で自動更新）
+async function ensureFbAuth() {
+  if(!FB_API_KEY) return; // キー未設定なら認証なし運用
+  if(_fbToken && Date.now() < _fbTokenExp - 60000) return; // まだ有効
+  // 同時に複数の通信から呼ばれても、サインインは1本だけ走らせて共有する
+  if(_fbAuthInflight) return _fbAuthInflight;
+  _fbAuthInflight = _doFbAuth().finally(()=>{ _fbAuthInflight = null; });
+  return _fbAuthInflight;
+}
+// 認証リクエスト用: タイムアウト付きfetch（固まっても全DB通信を道連れにしない）
+function _authFetch(url, opt) {
+  return Promise.race([
+    fetch(url, opt),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('auth timeout')), 6000))
+  ]);
+}
+async function _doFbAuth() {
+  try {
+    // 既にサインイン済みなら、リフレッシュトークンで更新（同じ匿名ユーザーを使い回す＝ユーザーが増えない）
+    if(_fbRefresh) {
+      const res = await _authFetch(`https://securetoken.googleapis.com/v1/token?key=${FB_API_KEY}`, {
+        method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(_fbRefresh)}`
+      });
+      const d = await res.json();
+      if(d && d.id_token) {
+        _fbToken = d.id_token;
+        _fbRefresh = d.refresh_token || _fbRefresh;
+        _fbTokenExp = Date.now() + (parseInt(d.expires_in||'3600',10) * 1000);
+        return;
+      }
+      // リフレッシュ失敗 → 新規サインインにフォールバック
+    }
+    // 新規 匿名サインイン
+    const res = await _authFetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FB_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ returnSecureToken: true })
+    });
+    const d = await res.json();
+    if(d && d.idToken) {
+      _fbToken = d.idToken;
+      _fbRefresh = d.refreshToken || null;
+      _fbTokenExp = Date.now() + (parseInt(d.expiresIn||'3600',10) * 1000);
+    } else {
+      console.warn('匿名認証に失敗', d && d.error && d.error.message);
+    }
+  } catch(e) { console.warn('匿名認証エラー', e.message); }
+}
+// URLに付ける認証パラメータ（?か&かを指定）
+function fbAuthParam(sep) { return (FB_API_KEY && _fbToken) ? `${sep}auth=${_fbToken}` : ''; }
 let LOCAL_MODE = false;
 let myId = null;
 let roomCode = null;
@@ -4415,8 +5117,9 @@ let myName = '';
 // ─── Firebase REST API ───────────────────────
 async function fbGet(path) {
   try {
+    await ensureFbAuth();
     const timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 7000));
-    const req = fetch(`${FB_URL}/${path}.json?_=${Date.now()}`);
+    const req = fetch(`${FB_URL}/${path}.json?_=${Date.now()}${fbAuthParam('&')}`);
     const r = await Promise.race([req, timeout]);
     if(r.status === 401 || r.status === 403) return '__PERMISSION_DENIED__';
     if(!r.ok) { console.warn('fbGet HTTP error', r.status, path); return null; }
@@ -4428,8 +5131,9 @@ async function fbGet(path) {
 }
 async function fbSet(path, data) {
   try {
+    await ensureFbAuth();
     const timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 8000));
-    const req = fetch(`${FB_URL}/${path}.json`, {
+    const req = fetch(`${FB_URL}/${path}.json${fbAuthParam('?')}`, {
       method:'PUT', body:JSON.stringify(data),
       headers:{'Content-Type':'application/json'}
     });
@@ -4443,8 +5147,9 @@ async function fbSet(path, data) {
 }
 async function fbPatch(path, data) {
   try {
+    await ensureFbAuth();
     const timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 8000));
-    const req = fetch(`${FB_URL}/${path}.json`, {
+    const req = fetch(`${FB_URL}/${path}.json${fbAuthParam('?')}`, {
       method:'PATCH', body:JSON.stringify(data),
       headers:{'Content-Type':'application/json'}
     });
@@ -4500,6 +5205,8 @@ async function broadcastLive(data, fullScreen=false) {
 
 function isMyTurn() {
   if(LOCAL_MODE) return true;
+  // オンラインBot補充: 現在の手番がBotなら、ホスト端末が「自分の番」として代行する
+  if(isHost && G.players[G.ci]?.isBot) return true;
   return G.players[G.ci]?.id === myId;
 }
 
@@ -4691,6 +5398,9 @@ async function syncGameState() {
       if(md) { md.style.opacity = '1'; md.style.pointerEvents = 'auto'; }
     }
 
+    // オンラインBot補充: 手番がBotに変わったら、ホストが代行を開始する
+    if(turnChanged && isHost && G.players[G.ci]?.isBot) maybeDriveOnlineBot();
+
     // 清算フェーズ開始 → 非トリガーデバイスで showFinalSettlement を起動
     if(gs.settlementPhase && !window._settlementStarted) {
       showFinalSettlement(); // _settlementStarted フラグは関数内でセット
@@ -4830,12 +5540,37 @@ async function livePollTick() {
 // 旧名エイリアス（互換）
 async function gamePollTick() { await syncGameState(); }
 
+let _waitRoomMiss = 0; // ルーム取得の連続失敗回数（解散検知用）
 async function waitingPollTick() {
   if(LOCAL_MODE || !roomCode) return;
   if(_gameEntered) return; // すでにゲーム画面に遷移済みなら何もしない
   try {
     const room = await fbGet(`rooms/${roomCode}`);
-    if(!room) return;
+    if(!room) {
+      // 一時的な通信失敗と区別するため、連続で取れない場合のみ「解散」と判断してロビーへ戻す
+      _waitRoomMiss++;
+      if(_waitRoomMiss >= 5) {
+        _waitRoomMiss = 0;
+        if(pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+        roomCode = null; isHost = false;
+        history.replaceState(null, '', location.pathname);
+        toast('⚠️ ルームが解散されたか、通信が切断されました');
+        showScreen('lobby-screen');
+      }
+      return;
+    }
+    _waitRoomMiss = 0;
+    // ホスト判定は room.host から都度導出（退出によるホスト移譲に追従）
+    if(room.host){
+      const nowHost = (room.host === myId);
+      if(nowHost !== isHost){
+        isHost = nowHost;
+        const hsa = document.getElementById('host-start-area'); if(hsa) hsa.style.display = isHost ? 'block' : 'none';
+        const gwm = document.getElementById('guest-wait-msg'); if(gwm) gwm.style.display = isHost ? 'none' : 'block';
+        _syncRealModeWaitUI();
+        if(isHost) toast('👑 あなたがホストになりました');
+      }
+    }
     // ゲームが開始されたら移行
     if(room.started && room.gameState) {
       clearInterval(pollTimer);
@@ -4865,9 +5600,28 @@ async function waitingPollTick() {
       enterGame();
       return;
     }
+    // リアル志向モードの表示を同期（ホストの設定を全員に反映）
+    _realModeWait = !!room.realMode;
+    _syncRealModeWaitUI();
     // プレイヤー一覧を更新
     const players = Object.values(room.players || {}).sort((a,b)=>a.joined-b.joined);
     renderWaitingPlayers(players);
+
+    // ── ランダムマッチ: 情報表示（公開ルームのみ。自動スタートはせず、ホストが手動で開始） ──
+    const mm = document.getElementById('mm-info');
+    if(room.public){
+      if(mm){
+        mm.style.display = 'block';
+        const cnt = players.length;
+        if(cnt < 2){
+          mm.innerHTML = `🎲 ランダムマッチ｜あと <strong>${2 - cnt}人</strong> で開始できます（現在 ${cnt}人）`;
+        } else {
+          mm.innerHTML = `🎲 ${cnt}人 参加中！${isHost ? '「ゲームを開始する」で開始できます' : 'ホストの開始を待っています'}`;
+        }
+      }
+    } else {
+      if(mm) mm.style.display = 'none';
+    }
   } catch(e) { console.error('waitingPollTick error:', e); toast('⚠️ 待機エラー: '+e.message); }
 }
 
@@ -4898,7 +5652,7 @@ async function saveFirebase() {
   // 接続テスト
   const btn = document.querySelector('#firebase-screen .ob-btn-blue');
   btn.textContent = '接続確認中...'; btn.disabled = true;
-  const ok = await fbSet('_ping', { t: Date.now() });
+  const ok = await fbSet('_conncheck', { t: Date.now() }); // ルールで許可されたパスで接続テスト
   btn.textContent = '接続してはじめる 🚀'; btn.disabled = false;
 
   if(!ok) {
@@ -4913,9 +5667,39 @@ async function saveFirebase() {
 
 function useLocalMode() {
   LOCAL_MODE = true;
+  window._tutorial = false; hideCoach(); // 通常プレイなのでチュートリアル案内を解除
   showScreen('title-screen');
-  
+
   toast('🖥️ ローカルモードで起動しました');
+}
+
+// ─── タイトル（スタート画面）に戻る ───
+function backToStart() {
+  LOCAL_MODE = false;
+  isHost = false; roomCode = null;
+  window._tutorial = false; hideCoach();
+  if(pollTimer) { clearInterval(pollTimer); pollTimer = null; } // 待機ポーリング等を停止
+  history.replaceState(null, '', location.pathname); // ?room= を消す
+  showScreen('start-screen');
+}
+
+// 24時間以上前のルームを自動削除（ランキング rankings/ は別パスなので消えない）
+async function cleanupOldRooms() {
+  if(!FB_URL) return;
+  try {
+    const rooms = await fbGet('rooms');
+    if(!rooms || typeof rooms !== 'object') return;
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    for(const code in rooms) {
+      const created = rooms[code] && rooms[code].created;
+      // 進行中のゲーム（ホスト心拍が10分以内）は24時間を超えても消さない
+      const beatFresh = (now - (rooms[code] && rooms[code].hostBeat || 0)) < 10 * 60 * 1000;
+      if(created && (now - created) > DAY && !beatFresh) {
+        fetch(`${FB_URL}/rooms/${code}.json${fbAuthParam('?')}`, { method:'DELETE' }).catch(()=>{});
+      }
+    }
+  } catch(e) {}
 }
 
 function goToLobby() {
@@ -4924,6 +5708,7 @@ function goToLobby() {
     localStorage.setItem('myId', id);
     return id;
   })();
+  cleanupOldRooms(); // 古いルームを掃除（ランキングは保持）
   showScreen('lobby-screen');
   // URLパラメータで自動入力
   const rc = new URLSearchParams(location.search).get('room');
@@ -4937,6 +5722,71 @@ function goToLobby() {
 
 function genCode() {
   return Math.random().toString(36).slice(2,8).toUpperCase();
+}
+
+// ─── ランダムマッチ ───────────────────────────
+// 空いている公開ルームを探して参加。無ければ公開ルームを新規作成してホストになる。
+// （既存の待合室・開始・同期フローをそのまま利用するので、オンライン対戦の挙動は変えない）
+async function randomMatch() {
+  const name = document.getElementById('lobby-name').value.trim();
+  if(!name) { alert('プレイヤー名を入力してください'); return; }
+  if(!myId) myId = localStorage.getItem('myId') || (()=>{ const id=Math.random().toString(36).slice(2,10); localStorage.setItem('myId',id); return id; })();
+  myName = name;
+
+  const btn = document.querySelector('#lobby-screen .ob-btn-purple');
+  if(btn){ btn.disabled = true; btn.textContent = '🎲 マッチング中...'; }
+  const restoreBtn = () => { if(btn){ btn.disabled = false; btn.textContent = '🎲 ランダムマッチで対戦'; } };
+
+  try {
+    const rooms = await fbGet('rooms');
+    let target = null;
+    if(rooms && typeof rooms === 'object') {
+      const now = Date.now();
+      const candidates = Object.entries(rooms).filter(([code, r]) => {
+        if(!r || r.public !== true || r.started) return false;
+        const pc = r.players ? Object.keys(r.players).length : 0;
+        if(pc < 1 || pc >= 6) return false;                 // 満員/空は除外
+        if(r.players && r.players[myId]) return false;       // 自分が既にいる部屋は除外
+        if((now - (r.created || 0)) > 10 * 60 * 1000) return false; // 古い募集は除外
+        return true;
+      // 人数が多い部屋を優先（早く成立させる）
+      }).sort((a, b) => Object.keys(b[1].players).length - Object.keys(a[1].players).length);
+      if(candidates.length) target = candidates[0][0];
+    }
+
+    if(target) {
+      // 既存の公開ルームに参加
+      roomCode = target;
+      const r = rooms[target];
+      isHost = (r.host === myId);
+      const color = Object.keys(r.players || {}).length;
+      const ok = await fbSet(`rooms/${target}/players/${myId}`, { id:myId, name, color, joined:Date.now() });
+      if(!ok) { alert('❌ 参加に失敗しました。もう一度お試しください。'); restoreBtn(); return; }
+      history.replaceState(null, '', `?room=${roomCode}`);
+      toast('🎲 マッチしました！');
+      restoreBtn();
+      goToWaiting();
+    } else {
+      // 公開ルームを新規作成（ホスト）
+      roomCode = genCode();
+      isHost = true;
+      const roomData = {
+        host: myId, created: Date.now(), started: false, public: true,
+        players: { [myId]: { id:myId, name, color:0, joined:Date.now() } },
+        gameState: null
+      };
+      const ok = await fbSet(`rooms/${roomCode}`, roomData);
+      if(!ok) { alert('❌ ルーム作成に失敗しました。通信環境を確認してください。'); restoreBtn(); return; }
+      history.replaceState(null, '', `?room=${roomCode}`);
+      toast('🎲 マッチング待機中…他のプレイヤーを待っています');
+      restoreBtn();
+      goToWaiting();
+    }
+  } catch(e) {
+    console.warn('randomMatch error', e);
+    alert('❌ マッチングに失敗しました。通信環境を確認してください。');
+    restoreBtn();
+  }
 }
 
 async function createRoom() {
@@ -5008,13 +5858,40 @@ async function joinRoom() {
   goToWaiting();
 }
 
+// 待合室から退出してロビーに戻る（自分を部屋から削除。ホストなら必要に応じて移譲/部屋削除）
+async function leaveWaiting() {
+  if(pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  const _code = roomCode, _wasHost = isHost;
+  try { if(_code && myId) await fbSet(`rooms/${_code}/players/${myId}`, null); } catch(e){}
+  try {
+    if(_wasHost && _code){
+      const r = await fbGet(`rooms/${_code}`);
+      const remain = r && r.players ? Object.keys(r.players) : [];
+      if(remain.length === 0){
+        // 誰もいなくなった → 放置公開ルームを残さないよう削除
+        fetch(`${FB_URL}/rooms/${_code}.json${fbAuthParam('?')}`, { method:'DELETE' }).catch(()=>{});
+      } else {
+        // ホストを最年長参加者に移譲（残った人が開始操作できるように）
+        const next = Object.values(r.players).sort((a,b)=>a.joined-b.joined)[0];
+        if(next) await fbPatch(`rooms/${_code}`, { host: next.id, autoStartAt: null });
+      }
+    }
+  } catch(e){}
+  roomCode = null; isHost = false; window._autoStarting = false;
+  history.replaceState(null, '', location.pathname);
+  showScreen('lobby-screen');
+}
+
 function goToWaiting() {
   _gameEntered = false;  // ゲーム遷移フラグをリセット
+  _waitRoomMiss = 0;     // 解散検知カウンタをリセット（前の部屋の失敗を持ち越さない）
+  const _mm = document.getElementById('mm-info'); if(_mm) _mm.style.display = 'none';
   if(pollTimer) clearInterval(pollTimer);
   showScreen('waiting-screen');
   document.getElementById('w-code').textContent = roomCode;
   document.getElementById('host-start-area').style.display = isHost ? 'block' : 'none';
   document.getElementById('guest-wait-msg').style.display = isHost ? 'none' : 'block';
+  _syncRealModeWaitUI(); // リアル志向トグルの初期表示（ホスト/ゲストで文言が変わる）
   pollTimer = setInterval(waitingPollTick, 2000);
   waitingPollTick();
 }
@@ -5028,13 +5905,38 @@ function renderWaitingPlayers(players) {
       ${p.id===myId?'<div class="wp-you">あなた</div>':''}
     </div>`).join('') || '<div style="padding:12px;color:var(--text2)">参加者を待っています...</div>';
 
+  window._lastWaitCount = players.length;
+  if(!document.getElementById('start-btn')) return;
+  updateStartBtnText();
+}
+
+// 合計人数（=人間＋Bot補充）の目標値。0=Bot補充なし。ホストが待合室で選択（既定なし）
+if(window._botFillTarget === undefined) window._botFillTarget = 0;
+function setBotFillTarget(n){
+  window._botFillTarget = n;
+  document.querySelectorAll('#botfill-row .cnt-btn').forEach(b => {
+    const v = b.textContent === 'なし' ? 0 : parseInt(b.textContent);
+    b.classList.toggle('active', v === n);
+  });
+  updateStartBtnText();
+}
+// 合計人数の目標（人間数を下回らない・上限6）
+function waitTargetTotal(){ return Math.min(6, Math.max(window._botFillTarget || 0, window._lastWaitCount || 0)); }
+// 待合室でBotの強さを選択（window._botLevel を更新。botPickButtonが参照）
+function setBotLevelWait(lv){
+  window._botLevel = lv;
+  const order = ['easy','normal','hard'];
+  document.querySelectorAll('#botstrength-row .cnt-btn').forEach((b,i)=> b.classList.toggle('active', order[i]===lv));
+}
+function updateStartBtnText(){
   const btn = document.getElementById('start-btn');
   if(!btn) return;
-  // 1人以上で開始可能（テスト兼用）
-  btn.disabled = players.length < 2;
-  if(isHost && document.getElementById('host-start-area').style.display !== 'none') {
-    btn.textContent = `ゲームを開始する（${players.length}人）→`;
-  }
+  if(!(isHost && document.getElementById('host-start-area').style.display !== 'none')) return;
+  const cnt = window._lastWaitCount || 0;
+  const target = waitTargetTotal();
+  const fill = Math.max(0, target - cnt);
+  btn.disabled = target < 2; // 合計2人以上で開始可能（Bot補充含む）
+  btn.textContent = fill > 0 ? `ゲーム開始（${cnt}人＋🤖${fill}＝${target}人）→` : `ゲームを開始する（${cnt}人）→`;
 }
 
 function copyRoomUrl() {
@@ -5051,6 +5953,19 @@ async function hostStartGame() {
   if(!room) { alert('ルーム情報の取得に失敗しました'); if(btn) btn.disabled = false; return; }
 
   const rawPlayers = Object.values(room.players||{}).sort((a,b)=>a.joined-b.joined);
+
+  // ★ オンラインBot補充（プロトタイプ）: ホストが選んだ合計人数までBotで埋める。
+  //   Botはホスト端末が代行操作する（id は 'bot_' 始まりで人間と区別）。
+  //   人間が目標を超える場合は補充なし、上限は6人。
+  const TARGET = Math.min(6, Math.max(window._botFillTarget || 0, rawPlayers.length));
+  const _botNames = ['🤖ミドリ','🤖キイロ','🤖アオ','🤖ムラサキ','🤖ミズ'];
+  let _bi = 0;
+  while(rawPlayers.length < TARGET){
+    rawPlayers.push({ id:'bot_'+_bi+'_'+Math.random().toString(36).slice(2,7), name:_botNames[_bi%_botNames.length], isBot:true, joined: Date.now()+_bi+1 });
+    _bi++;
+  }
+  if(!window._botLevel) window._botLevel = 'normal';
+
   _pc = rawPlayers.length;
   const jobs = assignJobs(_pc);
 
@@ -5058,7 +5973,7 @@ async function hostStartGame() {
   const shuffledPlayers = rawPlayers.slice().sort(() => Math.random() - 0.5);
   G.players = shuffledPlayers.map((p,i) => ({
     id:p.id, name:p.name, color:COLORS[i % COLORS.length],
-    job: jobs[i],
+    job: jobs[i], isBot: !!p.isBot,
     cash:100000, stocks:0, gold:0, estates:[], bonds:[], ipo:0, pos:0, skips:0,
     forcedN:0, hasNisa:false, nisaAmt:0, noSalNext:false, insYear:0,
     insCost:30000, divMod:1, estDisc:false, estMult:3, isGoal:false, isBankrupt:false
@@ -5066,6 +5981,7 @@ async function hostStartGame() {
   G.pc = _pc; G.ci = 0; G.turn = 1; G.year = 1;
   G.market = MARKETS[2]; G.goalOrder = []; G.version = 1;
   G.highInt = false; G.marketManip = null;
+  G.realMode = !!room.realMode; // ← ホストが待合室で設定したリアル志向モードを全員に同期
 
   const ok = await fbPatch(`rooms/${roomCode}`, { started:true, gameState:G });
   if(!ok) { alert('ゲーム開始データの書き込みに失敗しました。Firebaseのルールを確認してください。'); if(btn) btn.disabled = false; return; }
@@ -5112,6 +6028,10 @@ function enterGame() {
     if(pollTimer) clearInterval(pollTimer);
     pollTimer      = setInterval(syncGameState, 1500);
     setInterval(livePollTick, 1500);
+    // ★ オンラインBot補充: ホストはBot代行＋心拍を開始。非ホストはホスト生存を監視（落ちたら後継者が引き継ぐ）
+    if(isHost) startHostDuties();
+    if(window._hostCheckInterval) clearInterval(window._hostCheckInterval);
+    window._hostCheckInterval = setInterval(checkHostAlive, 5000);
     lastVersion    = G.version;
     _lastLiveTs    = 0;
     _syncRunning   = false;
@@ -5134,8 +6054,6 @@ function enterGame() {
 
   try { showMobTabs(); } catch(e) {}
 
-  setTimeout(() => { try {  } catch(e){} }, 900);
-
   // ⑥ 職業発表モーダル
   try {
     showModal({
@@ -5145,6 +6063,8 @@ function enterGame() {
         closeModal();
         if(isMyTurn()) toast('🎲 あなたが最初のターンです！');
         else toast(`👀 ${G.players[G.ci]?.name||'?'}のターンです`);
+        // オンラインBot補充: 最初の手番がBotならホストが代行開始
+        maybeDriveOnlineBot();
       }}]
     });
   } catch(e) { console.error('[modal]', e); toast('⚠️ モーダルエラー: '+e.message); }
@@ -5152,9 +6072,11 @@ function enterGame() {
 
 // ─── モードボタン ─────────────────────────────
 function goOnlineMode() {
+  window._tutorial = false; hideCoach(); // 通常プレイなのでチュートリアル案内を解除
+  // URLが内蔵されていれば設定をスキップして即ロビーへ（設定不要で即接続）
+  if(BAKED_FB_URL) { FB_URL = BAKED_FB_URL; localStorage.setItem('fbUrl', BAKED_FB_URL); goToLobby(); return; }
   // Firebase設定済みならロビーへ、未設定なら設定画面へ
   const savedFb = localStorage.getItem('fbUrl');
-  
   if(savedFb) { FB_URL = savedFb; goToLobby(); }
   else { showScreen('firebase-screen'); }
 }
