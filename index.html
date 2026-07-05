@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ビリオンバトル（ビリバト） — 金融すごろく | Team 金融すごろく（YouKey College）</title>
+<!-- ═══ PWA（アプリ化）設定 ═══ -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffde59">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ビリバト">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;900&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -196,13 +204,13 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 /* ===== START SCREEN ===== */
 #start-screen {
-  background: linear-gradient(160deg, #ffe55c 0%, #ffde59 40%, #ffd13a 100%) !important;
+  background: #ffde59 !important;
   overflow-x: hidden;            /* 横はみ出しのみ抑制。縦はスクロール可（小さい画面対策） */
   justify-content: flex-start;   /* 中央寄せだと上が切れて押せなくなるため上詰め */
   padding-top: 28px;
 }
 #title-screen {
-  background: linear-gradient(160deg, #ffe55c 0%, #ffde59 40%, #ffd13a 100%) !important;
+  background: #ffde59 !important;
   overflow-y: auto;
   justify-content: flex-start;
   padding: 24px 0 48px;
@@ -219,7 +227,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   left: var(--x);
   font-size: calc(28px * var(--s));
   animation: coinFall 4s var(--d) ease-in-out infinite;
-  opacity: 0.35;
+  opacity: 0.15;
   filter: drop-shadow(0 4px 8px rgba(0,0,0,.15));
 }
 @keyframes coinFall {
@@ -289,10 +297,10 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ss-btn:nth-child(1){ animation-delay:.7s; opacity:0 }
 .ss-btn:nth-child(2){ animation-delay:.85s; opacity:0 }
 .ss-btn:active { transform: translateY(6px); box-shadow: none; }
-.ss-btn-online { background: linear-gradient(135deg, #e0f2fe, #bae6fd); }
-.ss-btn-online:hover { background: linear-gradient(135deg, #bae6fd, #7dd3fc); }
-.ss-btn-local  { background: linear-gradient(135deg, #dcfce7, #bbf7d0); }
-.ss-btn-local:hover  { background: linear-gradient(135deg, #bbf7d0, #86efac); }
+.ss-btn-online { background: #bae6fd; }
+.ss-btn-online:hover { background: #7dd3fc; }
+.ss-btn-local  { background: #bbf7d0; }
+.ss-btn-local:hover  { background: #86efac; }
 .ss-btn-icon { font-size: 36px; flex-shrink: 0; }
 .ss-btn-label { font-size: 18px; font-weight: 900; color: var(--text); }
 .ss-btn-desc  { font-size: 11px; font-weight: 700; color: var(--text2); margin-top: 2px; }
@@ -578,7 +586,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ob-btn-blue  { background:var(--blue);color:#fff; }
 .ob-btn-gold  { background:var(--gold);color:#fff; }
 .ob-btn-gray  { background:#f1f5f9;color:var(--text); }
-.ob-btn-purple{ background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff; }
+.ob-btn-purple{ background:#8b5cf6;color:#fff; }
 .ob-or { color:var(--text2);font-size:13px;font-weight:900;margin:12px 0;position:relative; }
 .ob-or::before,.ob-or::after {
   content:'';position:absolute;top:50%;width:42%;height:2px;background:#e2e8f0;
@@ -642,8 +650,8 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .op-grid {
   position:absolute;inset:0;
   background-image:
-    linear-gradient(rgba(79,172,254,.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(79,172,254,.07) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
   background-size: 48px 48px;
   animation: opGridMove 8s linear infinite;
 }
@@ -700,7 +708,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   font-weight:900;color:#fff;
   display:block;opacity:0;
   animation: opSlideIn .6s var(--d) cubic-bezier(.2,.8,.2,1) both;
-  text-shadow: 0 0 40px rgba(79,172,254,.6);
+  text-shadow: 3px 3px 0 rgba(0,0,0,.4);
 }
 @keyframes opSlideIn {
   from { opacity:0; transform:translateX(-40px); }
@@ -722,9 +730,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   font-weight:900;color:var(--c);
   opacity:0;
   animation: opPopUp .55s var(--d) cubic-bezier(.34,1.4,.64,1) both;
-  text-shadow:
-    4px 4px 0 rgba(0,0,0,.5),
-    0 0 30px rgba(255,255,255,.15);
+  text-shadow: 4px 4px 0 rgba(0,0,0,.5);
   display:inline-block;
 }
 @keyframes opPopUp {
@@ -967,8 +973,8 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   font-size:15px;font-weight:900;cursor:pointer;font-family:inherit;
   box-shadow:0 4px 0 var(--border);transition:all .1s;background:#fff;color:var(--text); }
 .tut-btn:active{ transform:translateY(3px);box-shadow:0 1px 0 var(--border); }
-.tut-btn.primary{ background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff; }
-.tut-btn.go{ background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff; }
+.tut-btn.primary{ background:#8b5cf6;color:#fff; }
+.tut-btn.go{ background:var(--green);color:#fff; }
 .tut-btn:disabled{ opacity:.35;cursor:default; }
 .tut-skip-row{ display:flex;justify-content:space-between;align-items:center;gap:12px; }
 .tut-skip{ text-align:center;font-size:12px;font-weight:800;color:var(--text2);cursor:pointer;text-decoration:underline; }
@@ -1007,7 +1013,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .ach-item-d{ font-size:11px;font-weight:700;color:var(--text2);line-height:1.5; }
 .ach-item-chk{ font-size:18px;font-weight:900;color:var(--green);flex-shrink:0; }
 .ach-toast{ position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140%);z-index:10000;
-  background:linear-gradient(135deg,#fffbeb,#fde047);border:3px solid var(--border);border-radius:16px;
+  background:#fffbeb;border:3px solid var(--border);border-radius:16px;
   box-shadow:4px 4px 0 var(--border);padding:10px 18px;display:flex;align-items:center;gap:12px;
   transition:transform .4s cubic-bezier(.2,1.3,.5,1);max-width:92%; }
 .ach-toast.show{ transform:translateX(-50%) translateY(0); }
@@ -1058,7 +1064,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 /* 初心者モード ヒントボックス */
 .hint-box {
-  background:linear-gradient(135deg,#eff6ff,#dbeafe);
+  background:#eff6ff;
   border:2px solid #93c5fd;border-radius:14px;
   padding:12px 14px;margin-bottom:12px;
   display:flex;gap:10px;align-items:flex-start;
@@ -1177,7 +1183,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
   <!-- ロゴ -->
   <div class="ss-logo">
-    <div class="ss-badge">💰 FINANCIAL BOARD GAME 💰</div>
+    <div class="ss-badge">FINANCIAL BOARD GAME</div>
     <div class="ss-title">
       <span style="color:#ff6b6b">ビ</span><span style="color:#4facfe">リ</span><span style="color:#4ade80">オ</span><span style="color:#ff9f43">ン</span><span style="color:#d8b4fe">バ</span><span style="color:#ff6b6b">ト</span><span style="color:#4facfe">ル</span>
     </div>
@@ -1216,23 +1222,23 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     </button>
     <!-- その他は2列グリッド -->
     <div class="ss-grid2">
-      <button class="ss-btn" onclick="openTutorial()" style="background:linear-gradient(135deg,#a78bfa,#7c3aed)">
+      <button class="ss-btn" onclick="openTutorial()" style="background:#8b5cf6">
         <span class="ss-btn-icon">🎓</span>
         <div class="ss-btn-label" style="color:#fff">遊び方</div>
       </button>
-      <button class="ss-btn" onclick="openRanking()" style="background:linear-gradient(135deg,#fce7f3,#fbcfe8)">
+      <button class="ss-btn" onclick="openRanking()" style="background:#fbcfe8">
         <span class="ss-btn-icon">🏆</span>
         <div class="ss-btn-label">ランキング</div>
       </button>
-      <button class="ss-btn" onclick="window.open('rules.html','_blank')" style="background:linear-gradient(135deg,#fefce8,#fde047)">
+      <button class="ss-btn" onclick="window.open('rules.html','_blank')" style="background:#fde047">
         <span class="ss-btn-icon">📖</span>
         <div class="ss-btn-label">ルール</div>
       </button>
-      <button class="ss-btn" onclick="openSettings()" style="background:linear-gradient(135deg,#f1f5f9,#e2e8f0)">
+      <button class="ss-btn" onclick="openSettings()" style="background:#e2e8f0">
         <span class="ss-btn-icon">⚙️</span>
         <div class="ss-btn-label">設定</div>
       </button>
-      <button class="ss-btn" onclick="openAchievements()" style="grid-column:1/-1;background:linear-gradient(135deg,#fef3c7,#fbbf24)">
+      <button class="ss-btn" onclick="openAchievements()" style="grid-column:1/-1;background:#fbbf24">
         <span class="ss-btn-icon">🎖️</span>
         <div class="ss-btn-label">やりこみ・実績</div>
       </button>
@@ -1405,7 +1411,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <div class="ss-coin" style="--d:1.2s;--x:90%;--s:1.1">🏦</div>
   </div>
   <div class="ss-logo">
-    <div class="ss-badge">💰 FINANCIAL BOARD GAME 💰</div>
+    <div class="ss-badge">FINANCIAL BOARD GAME</div>
     <div class="ss-title">
       <span style="color:#ff6b6b">ビ</span><span style="color:#4facfe">リ</span><span style="color:#4ade80">オ</span><span style="color:#ff9f43">ン</span><span style="color:#d8b4fe">バ</span><span style="color:#ff6b6b">ト</span><span style="color:#4facfe">ル</span>
     </div>
@@ -6131,7 +6137,7 @@ async function tryRejoinSession(sess) {
     overlay.id = 'rejoin-overlay';
     overlay.style.cssText = `
       position:fixed;inset:0;z-index:9000;
-      background:linear-gradient(160deg,#ffe55c,#ffde59);
+      background:#ffde59;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       gap:0;padding:24px;font-family:'M PLUS Rounded 1c',sans-serif;
     `;
@@ -6580,6 +6586,13 @@ window.showMyAssets = function() {
 };
 
 setCount(3);
+
+// ═══ PWA: Service Worker 登録（HTTPS/localhostのみ。file:直開きでは何もしない） ═══
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW登録失敗:', e.message));
+  });
+}
 </script>
 </body>
 </html>

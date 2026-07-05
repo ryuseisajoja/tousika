@@ -1,0 +1,17 @@
+{
+  "name": "ビリオンバトル（ビリバト） — 金融すごろく",
+  "short_name": "ビリバト",
+  "description": "知識・運・決断力が試される超実践型金融ボードゲーム。ローカル対戦もオンライン対戦もこれ1つで。",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffde59",
+  "theme_color": "#ffde59",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
