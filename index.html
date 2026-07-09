@@ -1238,9 +1238,13 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
         <span class="ss-btn-icon">⚙️</span>
         <div class="ss-btn-label">設定</div>
       </button>
-      <button class="ss-btn" onclick="openAchievements()" style="grid-column:1/-1;background:#fbbf24">
+      <button class="ss-btn" onclick="openAchievements()" style="background:#fbbf24">
         <span class="ss-btn-icon">🎖️</span>
         <div class="ss-btn-label">やりこみ・実績</div>
+      </button>
+      <button class="ss-btn" onclick="MG.open()" style="background:#2dd4bf">
+        <span class="ss-btn-icon">🎮</span>
+        <div class="ss-btn-label">ミニゲーム</div>
       </button>
     </div>
   </div>
@@ -4422,7 +4426,7 @@ async function processCell(p, cell){
 
       // カット → その後ハプニング → 給料 → 保険
       const continueCase31 = async () => {
-        const hcF = await spinRoulette('2年目終わり ハプニング！', HAPPS, 't-happen');
+        const hcF = {...await spinRoulette('2年目終わり ハプニング！', HAPPS, 't-happen')}; // 共有カードを直接書き換えないようコピー
         const cashBefore31H = p.cash; // 効果適用前を記録
         let hcDesc = hcF.desc;
         let hcInsured = false; // ★マス31（2年目終わり）のハプニングは保険対象外
@@ -6593,6 +6597,697 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW登録失敗:', e.message));
   });
 }
+</script>
+
+<!-- ═══════════════ ミニゲーム（短時間金融学習）═══════════════ -->
+<style>
+#mg-root { position:fixed; inset:0; background:var(--bg); background-image:radial-gradient(#dfe6e9 2px, transparent 2px); background-size:24px 24px; z-index:1300; display:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+#mg-root.on { display:block; }
+.mg-wrap { max-width:560px; margin:0 auto; padding:16px 14px 40px; }
+.mg-scr { display:none; }
+.mg-scr.on { display:block; animation:mgFadeUp .25s ease both; }
+@keyframes mgFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+@keyframes mgPopIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+.mg-hdr { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.mg-back { background:#fff; border:3px solid var(--border); border-radius:12px; font:inherit; font-weight:900; padding:8px 14px; cursor:pointer; box-shadow:3px 3px 0 var(--border); font-size:13px; }
+.mg-back:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--border); }
+.mg-hbtn { margin-left:auto; }
+.mg-httl { font-size:18px; font-weight:900; }
+.mg-badge { background:var(--border); color:#fff; font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; letter-spacing:.15em; }
+.mg-menu-ttl { text-align:center; margin:14px 0 4px; font-size:26px; font-weight:900; }
+.mg-menu-sub { text-align:center; color:var(--text2); font-size:12px; font-weight:700; margin-bottom:20px; }
+.mg-mcard { display:block; width:100%; text-align:left; background:#fff; border:4px solid var(--border); border-radius:18px; padding:16px; margin-bottom:14px; cursor:pointer; font:inherit; box-shadow:5px 5px 0 var(--border); transition:transform .08s; }
+.mg-mcard:active { transform:translate(3px,3px); box-shadow:2px 2px 0 var(--border); }
+.mg-mcard .mg-ic { font-size:30px; }
+.mg-mcard .mg-nm { font-size:17px; font-weight:900; margin:4px 0 2px; }
+.mg-mcard .mg-ds { font-size:12px; color:var(--text2); font-weight:700; line-height:1.5; }
+.mg-mcard .mg-bst { display:inline-block; margin-top:8px; font-size:11px; font-weight:900; background:var(--gold); border:2px solid var(--border); border-radius:10px; padding:2px 10px; }
+.mg-mcard.mg-c1{ border-top:10px solid var(--blue);} .mg-mcard.mg-c2{ border-top:10px solid var(--green);}
+.mg-mcard.mg-c3{ border-top:10px solid var(--red);} .mg-mcard.mg-c4{ border-top:10px solid var(--orange);}
+.mg-panel { background:#fff; border:4px solid var(--border); border-radius:18px; padding:16px; box-shadow:5px 5px 0 var(--border); margin-bottom:14px; animation:mgPopIn .2s ease both; }
+.mg-stat-row { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.mg-stat { flex:1; min-width:90px; background:#fff; border:3px solid var(--border); border-radius:12px; padding:8px 10px; text-align:center; box-shadow:3px 3px 0 var(--border); }
+.mg-stat .mg-lb { font-size:10px; font-weight:900; color:var(--text2); }
+.mg-stat .mg-vl { font-size:16px; font-weight:900; }
+.mg-stat .mg-vl.mg-minus { color:var(--red); }
+.mg-btn { display:block; width:100%; background:var(--gold); border:3px solid var(--border); border-radius:14px; font:inherit; font-weight:900; font-size:15px; padding:13px; cursor:pointer; box-shadow:4px 4px 0 var(--border); margin-top:10px; }
+.mg-btn:active { transform:translate(2px,2px); box-shadow:2px 2px 0 var(--border); }
+.mg-btn.mg-sec { background:#fff; font-size:13px; }
+.mg-btn.mg-grn { background:var(--green); }
+.mg-btn.mg-red { background:var(--red); color:#fff; }
+.mg-btn:disabled { opacity:.4; pointer-events:none; }
+.mg-choice { display:block; width:100%; text-align:left; background:#fff; border:3px solid var(--border); border-radius:14px; font:inherit; font-weight:900; font-size:14px; padding:13px 14px; cursor:pointer; box-shadow:3px 3px 0 var(--border); margin-top:10px; }
+.mg-choice:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--border); }
+.mg-choice.mg-ok { background:var(--green); }
+.mg-choice.mg-ng { background:var(--red); color:#fff; }
+.mg-choice.mg-dim { opacity:.45; pointer-events:none; }
+.mg-expl { background:#fffbeb; border:3px solid #fde047; border-radius:12px; padding:10px 12px; font-size:12.5px; font-weight:700; line-height:1.7; margin-top:12px; animation:mgPopIn .2s ease both; }
+.mg-qtag { font-size:12px; font-weight:900; color:var(--text2); margin-bottom:6px; }
+.mg-qtxt { font-size:16px; font-weight:900; line-height:1.6; }
+.mg-result-big { text-align:center; font-size:40px; margin:6px 0; }
+.mg-result-rank { text-align:center; font-size:22px; font-weight:900; margin-bottom:6px; }
+.mg-result-note { text-align:center; font-size:12.5px; color:var(--text2); font-weight:700; line-height:1.7; }
+.mg-mkt-banner { text-align:center; border:3px solid var(--border); border-radius:14px; padding:10px; font-size:16px; font-weight:900; margin-bottom:12px; background:var(--bg2); animation:mgPopIn .25s ease both; }
+.mg-asset { display:flex; align-items:center; gap:8px; border:3px solid var(--border); border-radius:14px; padding:10px; margin-top:10px; background:#fff; box-shadow:3px 3px 0 var(--border); }
+.mg-asset .mg-anm { flex:1; font-size:13px; font-weight:900; line-height:1.4; }
+.mg-asset .mg-anm small { display:block; color:var(--text2); font-size:10.5px; }
+.mg-tbtn { width:44px; height:40px; border:3px solid var(--border); border-radius:10px; font:inherit; font-weight:900; font-size:17px; cursor:pointer; box-shadow:2px 2px 0 var(--border); }
+.mg-tbtn:active { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--border); }
+.mg-tbtn.mg-buy { background:var(--green); } .mg-tbtn.mg-sell { background:var(--red); color:#fff; }
+.mg-tbtn:disabled { opacity:.35; pointer-events:none; }
+.mg-card-face { border:4px solid var(--border); border-radius:16px; padding:18px 14px; text-align:center; box-shadow:4px 4px 0 var(--border); animation:mgPopIn .25s ease both; margin-top:12px; }
+.mg-card-face.mg-bad { background:#fee2e2; } .mg-card-face.mg-good { background:#dcfce7; } .mg-card-face.mg-shield { background:#dbeafe; }
+.mg-card-face .mg-cnm { font-size:19px; font-weight:900; }
+.mg-card-face .mg-cds { font-size:12.5px; font-weight:700; color:var(--text2); margin-top:6px; line-height:1.6; }
+.mg-card-face .mg-ceff { font-size:20px; font-weight:900; margin-top:8px; }
+.mg-ceff.mg-minus{ color:var(--red);} .mg-ceff.mg-plus{ color:#16a34a; }
+.mg-alloc { display:flex; align-items:center; gap:8px; border:3px solid var(--border); border-radius:14px; padding:10px; margin-top:10px; background:#fff; box-shadow:3px 3px 0 var(--border); }
+.mg-alloc .mg-anm { flex:1; font-size:13px; font-weight:900; }
+.mg-alloc .mg-anm small{ display:block; color:var(--text2); font-size:10.5px; font-weight:700; }
+.mg-alloc .mg-val { width:56px; text-align:center; font-size:15px; font-weight:900; }
+.mg-meter { height:14px; border:2px solid var(--border); border-radius:8px; background:#eee; overflow:hidden; margin-top:4px; }
+.mg-meter > div { height:100%; background:var(--green); transition:width .3s; }
+.mg-log-line { font-size:12px; font-weight:700; padding:6px 8px; border-bottom:2px dashed #e2e8f0; line-height:1.5; }
+.mg-log-line b.mg-m { color:var(--red); } .mg-log-line b.mg-p { color:#16a34a; }
+.mg-note { font-size:11.5px; color:var(--text2); font-weight:700; line-height:1.6; margin-top:8px; }
+.mg-howto-ov { position:fixed; inset:0; background:rgba(45,52,54,.55); display:flex; align-items:center; justify-content:center; z-index:1400; padding:16px; }
+.mg-howto-bx { background:#fff; border:4px solid var(--border); border-radius:20px; box-shadow:6px 6px 0 var(--border); max-width:480px; width:100%; padding:18px; max-height:85vh; overflow-y:auto; animation:mgPopIn .2s ease both; }
+.mg-howto-bx h2 { font-size:19px; margin-bottom:12px; text-align:center; }
+.mg-howto-step { display:flex; gap:10px; align-items:flex-start; font-size:13px; font-weight:700; line-height:1.6; margin-top:10px; }
+.mg-howto-step .mg-n { flex:none; width:24px; height:24px; border-radius:50%; background:var(--border); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; margin-top:2px; }
+.mg-skiprow { display:flex; align-items:center; gap:8px; margin-top:16px; font-size:12.5px; font-weight:900; cursor:pointer; user-select:none; }
+.mg-skiprow input { width:18px; height:18px; accent-color:var(--border); }
+</style>
+
+<div id="mg-root">
+<div class="mg-wrap">
+  <div class="mg-scr on" id="mg-scr-menu">
+    <div class="mg-hdr"><button class="mg-back" onclick="MG.close()">✕ とじる</button><div style="margin-left:auto"><span class="mg-badge">BILLION BATTLE MINI</span></div></div>
+    <div class="mg-menu-ttl">🎮 ミニゲーム</div>
+    <div class="mg-menu-sub">短い時間で金融知識をゲット！</div>
+    <button class="mg-mcard mg-c1" onclick="MG.openGame('quiz')">
+      <span class="mg-ic">🧠</span><div class="mg-nm">金融クイズ 10問チャレンジ</div>
+      <div class="mg-ds">難易度3段階の4択＆○×クイズ。NISA・国債・金利…どこまで分かる？（約3分）</div>
+      <span class="mg-bst" id="mg-best-quiz">ベスト: -</span>
+    </button>
+    <button class="mg-mcard mg-c2" onclick="MG.openGame('mkt')">
+      <span class="mg-ic">📈</span><div class="mg-nm">相場チャレンジ</div>
+      <div class="mg-ds">100万円を元手に5ターンの売買で資産を増やせ！相場を読む力を鍛える。（約5分）</div>
+      <span class="mg-bst" id="mg-best-mkt">ベスト: -</span>
+    </button>
+    <button class="mg-mcard mg-c3" onclick="MG.openGame('ins')">
+      <span class="mg-ic">🛡️</span><div class="mg-nm">保険ディフェンス</div>
+      <div class="mg-ds">ハプニング10連発を生き残れ！保険に「入る/入らない」の判断力ゲーム。（約4分）</div>
+      <span class="mg-bst" id="mg-best-ins">ベスト: -</span>
+    </button>
+    <button class="mg-mcard mg-c4" onclick="MG.openGame('bud')">
+      <span class="mg-ic">🏠</span><div class="mg-nm">家計やりくり12ヶ月</div>
+      <div class="mg-ds">毎月のお金を貯金・投資・娯楽に配分。1年後の資産と幸せを両立できる？（約6分）</div>
+      <span class="mg-bst" id="mg-best-bud">ベスト: -</span>
+    </button>
+    <div class="mg-note" style="text-align:center">※記録はこの端末に保存されます</div>
+  </div>
+  <div class="mg-scr" id="mg-scr-quiz">
+    <div class="mg-hdr"><button class="mg-back" onclick="MG.goMenu()">← 戻る</button><div class="mg-httl">🧠 金融クイズ</div><button class="mg-back mg-hbtn" onclick="MG.showHowto('quiz','とじる')">❓ 遊び方</button></div>
+    <div id="mg-quiz-body"></div>
+  </div>
+  <div class="mg-scr" id="mg-scr-mkt">
+    <div class="mg-hdr"><button class="mg-back" onclick="MG.goMenu()">← 戻る</button><div class="mg-httl">📈 相場チャレンジ</div><button class="mg-back mg-hbtn" onclick="MG.showHowto('mkt','とじる')">❓ 遊び方</button></div>
+    <div id="mg-mkt-body"></div>
+  </div>
+  <div class="mg-scr" id="mg-scr-ins">
+    <div class="mg-hdr"><button class="mg-back" onclick="MG.goMenu()">← 戻る</button><div class="mg-httl">🛡️ 保険ディフェンス</div><button class="mg-back mg-hbtn" onclick="MG.showHowto('ins','とじる')">❓ 遊び方</button></div>
+    <div id="mg-ins-body"></div>
+  </div>
+  <div class="mg-scr" id="mg-scr-bud">
+    <div class="mg-hdr"><button class="mg-back" onclick="MG.goMenu()">← 戻る</button><div class="mg-httl">🏠 家計やりくり12ヶ月</div><button class="mg-back mg-hbtn" onclick="MG.showHowto('bud','とじる')">❓ 遊び方</button></div>
+    <div id="mg-bud-body"></div>
+  </div>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const fmtM = n => (n < 0 ? '-¥' : '¥') + Math.abs(Math.round(n)).toLocaleString();
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+const STORE_KEY = 'tousika_mini_v1';
+function loadBests(){ try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch(e){ return {}; } }
+function saveBest(game, score){
+  const b = loadBests();
+  if(b[game] === undefined || score > b[game]) { b[game] = score; localStorage.setItem(STORE_KEY, JSON.stringify(b)); return true; }
+  return false;
+}
+function renderBests(){
+  const b = loadBests();
+  const qb = d => b['quiz_'+d] !== undefined ? b['quiz_'+d] : '-';
+  $('mg-best-quiz').textContent = `ベスト: 🌱${qb('e')} 🔥${qb('n')} 👑${qb('h')}`;
+  $('mg-best-mkt').textContent  = 'ベスト: ' + (b.mkt !== undefined ? fmtM(b.mkt) : '-');
+  $('mg-best-ins').textContent  = 'ベスト: ' + (b.ins !== undefined ? fmtM(b.ins) : '-');
+  $('mg-best-bud').textContent  = 'ベスト: ' + (b.bud !== undefined ? fmtM(b.bud) : '-');
+}
+function showScr(id){ document.querySelectorAll('#mg-root .mg-scr').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); $('mg-root').scrollTo(0,0); }
+function goMenu(){ renderBests(); showScr('mg-scr-menu'); }
+function open(){ renderBests(); showScr('mg-scr-menu'); $('mg-root').classList.add('on'); }
+function close(){ $('mg-root').classList.remove('on'); const ov=$('mg-howto-ov'); if(ov) ov.remove(); }
+
+// ── 遊び方（スキップ設定つき）──
+const HOWTO = {
+  quiz:{ic:'🧠', ttl:'金融クイズ 遊び方', steps:[
+    '難易度（かんたん / ふつう / むずかしい）をえらぶ',
+    '10問のクイズに挑戦！4択か○×で答えよう',
+    '答えるとすぐに解説が出る。読めば知識が身につく！',
+    '正解数で称号ゲット。難易度ごとの自己ベストを更新しよう']},
+  mkt:{ic:'📈', ttl:'相場チャレンジ 遊び方', steps:[
+    '元手100万円。5ターンで資産を増やそう',
+    '毎ターン相場が変わる：デフレは金🪙が高く、インフレは株📈が高い！',
+    '「＋」で買う、「−」で売る。国債🏛️は毎ターン利子+10%で安定',
+    '最終ターンの後は、選べない相場で全資産を強制精算。売り時も実力！']},
+  ins:{ic:'🛡️', ttl:'保険ディフェンス 遊び方', steps:[
+    '毎ラウンド給料+10万円。そのあと保険（3万円）に入るか選ぶ',
+    'ハプニングカードをめくる。保険に入っていれば「保険対象」の被害はゼロに！',
+    '「保険対象外」のカードは保険でも防げないので注意',
+    '現金がマイナスになったら破産。10ラウンド生き残って資産を競おう']},
+  bud:{ic:'🏠', ttl:'家計やりくり 遊び方', steps:[
+    '毎月の自由なお金10万円を「貯金・投資・娯楽」に配分する',
+    '投資📈は増えたり減ったり（長期では有利）。娯楽🎮は幸福度アップ',
+    '幸福度が低いとストレス浪費が発生！現金マイナスは利子5%の借金に',
+    '12ヶ月後の総資産で勝負。お金と幸せのバランスが極意！']},
+};
+function getSkip(g){ return !!((loadBests().skip)||{})[g]; }
+function setSkip(g, v){ const b = loadBests(); b.skip = b.skip || {}; b.skip[g] = v; localStorage.setItem(STORE_KEY, JSON.stringify(b)); }
+function showHowto(g, startLabel){
+  startLabel = startLabel || '▶ はじめる';
+  const h = HOWTO[g];
+  const old = $('mg-howto-ov'); if(old) old.remove();
+  const ov = document.createElement('div'); ov.className='mg-howto-ov'; ov.id='mg-howto-ov';
+  ov.innerHTML = `<div class="mg-howto-bx">
+    <h2>${h.ic} ${h.ttl}</h2>
+    ${h.steps.map((s,i)=>`<div class="mg-howto-step"><div class="mg-n">${i+1}</div><div>${s}</div></div>`).join('')}
+    <label class="mg-skiprow"><input type="checkbox" id="mg-howto-skip" ${getSkip(g)?'checked':''}> 次からこの説明をスキップする</label>
+    <button class="mg-btn" id="mg-howto-go">${startLabel}</button>
+  </div>`;
+  document.body.appendChild(ov);
+  $('mg-howto-skip').onchange = e => setSkip(g, e.target.checked);
+  $('mg-howto-go').onclick = () => ov.remove();
+}
+function openGame(g){
+  if(g==='quiz'){ showScr('mg-scr-quiz'); quizStart(); }
+  if(g==='mkt'){ showScr('mg-scr-mkt'); mktStart(); }
+  if(g==='ins'){ showScr('mg-scr-ins'); insStart(); }
+  if(g==='bud'){ showScr('mg-scr-bud'); budStart(); }
+  if(!getSkip(g)) showHowto(g);
+}
+
+// 本編と同じ市場定義（＋金価格）
+const MARKETS = [
+  {id:'severe_deflation', name:'深刻なデフレ',   stockPrice:20000, gold:600000, emoji:'🔻'},
+  {id:'deflation',        name:'デフレ',         stockPrice:30000, gold:500000, emoji:'📉'},
+  {id:'stable',           name:'市場安定',        stockPrice:50000, gold:200000, emoji:'📊'},
+  {id:'inflation',        name:'インフレ',        stockPrice:70000, gold:100000, emoji:'📈'},
+  {id:'hyperinflation',   name:'ハイパーインフレ', stockPrice:80000, gold:50000,  emoji:'💸'},
+];
+const MARKET_POOL = [0,1,1,2,2,3,3,4];
+
+// ═══ ① 金融クイズ ═══
+const QUIZ_POOL = [
+ {q:'「積立NISA」の一番のメリットは？', c:['投資の利益に税金がかからない','元本が保証される','必ず値上がりする','手数料が無料になる'], a:0, e:'NISAは投資の利益（通常約20%課税）が非課税になる制度。元本保証ではない点に注意！'},
+ {q:'「複利」の説明として正しいのは？', c:['利子にも利子がついて雪だるま式に増える','毎年同じ額の利子だけがつく','元本が2倍になったら終わる','借金には適用されない'], a:0, e:'複利は「利子が元本に組み込まれて、その利子にも利子がつく」仕組み。早く始めるほど有利！'},
+ {q:'インフレになると「現金」の価値はどうなる？', c:['実質的に下がる','上がる','変わらない','2倍になる'], a:0, e:'物価が上がる＝同じお金で買える量が減る。インフレ時は現金だけで持つと目減りする。'},
+ {q:'インフレに強いとされる資産は？', c:['不動産や株などの実物・事業資産','タンス預金','普通預金','商品券'], a:0, e:'物価と一緒に価格が上がりやすい実物資産（不動産・株など）はインフレに強いとされる。'},
+ {q:'デフレのとき価値が上がりやすいのは？', c:['現金や金（ゴールド）','借金','不動産','外食チケット'], a:0, e:'デフレは物価が下がる＝お金の価値が上がる。「有事の金」もお金が不安な時に買われやすい。'},
+ {q:'「分散投資」の目的は？', c:['大きな損失のリスクを減らす','必ず利益を出す','手数料を増やす','税金を減らす'], a:0, e:'「卵は一つのカゴに盛るな」。値動きの違う資産に分けることで、一度に全部を失うリスクを減らせる。'},
+ {q:'「国債」を買うことは、何をしていることになる？', c:['国にお金を貸している','国に寄付している','国の株主になっている','税金を前払いしている'], a:0, e:'国債は国の借金の証書。買った人は国にお金を貸し、利子を受け取る。'},
+ {q:'一般に、株式より国債の方が…', c:['ローリスク・ローリターン','ハイリスク・ハイリターン','リスクは同じ','必ず儲かる'], a:0, e:'国が返してくれる前提の国債は値動きが小さい分、リターンも小さい。リスクとリターンは表裏一体！'},
+ {q:'保険の一番の役割は？', c:['めったに起きないが起きたら困る大損失に備える','お金を増やす','税金を払わなくて済む','毎月必ず得をする'], a:0, e:'保険は「確率は低いけど起きたら生活が壊れる」事態への備え。増やす道具ではなくお守り。'},
+ {q:'日本で銀行が破綻した場合、預金保険で保護されるのは1金融機関あたり…', c:['元本1,000万円＋利息まで','全額','100万円まで','保護されない'], a:0, e:'ペイオフ制度により普通預金などは元本1,000万円とその利息まで保護される。大金は分散も検討！'},
+ {q:'借金を放置すると起きることは？', c:['利子に利子がつき雪だるま式に増える','時間が経てば自然に消える','利子が減っていく','信用が上がる'], a:0, e:'複利は借金にも働く。返済を後回しにするほど返す総額は増えていく。'},
+ {q:'IPO株（未上場株）の特徴は？', c:['大化けもあるが紙切れになるリスクもある','元本保証','必ず上場する','国が価格を決める'], a:0, e:'上場すれば数倍になることもあるが、上場できなければ価値がなくなることも。余裕資金で！'},
+ {q:'金（ゴールド）が「有事の金」と呼ばれる理由は？', c:['経済が不安な時に価値が上がりやすいから','いつでも2倍になるから','利子がつくから','国が価格を保証するから'], a:0, e:'金は世界共通の実物資産。通貨や株が不安な時の避難先として買われやすい。ただし利子は生まない。'},
+ {q:'投資の勧誘で最も詐欺を疑うべきフレーズは？', c:['「絶対に儲かります」','「リスクがあります」','「手数料がかかります」','「長期で考えましょう」'], a:0, e:'投資に「絶対」はない。元本保証＋高利回りをうたう勧誘は詐欺の典型パターン！'},
+ {q:'○×：株価はずっと持っていれば必ず上がる。', c:['×','○'], a:0, e:'株価が上がる保証はない。だからこそ長期・積立・分散でリスクを抑える工夫が大切。'},
+ {q:'○×：収入より支出が多い生活を続けると、資産は必ず減っていく。', c:['○','×'], a:0, e:'当たり前だけど大事な家計の大原則。まずは収支の見える化から！'},
+ {q:'家計改善でまず見直すべきと言われるのは？', c:['サブスクなどの固定費','たまの外食','友達へのプレゼント','光熱費の1円単位'], a:0, e:'毎月自動で出ていく固定費は、1回の見直しで効果がずっと続くのでコスパ最強。'},
+ {q:'「連帯保証人」になるとどうなる？', c:['本人が払えないとき代わりに全額返済義務を負う','半分だけ払えばよい','関係ない','利子だけ払う'], a:0, e:'連帯保証人は借りた本人とほぼ同じ責任を負う。安易に引き受けるのは危険！'},
+ {q:'確定申告を忘れるとどうなる？', c:['無申告加算税などのペナルティがつく','何も起きない','税金が安くなる','翌年まとめて払えばOK'], a:0, e:'期限を過ぎると加算税や延滞税が上乗せされる。副業収入がある人も要注意。'},
+ {q:'「流動性が高い資産」とはどんな資産？', c:['すぐに現金に換えやすい資産','値上がりしやすい資産','税金がかからない資産','利回りが高い資産'], a:0, e:'現金化のしやすさが流動性。不動産は価値があっても売るのに時間がかかる＝流動性が低い。'},
+ {q:'「ボラティリティが高い」とはどういう意味？', c:['価格の変動が激しい','必ず値上がりする','取引量が少ない','手数料が高い'], a:0, e:'暗号資産などは1日で数十%動くことも。変動が激しい資産に生活費を突っ込むのはNG！'},
+ {q:'○×：分散投資をすれば絶対に損をしない。', c:['×','○'], a:0, e:'分散はリスクを「減らす」手段で「ゼロにする」手段ではない。市場全体が下がれば損もありうる。'},
+ {q:'給料の「手取り」が額面より少ないのはなぜ？', c:['税金や社会保険料が引かれているから','会社が貯金してくれているから','ミスで少ないから','ボーナスに回されるから'], a:0, e:'所得税・住民税・年金・健康保険などが天引きされる。額面と手取りの違いを知るのは家計の第一歩。'},
+ {q:'リスクとリターンの関係で正しいのは？', c:['高いリターンを狙うほどリスクも高くなる','リスクとリターンは無関係','リスクが低いほどリターンは高い','リスクゼロで高リターンの商品もよくある'], a:0, e:'ローリスク・ハイリターンは存在しない。あったら詐欺を疑おう！'},
+ {q:'長期投資のメリットは？', c:['複利が効き、短期の値動きもならされる','必ず儲かる','税金がゼロになる','いつでも即現金化できる'], a:0, e:'時間を味方につけると複利が効き、一時的な暴落の影響も長期ではならされやすい。'},
+ {q:'○×：保険はたくさん入るほどお得である。', c:['×','○'], a:0, e:'保険料もコスト。貯金で対応できる小さいリスクまで保険をかけると家計を圧迫する。必要な分だけ！'},
+ {q:'「72の法則」で何が分かる？', c:['資産が2倍になるおよその年数','税金の額','株の適正価格','年金の受給額'], a:0, e:'72÷金利(%)≒2倍になる年数。年利6%なら約12年。複利のパワーをざっくり掴める便利な式。'},
+ {q:'○×：国債は国が発行しているので、絶対に損をしない。', c:['×','○'], a:0, e:'国の信用が揺らげば国債も値下がりする（例：ギリシャ危機）。「比較的安全」であって「絶対」ではない。'},
+ {q:'「卵は一つのカゴに盛るな」という格言の意味は？', c:['資産を分散させよ','卵は割れやすい','一点集中で勝負せよ','買い物は計画的に'], a:0, e:'カゴ（投資先）を落としても全部の卵（資産）が割れないように分けておけ、という分散投資の教え。'},
+ {q:'○×：クレジットカードのリボ払いは手数料（金利）が高い。', c:['○','×'], a:0, e:'リボ払いは年15%前後の手数料がかかることが多い。残高が減りにくい仕組みなので要注意！'},
+ {q:'「生活防衛資金」として貯めておくとよいとされる目安は？', c:['生活費の3〜6ヶ月分','1週間分','10年分','特に必要ない'], a:0, e:'失業や病気に備える現金クッション。これがあると安心して投資にも取り組める。'},
+ {q:'暗号資産（ビットコインなど）の特徴として正しいのは？', c:['価格変動が非常に激しい','元本保証がある','国が価格を安定させている','銀行預金と同じ'], a:0, e:'1日で大きく動くハイリスク資産。仕組みを理解し、失っても困らない範囲で。'},
+];
+const QUIZ_DIFF_MAP = ['n','n','n','n','n','n','n','n','e','h','e','n','n','e','e','e','n','n','n','h','h','n','n','n','n','n','h','h','n','n','n','n'];
+QUIZ_POOL.forEach((q,i)=>{ q.d = QUIZ_DIFF_MAP[i] || 'n'; });
+QUIZ_POOL.push(
+ {d:'e', q:'「貯金」と「投資」の違いで正しいのは？', c:['投資は増える可能性も減る可能性もある','投資は必ず増える','貯金は必ず減る','違いはない'], a:0, e:'貯金は安全だがほぼ増えない。投資は増える可能性がある代わりに減るリスクもある。目的で使い分けよう！'},
+ {d:'e', q:'○×：宝くじやギャンブルは、続けるほど儲かりやすい。', c:['×','○'], a:0, e:'宝くじの還元率は約45%。続けるほど「期待値どおり」損に近づく。夢を買う娯楽費として楽しむもの！'},
+ {d:'h', q:'市場の金利が上がると、すでに発行された債券の価格は一般に…', c:['下がる','上がる','変わらない','ゼロになる'], a:0, e:'新しい債券の方が利子が高くなるので、古い債券は魅力が下がり価格が下落。金利と債券価格はシーソーの関係！'},
+ {d:'h', q:'「ドルコスト平均法」とはどんな買い方？', c:['定期的に同じ金額ずつ買い続ける','一番安い日を狙って一括で買う','値上がりした時だけ買う','毎日全財産で買う'], a:0, e:'定額で買い続けると高い時は少なく・安い時は多く買え、平均取得価格をならせる。積立NISAの基本戦略！'},
+ {d:'h', q:'「インデックス投資」の説明として正しいのは？', c:['日経平均など市場全体の値動きへの連動を目指す','1社に集中投資する','プロが銘柄を厳選して市場平均超えを狙う','元本が保証されている'], a:0, e:'市場全体へ丸ごと分散するイメージで、低コスト。長期投資の王道とされる。平均超えを狙うのは「アクティブ投資」。'},
+ {d:'h', q:'円安が進むと、私たちの生活で起きやすいのは？', c:['輸入品やガソリンが値上がりする','輸入品が安くなる','海外旅行が安くなる','物価が必ず下がる'], a:0, e:'円の価値が下がる＝海外のものを買うのに多くの円が必要。輸入品・燃料・食品の値上げにつながりやすい。'},
+ {d:'h', q:'100万円を「単利」年10%で2年間運用すると？', c:['120万円','121万円','110万円','200万円'], a:0, e:'単利は元本にだけ利子がつく：10万円×2年＝+20万円。複利なら2年目は110万円に10%がついて121万円。この差が年々広がる！'},
+ {d:'h', q:'名目金利3%・インフレ率2%のとき、実質金利はおよそ…', c:['1%','5%','3%','2%'], a:0, e:'実質金利≒名目金利−インフレ率。物価上昇分を差し引いた「本当の増え方」で考えるクセをつけよう。'},
+ {d:'h', q:'「レバレッジをかける」とはどういうこと？', c:['借入などで自己資金より大きな金額を取引する','利益を再投資する','分散投資する','手数料を抑える'], a:0, e:'てこの原理で利益も損失も拡大する。FXや信用取引で可能だが、資金以上の損失が出ることも。初心者は要注意！'},
+ {d:'h', q:'インフレが行きすぎたとき、中央銀行が行う代表的な対策は？', c:['金利を上げる','金利を下げる','お金をたくさん刷る','税金を下げる'], a:0, e:'利上げでお金を借りにくくして経済の過熱を冷ます。金利のニュースは投資にも家計にも直結！'},
+ {d:'e', q:'銀行にお金を預けると、少しずつもらえるものは？', c:['利子（りし）','ポイント','株','宝くじ'], a:0, e:'預けたお金のお礼として銀行がくれるのが「利子」。お金がお金を生む第一歩！'},
+ {d:'e', q:'物の値段が全体的に上がっていくことを何という？', c:['インフレ','デフレ','セール','リサイクル'], a:0, e:'インフレ＝物価が上がること。逆に物価が下がるのは「デフレ」。ニュースでよく聞く言葉！'},
+ {d:'e', q:'○×：借りたお金は、返さなくてもよい。', c:['×','○'], a:0, e:'借りたお金は必ず返す約束。しかも遅れると「利子」が増えて、返す額はどんどん大きくなる！'},
+ {d:'e', q:'収入より支出（使うお金）が少ないと、お金はどうなる？', c:['貯まっていく','減っていく','変わらない','消える'], a:0, e:'「収入−支出＝貯まるお金」。これが家計のいちばん大事な式！'},
+ {d:'e', q:'買い物の前に「予算」を決めるのはなぜ？', c:['使いすぎを防ぐため','お店が喜ぶため','値段が安くなるため','ポイントが増えるため'], a:0, e:'先に使える金額を決めておくと、つい買いすぎるのを防げる。おこづかい管理の基本！'},
+ {d:'e', q:'私たちが払った税金は、主に何に使われる？', c:['学校や道路など、みんなのための サービス','お店の売上','銀行の利子','宝くじの賞金'], a:0, e:'税金は学校・道路・警察・消防など、みんなが使う公共サービスの資金になっている。'},
+ {d:'e', q:'おこづかい帳や家計簿をつける一番の目的は？', c:['お金の出入りを知るため','字がうまくなるため','銀行に見せるため','運が良くなるため'], a:0, e:'何にいくら使ったか「見える」ようにするのが第一歩。使いすぎに気づけるようになる！'},
+ {d:'e', q:'○×：セール中なら、使わない物でも買った方がお得だ。', c:['×','○'], a:0, e:'いらない物は安くても「ムダづかい」。安いかどうかより「必要かどうか」で決めよう！'},
+ {d:'e', q:'銀行の主な仕事は？', c:['お金を預かったり、貸したりする','お金を印刷する','税金を決める','お店の値段を決める'], a:0, e:'銀行はみんなのお金を預かり、必要な人や会社に貸すのが仕事。お札を作るのは日本銀行という特別な銀行！'},
+ {d:'e', q:'貯金をしておくと良いのはなぜ？', c:['急な出費や将来に備えられる','必ず2倍になる','税金がなくなる','物の値段が下がる'], a:0, e:'ケガや故障などの「もしも」に備えるのが貯金の役割。まずは少しずつでもOK！'}
+);
+QUIZ_POOL.push(
+ {d:'e', q:'「収入」とはどんなお金？', c:['働いたりして入ってくるお金','使ったお金','借りたお金','拾ったお金'], a:0, e:'入ってくるお金が「収入」、出ていくお金が「支出」。この2つの言葉が家計の基本！'},
+ {d:'e', q:'○×：スマホ代や電気代のように、毎月決まって出ていくお金を「固定費」という。', c:['○','×'], a:0, e:'固定費は毎月自動で出ていくお金。見直すと節約効果がずっと続く！'},
+ {d:'e', q:'お金の3つの使い方は「使う」「貯める」ともう1つは？', c:['増やす（投資）','隠す','忘れる','燃やす'], a:0, e:'「使う・貯める・増やす」のバランスが大事。増やす＝投資は早くから知っておきたい考え方！'},
+ {d:'e', q:'200mlで100円と500mlで200円のジュース、量のわりに安いのは？', c:['500mlの方','200mlの方','同じ','わからない'], a:0, e:'100mlあたりで比べると200mlは50円、500mlは40円。「単価」で比べるとお得が見える！'},
+ {d:'e', q:'○×：クレジットカードで払えば、お金は払わなくてよい。', c:['×','○'], a:0, e:'クレカは「後払い」。あとでまとめて銀行口座から引き落とされる。使いすぎに注意！'},
+ {d:'e', q:'おこづかいや給料をもらったら、まず何をすると貯まりやすい？', c:['先に貯金する分を取り分ける','全部使ってから考える','財布に全部入れる','友達に配る'], a:0, e:'「先取り貯金」は最強の貯金術。残ったお金で生活すれば自然に貯まる！'},
+ {d:'e', q:'「ポイント還元」とはどんな仕組み？', c:['使った金額の一部がポイントで戻ってくる','商品が無料になる','税金が返ってくる','値段が2倍になる'], a:0, e:'戻ってくるのは一部だけ。「ポイントのために買いすぎる」と逆に損！'},
+ {d:'e', q:'○×：同じジュースでも、自動販売機とスーパーで値段が違うことがある。', c:['○','×'], a:0, e:'同じ商品でも売る場所で値段は変わる。比べて買うのも立派な節約！'},
+ {d:'e', q:'「必要な物」と「欲しい物」、先に買うべきなのは？', c:['必要な物','欲しい物','高い方','安い方'], a:0, e:'ニーズ（必要）とウォンツ（欲しい）を分けて考えるのが、お金の使い方の第一歩！'},
+ {d:'e', q:'働いたときに会社からもらえるお金を何という？', c:['給料','おつり','利子','税金'], a:0, e:'働いた対価が「給料」。そこから税金や社会保険料が引かれて「手取り」になる。'},
+ {d:'e', q:'夜おそくや休日にATMでお金をおろすと？', c:['手数料がかかることがある','多くもらえる','必ず無料','ポイントがつく'], a:0, e:'時間外手数料は1回数百円。回数が重なると大きい！おろす時間と回数を工夫しよう。'},
+ {d:'e', q:'○×：ゲームの「ガチャ」への課金も、お金の使いすぎに注意が必要だ。', c:['○','×'], a:0, e:'課金も立派な支出。「今月いくらまで」と決めて遊ぶのが上手な付き合い方！'},
+ {d:'e', q:'電子マネーやバーコード払いで気をつけることは？', c:['現金より使った感覚が薄くなりやすい','お金がかからない','必ず割引される','貯金が増える'], a:0, e:'ピッと払えて便利な分、使いすぎに気づきにくい。履歴を見る習慣をつけよう！'},
+ {d:'n', q:'投資で使う「元本」とは？', c:['最初に投資したお金そのもの','利子の合計','手数料','税金'], a:0, e:'元本100万円が110万円になれば利益10万円。「元本保証」＝この最初のお金が減らない、という意味。'},
+ {d:'n', q:'「配当」とはどんなお金？', c:['会社が利益の一部を株主に分けるお金','銀行がくれるお金','国からのお祝い金','宝くじの賞金'], a:0, e:'株を持っていると、会社の利益から配当がもらえることがある。株の楽しみの一つ！'},
+ {d:'n', q:'「投資信託」とはどんな商品？', c:['みんなのお金をまとめてプロが分散運用する','1つの会社の株だけを買う','国にお金を貸す','金を買う'], a:0, e:'少額から数百銘柄に分散できるのが強み。積立NISAで買えるのも主に投資信託！'},
+ {d:'n', q:'100万円を年利1%で1年間預けると、利子は約いくら？（税引前）', c:['1万円','10万円','1000円','100円'], a:0, e:'100万円×1%＝1万円。「%の計算」ができるとお金の話が一気に分かるようになる！'},
+ {d:'n', q:'「信用情報」とは何の記録？', c:['ローンやクレカの利用・返済の記録','学校の成績','病院の履歴','貯金額ランキング'], a:0, e:'支払いの延滞は信用情報に残り、将来ローンやクレカが作れなくなることも。支払期日は守ろう！'},
+ {d:'n', q:'欲しい人が多いのに品物が少ないと、値段はどうなる？', c:['上がる','下がる','変わらない','ゼロになる'], a:0, e:'「需要と供給」の関係。チケットの高騰も、野菜の値上がりもこの仕組み！'},
+ {d:'n', q:'急な出費に備えるお金は、どこに置いておくのがよい？', c:['すぐ引き出せる普通預金など','株','不動産','長期の定期預金だけ'], a:0, e:'緊急資金は「増やす」より「すぐ使える」が大事。流動性の高い場所に置こう！'},
+ {d:'n', q:'単利と複利、長く運用するほど有利なのは？', c:['複利','単利','同じ','どちらも損'], a:0, e:'複利は利子が利子を生むので、時間が長いほど差が開く。若いうちに始めるほど有利な理由がこれ！'},
+ {d:'h', q:'中央銀行が政策金利を「下げる」主な狙いは？', c:['お金を借りやすくして景気を刺激する','物価を上げないようにする','銀行を儲けさせる','税収を増やす'], a:0, e:'利下げ＝借金のコストが下がる→企業や個人がお金を使いやすくなり景気を後押しする。'},
+ {d:'h', q:'「円高」になると一般に有利なのは？', c:['輸入企業や海外旅行に行く人','輸出企業','海外に商品を売る会社','外国人観光客'], a:0, e:'円の価値が上がるので海外のものを安く買える。逆に輸出企業は売上が目減りしやすい。'},
+ {d:'h', q:'株価指標「PER」が低い株は、一般にどう評価される？', c:['利益に対して株価が割安','必ず値上がりする','倒産寸前','配当がない'], a:0, e:'PER＝株価÷1株あたり利益。低いほど「利益のわりに安い」とされるが、安いのには理由があることも。'},
+ {d:'h', q:'年利3%の複利で運用すると、資産が2倍になるのは約何年後？', c:['約24年','約3年','約100年','約50年'], a:0, e:'72の法則：72÷3＝24年。年利6%なら12年。利回りの差が年数に大きく効く！'},
+ {d:'h', q:'iDeCo（イデコ）の特徴として正しいのは？', c:['掛金が所得控除になるが、原則60歳まで引き出せない','いつでも引き出せる','元本保証','掛金に税金がかかる'], a:0, e:'老後資金づくり専用の制度。節税メリットが大きい代わりに、長期間ロックされる。'},
+ {d:'h', q:'日本銀行が目標としている物価上昇率（インフレ率）は？', c:['2%','0%','10%','5%'], a:0, e:'「物価安定の目標」は2%。緩やかなインフレが経済に良いとされている。'},
+ {d:'h', q:'「国債の利回りが上がった」とき、国債の価格は？', c:['下がっている','上がっている','変わらない','ゼロになっている'], a:0, e:'利回りと価格は逆の動き。価格が下がると、同じ利子でも利回り（率）は上がる。'},
+ {d:'h', q:'「源泉徴収」とはどんな仕組み？', c:['給料から税金を先に差し引いて会社が納める','自分で税務署に行って払う','税金が免除される','ボーナスから引かれない'], a:0, e:'会社員の税金は毎月の給料から天引きされている。年末調整で過不足を精算する。'},
+ {d:'h', q:'ふるさと納税の仕組みとして正しいのは？', c:['自治体に寄付すると返礼品がもらえ、税金も控除される','税金が全額戻ってくる','どこに寄付しても返礼品は同じ','会社員は利用できない'], a:0, e:'実質2,000円の負担で返礼品＋税控除。ただし控除には収入に応じた上限がある。'},
+ {d:'h', q:'積立投資中に大暴落が来たとき、ドルコスト平均法の考え方では？', c:['同じ額で多くの口数を買えるチャンスでもある','すぐ全部売るべき','積立を必ず増額すべき','投資をやめるべき'], a:0, e:'価格が下がると同じ金額でたくさん買える。長期目線なら暴落時も淡々と続けるのが基本戦略。'},
+ {d:'h', q:'株式の「時価総額」の計算方法は？', c:['株価×発行済み株式数','株価×社員数','売上×利益','資産−負債'], a:0, e:'会社の市場での値段。株価だけでは会社の規模は分からない、を教えてくれる指標！'},
+ {d:'h', q:'債券の「デフォルト」とは？', c:['利子や元本が約束どおり支払われないこと','値上がりすること','満期を迎えること','利回りが上がること'], a:0, e:'発行体（国や会社）がお金を返せなくなること。格付けが低い債券ほど利回りが高いのはこのリスクの対価。'},
+ {d:'h', q:'「ETF」とはどんな商品？', c:['証券取引所で株のように売買できる投資信託','外貨預金','国債の一種','保険商品'], a:0, e:'上場投資信託。インデックスに連動するものが多く、低コストでリアルタイムに売買できる。'},
+ {d:'h', q:'「機会費用」とはどんな考え方？', c:['ある選択をしたことで得られなかった、他の選択肢の利益','機械を買う費用','交通費','手数料の合計'], a:0, e:'お金を寝かせておくことにも「投資していれば得られた利益」という見えないコストがある。'},
+ {d:'h', q:'「サンクコスト（埋没費用）」への正しい向き合い方は？', c:['もう戻らない費用は、これからの判断材料にしない','取り戻すまで続ける','倍賭けして回収する','考え続ける'], a:0, e:'「ここまで課金したから」「ここまで並んだから」は判断を狂わせる。これからの損得だけで決めよう！'},
+ {d:'h', q:'会社員の副業収入で、確定申告が必要になる目安は所得いくら超？', c:['20万円','1万円','100万円','1000万円'], a:0, e:'給与以外の所得が年20万円を超えたら確定申告が必要（住民税は金額によらず申告が必要な点にも注意）。'},
+ {d:'h', q:'金融緩和でお金の量が増えると、通貨の価値は一般に？', c:['下がりやすい（インフレ・円安の要因）','上がりやすい','変わらない','2倍になる'], a:0, e:'出回るお金が増えるほど1円あたりの価値は薄まる。緩和はインフレや円安の一因になりうる。'}
+);
+const QUIZ_DIFFS = [
+  {id:'e', nm:'かんたん',   ic:'🌱', ds:'お金の基本。まずはここから！'},
+  {id:'n', nm:'ふつう',     ic:'🔥', ds:'NISA・保険・分散投資など実用知識'},
+  {id:'h', nm:'むずかしい', ic:'👑', ds:'金利・債券・実質金利…大人も苦戦!?'},
+];
+let QZ = null;
+function quizStart(){
+  const b = loadBests();
+  $('mg-quiz-body').innerHTML = `
+    <div class="mg-panel">
+      <div class="mg-qtxt" style="text-align:center">難易度をえらぼう！</div>
+      <div id="mg-quiz-diffs"></div>
+    </div>`;
+  const box = $('mg-quiz-diffs');
+  QUIZ_DIFFS.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'mg-choice';
+    const best = b['quiz_'+d.id];
+    btn.innerHTML = `${d.ic} <b>${d.nm}</b>　<small style="font-weight:900;background:var(--gold);border:2px solid var(--border);border-radius:8px;padding:1px 8px">ベスト: ${best!==undefined?best+'/10':'-'}</small><br><small style="font-weight:700;color:var(--text2)">${d.ds}（全${QUIZ_POOL.filter(q=>q.d===d.id).length}問からランダム10問）</small>`;
+    btn.onclick = ()=> quizBegin(d.id);
+    box.appendChild(btn);
+  });
+}
+function quizBegin(d){
+  QZ = { qs: shuffle(QUIZ_POOL.filter(q=>q.d===d)).slice(0,10), i:0, score:0, d };
+  quizRenderQ();
+}
+function quizRenderQ(){
+  const q = QZ.qs[QZ.i];
+  const order = shuffle(q.c.map((_,i)=>i));
+  $('mg-quiz-body').innerHTML = `
+    <div class="mg-panel">
+      <div class="mg-qtag">【${QUIZ_DIFFS.find(x=>x.id===QZ.d).nm}】第${QZ.i+1}問 / 10　${q.c.length===2?'○×':'4択'}　正解数: ${QZ.score}</div>
+      <div class="mg-qtxt">${q.q}</div>
+      <div id="mg-quiz-choices"></div>
+      <div id="mg-quiz-expl"></div>
+    </div>`;
+  const box = $('mg-quiz-choices');
+  order.forEach(ci=>{
+    const b = document.createElement('button');
+    b.className = 'mg-choice'; b.textContent = q.c[ci];
+    b.onclick = ()=> quizAnswer(ci, b);
+    box.appendChild(b);
+  });
+}
+function quizAnswer(ci, btn){
+  const q = QZ.qs[QZ.i];
+  const correct = ci === q.a;
+  if(correct) QZ.score++;
+  document.querySelectorAll('#mg-quiz-choices .mg-choice').forEach(b=>{
+    if(b.textContent === q.c[q.a]) b.classList.add('mg-ok');
+    else if(b===btn) b.classList.add('mg-ng');
+    else b.classList.add('mg-dim');
+    b.onclick = null;
+  });
+  $('mg-quiz-expl').innerHTML = `
+    <div class="mg-expl"><strong>${correct?'⭕ 正解！':'❌ 残念…'}</strong><br>💡 ${q.e}</div>
+    <button class="mg-btn" id="mg-quiz-next">${QZ.i===9?'結果を見る 🏁':'次の問題 ▶'}</button>`;
+  $('mg-quiz-next').onclick = quizNext;
+}
+function quizNext(){
+  QZ.i++;
+  if(QZ.i >= 10) quizResult(); else quizRenderQ();
+}
+function quizResult(){
+  const s = QZ.score;
+  const dn = QUIZ_DIFFS.find(x=>x.id===QZ.d).nm;
+  const rank = s===10?['👑','金融マスター！']: s>=8?['🥇','金融上級者！']: s>=6?['🥈','なかなかの知識！']: s>=4?['🥉','伸びしろあり！']:['📖','これから一緒に学ぼう！'];
+  const isBest = saveBest('quiz_'+QZ.d, s);
+  $('mg-quiz-body').innerHTML = `
+    <div class="mg-panel">
+      <div class="mg-result-big">${rank[0]}</div>
+      <div class="mg-result-rank">【${dn}】${s} / 10問正解　${rank[1]}</div>
+      <div class="mg-result-note">${isBest?'🎉 自己ベスト更新！':''}<br>クイズの内容は本編のマスにも登場するよ！</div>
+      <button class="mg-btn" onclick="MG.quizBegin('${QZ.d}')">🔄 もう一度（${dn}・問題は毎回変わる）</button>
+      <button class="mg-btn mg-sec" onclick="MG.quizStart()">難易度をえらび直す</button>
+      <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
+    </div>`;
+}
+
+// ═══ ② 相場チャレンジ ═══
+let MK = null;
+function mktStart(){
+  MK = { turn:1, maxTurn:5, cash:1000000, stocks:0, gold:0, bonds:0, market: MARKETS[2], done:false };
+  mktSpin(true);
+}
+function mktSpin(first){
+  const seq = [];
+  for(let i=0;i<8;i++) seq.push(MARKETS[pick(MARKET_POOL)]);
+  const final = MARKETS[pick(MARKET_POOL)];
+  let k = 0;
+  $('mg-mkt-body').innerHTML = `<div class="mg-panel"><div class="mg-mkt-banner" id="mg-mkt-spin">🎰 相場が動く…</div></div>`;
+  const t = setInterval(()=>{
+    if(!$('mg-mkt-spin')){ clearInterval(t); return; }
+    if(k < seq.length){ $('mg-mkt-spin').textContent = seq[k].emoji + ' ' + seq[k].name; k++; }
+    else { clearInterval(t); MK.market = final; mktRender(first); }
+  }, 110);
+}
+function mktRender(first){
+  const m = MK.market;
+  const total = MK.cash + MK.stocks*m.stockPrice + MK.gold*m.gold + MK.bonds*50000;
+  $('mg-mkt-body').innerHTML = `
+    <div class="mg-mkt-banner">${m.emoji} ${m.name}　<small style="font-size:11px">ターン ${MK.turn}/${MK.maxTurn}</small></div>
+    <div class="mg-stat-row">
+      <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${MK.cash<0?'mg-minus':''}">${fmtM(MK.cash)}</div></div>
+      <div class="mg-stat"><div class="mg-lb">📊 総資産(時価)</div><div class="mg-vl">${fmtM(total)}</div></div>
+    </div>
+    <div class="mg-panel" style="padding:12px">
+      <div class="mg-asset">
+        <div class="mg-anm">📈 株（10株単位）<small>いま ${fmtM(m.stockPrice)}/10株・保有 ${MK.stocks}口</small></div>
+        <button class="mg-tbtn mg-sell" ${MK.stocks<1?'disabled':''} onclick="MG.mktTrade('stocks',-1)">−</button>
+        <button class="mg-tbtn mg-buy" ${MK.cash<m.stockPrice?'disabled':''} onclick="MG.mktTrade('stocks',1)">＋</button>
+      </div>
+      <div class="mg-asset">
+        <div class="mg-anm">🪙 金（ゴールド）<small>いま ${fmtM(m.gold)}/個・保有 ${MK.gold}個</small></div>
+        <button class="mg-tbtn mg-sell" ${MK.gold<1?'disabled':''} onclick="MG.mktTrade('gold',-1)">−</button>
+        <button class="mg-tbtn mg-buy" ${MK.cash<m.gold?'disabled':''} onclick="MG.mktTrade('gold',1)">＋</button>
+      </div>
+      <div class="mg-asset">
+        <div class="mg-anm">🏛️ 国債（1口5万円）<small>毎ターン利子+10%（5千円/口）・保有 ${MK.bonds}口</small></div>
+        <button class="mg-tbtn mg-sell" ${MK.bonds<1?'disabled':''} onclick="MG.mktTrade('bonds',-1)">−</button>
+        <button class="mg-tbtn mg-buy" ${MK.cash<50000?'disabled':''} onclick="MG.mktTrade('bonds',1)">＋</button>
+      </div>
+      <div class="mg-note">💡 デフレは金が高い！インフレは株が高い！「安く買って高く売る」が基本。国債はコツコツ安定。</div>
+      <button class="mg-btn" onclick="MG.mktNextTurn()">${MK.turn===MK.maxTurn ? '🏁 最終決算へ（全資産を売却）' : '⏭️ このターンを終える（相場が動く）'}</button>
+    </div>`;
+}
+function mktTrade(kind, dir){
+  const m = MK.market;
+  const price = kind==='stocks' ? m.stockPrice : kind==='gold' ? m.gold : 50000;
+  if(dir>0 && MK.cash >= price){ MK.cash -= price; MK[kind]++; }
+  if(dir<0 && MK[kind] >= 1){ MK.cash += price; MK[kind]--; }
+  mktRender();
+}
+function mktNextTurn(){
+  if(MK.bonds > 0) MK.cash += MK.bonds * 5000;
+  if(MK.turn === MK.maxTurn){ mktFinal(); return; }
+  MK.turn++;
+  mktSpin();
+}
+function mktFinal(){
+  const final = MARKETS[pick(MARKET_POOL)];
+  const sv = MK.stocks*final.stockPrice, gv = MK.gold*final.gold, bv = MK.bonds*50000;
+  const total = MK.cash + sv + gv + bv;
+  const diff = total - 1000000;
+  const rank = total>=1600000?['👑','伝説の投資家！']: total>=1350000?['🥇','敏腕トレーダー！']: total>=1100000?['🥈','堅実な運用！']: total>=900000?['🥉','あと一歩！']:['💦','相場は厳しい…'];
+  const isBest = saveBest('mkt', total);
+  $('mg-mkt-body').innerHTML = `
+    <div class="mg-mkt-banner">🏁 最終決算の相場：${final.emoji} ${final.name}</div>
+    <div class="mg-panel">
+      <div class="mg-result-big">${rank[0]}</div>
+      <div class="mg-result-rank">総資産 ${fmtM(total)}<br><span style="font-size:14px;color:${diff>=0?'#16a34a':'var(--red)'}">（${diff>=0?'+':''}${fmtM(diff)}）</span></div>
+      <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
+        内訳：現金${fmtM(MK.cash)} / 株${fmtM(sv)} / 金${fmtM(gv)} / 国債${fmtM(bv)}<br>
+        💡 最後の相場は選べない…だから「売り時」も実力のうち！</div>
+      <button class="mg-btn" onclick="MG.mktStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
+    </div>`;
+}
+
+// ═══ ③ 保険ディフェンス ═══
+const INS_DECK = [
+  {name:'巨大地震発生',     ins:true,  val:-400000, desc:'家に大きな被害が…'},
+  {name:'交通事故',         ins:true,  val:-300000, desc:'修理費と治療費を支払う。'},
+  {name:'緊急入院',         ins:true,  val:-150000, desc:'入院費を支払う。'},
+  {name:'クレカ不正利用',   ins:true,  val:-200000, desc:'身に覚えのない請求が…'},
+  {name:'ロストバッゲージ', ins:true,  val:-100000, desc:'旅行の荷物が消えた。'},
+  {name:'追徴課税',         ins:false, val:-200000, desc:'税金の申告漏れ。保険では防げない！'},
+  {name:'スマホ画面バキバキ', ins:true, val:-50000, desc:'ポケットから落とした…'},
+  {name:'平穏な日々',       ins:null,  val:0, desc:'何も起きなかった。それが一番の幸せ。'},
+  {name:'平穏な日々',       ins:null,  val:0, desc:'何も起きなかった。保険料だけが飛んでいく…？'},
+  {name:'平穏な日々',       ins:null,  val:0, desc:'今日も無事に終わった。'},
+  {name:'臨時ボーナス',     ins:null,  val:100000, desc:'ラッキー！臨時収入ゲット。'},
+];
+const INS_COST = 30000, INS_ROUNDS = 10, INS_SALARY = 100000;
+let IN_ = null;
+function insStart(){
+  IN_ = { round:1, cash:500000, paid:0, saved:0 };
+  insAsk();
+}
+function insAsk(){
+  $('mg-ins-body').innerHTML = `
+    <div class="mg-stat-row">
+      <div class="mg-stat"><div class="mg-lb">ラウンド</div><div class="mg-vl">${IN_.round}/${INS_ROUNDS}</div></div>
+      <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${IN_.cash<0?'mg-minus':''}">${fmtM(IN_.cash)}</div></div>
+    </div>
+    <div class="mg-panel">
+      <div class="mg-qtxt">💰 給料 +${fmtM(INS_SALARY)} を受け取った。<br>今月、保険（${fmtM(INS_COST)}）に入る？</div>
+      <div class="mg-note">🛡️ 保険は「保険対象」のハプニングの損失をゼロにする。ただし対象外のカードは防げない！</div>
+      <button class="mg-btn mg-grn" onclick="MG.insDraw(true)">🛡️ 保険に入る（-${fmtM(INS_COST)}）</button>
+      <button class="mg-btn mg-sec" onclick="MG.insDraw(false)">💪 入らない（節約する）</button>
+    </div>`;
+  IN_.cash += INS_SALARY;
+}
+function insDraw(insured){
+  if(insured){ IN_.cash -= INS_COST; IN_.paid += INS_COST; }
+  const card = pick(INS_DECK);
+  let cls='mg-good', eff='±0', effCls='', note='';
+  if(card.val > 0){ IN_.cash += card.val; eff = '+'+fmtM(card.val); effCls='mg-plus'; }
+  else if(card.val < 0){
+    if(insured && card.ins){ IN_.saved += -card.val; cls='mg-shield'; eff='🛡️ 保険で無効化！ (0円)'; note=`本来なら ${fmtM(-card.val)} の損失だった！`; }
+    else {
+      IN_.cash += card.val; cls='mg-bad'; eff = fmtM(card.val); effCls='mg-minus';
+      if(insured && card.ins===false) note='⚠️ このハプニングは保険対象外だった…';
+      if(!insured && card.ins) note='😱 保険に入っていれば防げた…';
+    }
+  }
+  const dead = IN_.cash < 0;
+  $('mg-ins-body').innerHTML = `
+    <div class="mg-stat-row">
+      <div class="mg-stat"><div class="mg-lb">ラウンド</div><div class="mg-vl">${IN_.round}/${INS_ROUNDS}</div></div>
+      <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${IN_.cash<0?'mg-minus':''}">${fmtM(IN_.cash)}</div></div>
+    </div>
+    <div class="mg-panel">
+      <div style="text-align:center;font-weight:900;font-size:13px">${insured?'🛡️ 保険加入中で…':'保険なしで…'} カードをめくった！</div>
+      <div class="mg-card-face ${cls}">
+        <div class="mg-cnm">${card.val<0?'⚡':''}${card.name}</div>
+        <div class="mg-cds">${card.desc}${card.ins===false && card.val<0 ? '<br><b style="color:var(--red)">（保険対象外）</b>':''}</div>
+        <div class="mg-ceff ${effCls}">${eff}</div>
+        ${note?`<div class="mg-cds" style="margin-top:6px"><b>${note}</b></div>`:''}
+      </div>
+      ${dead
+        ? `<button class="mg-btn mg-red" onclick="MG.insResult(false)">💥 破産…（結果を見る）</button>`
+        : `<button class="mg-btn" onclick="MG.insNext()">${IN_.round===INS_ROUNDS?'🏁 結果を見る':'次のラウンドへ ▶'}</button>`}
+    </div>`;
+}
+function insNext(){
+  IN_.round++;
+  if(IN_.round > INS_ROUNDS) insResult(true); else insAsk();
+}
+function insResult(survived){
+  const s = IN_.cash;
+  const rank = !survived?['💥','リスク管理は難しい…']: s>=1300000?['👑','完璧なリスク管理！']: s>=1100000?['🥇','見事な判断力！']: s>=900000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
+  const isBest = survived ? saveBest('ins', s) : false;
+  $('mg-ins-body').innerHTML = `
+    <div class="mg-panel">
+      <div class="mg-result-big">${rank[0]}</div>
+      <div class="mg-result-rank">${survived?`生存！ 最終資産 ${fmtM(s)}`:`ラウンド${IN_.round}で破産…`}</div>
+      <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
+        支払った保険料：${fmtM(IN_.paid)}　/　保険が防いだ損失：${fmtM(IN_.saved)}<br>
+        💡 ${IN_.saved > IN_.paid ? '今回は保険が大活躍！でも毎回そうとは限らない。' : '今回は保険料の方が高くついた。それでも「破産しない」ことに価値がある！'}</div>
+      <button class="mg-btn" onclick="MG.insStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
+    </div>`;
+}
+
+// ═══ ④ 家計やりくり12ヶ月 ═══
+const BUD_INCOME = 250000, BUD_LIVING = 150000, BUD_FREE = 100000;
+let BD = null;
+function budStart(){
+  BD = { month:1, cash:100000, invest:0, happy:50, alloc:{save:4, inv:3, fun:3}, log:[] };
+  budRender();
+}
+function budRender(){
+  const a = BD.alloc, total = (a.save+a.inv+a.fun);
+  $('mg-bud-body').innerHTML = `
+    <div class="mg-stat-row">
+      <div class="mg-stat"><div class="mg-lb">📅 月</div><div class="mg-vl">${BD.month}/12</div></div>
+      <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${BD.cash<0?'mg-minus':''}">${fmtM(BD.cash)}</div></div>
+      <div class="mg-stat"><div class="mg-lb">📈 投資残高</div><div class="mg-vl">${fmtM(BD.invest)}</div></div>
+    </div>
+    <div class="mg-panel" style="padding:12px">
+      <div style="font-weight:900;font-size:13px">😊 幸福度</div>
+      <div class="mg-meter"><div style="width:${BD.happy}%;background:${BD.happy>=60?'var(--green)':BD.happy>=30?'var(--gold)':'var(--red)'}"></div></div>
+      <div class="mg-note">幸福度が低いと「ストレス浪費」が起きやすくなる！${BD.month===6||BD.month===12?'<br><b style="color:#b45309">🎁 今月はボーナス月（+20万円）！</b>':''}</div>
+    </div>
+    <div class="mg-panel" style="padding:12px">
+      <div style="font-weight:900;font-size:13px;margin-bottom:2px">今月の給料 ${fmtM(BUD_INCOME)}（生活費 -${fmtM(BUD_LIVING)} は自動）</div>
+      <div class="mg-note" style="margin-top:0">残り ${fmtM(BUD_FREE)} を1万円単位で配分しよう（合計10）</div>
+      <div class="mg-alloc">
+        <div class="mg-anm">🏦 貯金<small>安全。イベント出費に備える</small></div>
+        <button class="mg-tbtn mg-sell" onclick="MG.budAdj('save',-1)">−</button><div class="mg-val">${a.save}万</div><button class="mg-tbtn mg-buy" onclick="MG.budAdj('save',1)">＋</button>
+      </div>
+      <div class="mg-alloc">
+        <div class="mg-anm">📈 投資<small>増えるかも、減るかも（長期で有利）</small></div>
+        <button class="mg-tbtn mg-sell" onclick="MG.budAdj('inv',-1)">−</button><div class="mg-val">${a.inv}万</div><button class="mg-tbtn mg-buy" onclick="MG.budAdj('inv',1)">＋</button>
+      </div>
+      <div class="mg-alloc">
+        <div class="mg-anm">🎮 娯楽<small>幸福度アップ。人生には潤いも必要</small></div>
+        <button class="mg-tbtn mg-sell" onclick="MG.budAdj('fun',-1)">−</button><div class="mg-val">${a.fun}万</div><button class="mg-tbtn mg-buy" onclick="MG.budAdj('fun',1)">＋</button>
+      </div>
+      <button class="mg-btn" ${total!==10?'disabled':''} onclick="MG.budNextMonth()">${total===10 ? `📅 ${BD.month}月を過ごす ▶` : `あと${10-total>0?10-total+'万円配分して':'配分を'+(total-10)+'万円減らして'}ね`}</button>
+    </div>
+    ${BD.log.length?`<div class="mg-panel" style="padding:8px 12px;max-height:180px;overflow-y:auto">${BD.log.map(l=>`<div class="mg-log-line">${l}</div>`).join('')}</div>`:''}`;
+}
+function budAdj(k, d){
+  const a = BD.alloc, total = a.save+a.inv+a.fun;
+  if(d>0 && total>=10) return;
+  if(d<0 && a[k]<=0) return;
+  a[k]+=d; budRender();
+}
+function budNextMonth(){
+  const a = BD.alloc, m = BD.month, logs=[];
+  BD._cashB = BD.cash; BD._investB = BD.invest; BD._happyB = BD.happy;
+  let income = BUD_INCOME + ((m===6||m===12) ? 200000 : 0);
+  if(m===6||m===12) logs.push(`🎁 ボーナス月！ <b class="mg-p">+${fmtM(200000)}</b>`);
+  BD.cash += income - BUD_LIVING - (a.inv+a.fun)*10000;
+  BD.invest += a.inv*10000;
+  BD.happy = Math.max(0, Math.min(100, BD.happy + a.fun*4 - 8));
+  if(a.fun===0) logs.push('😞 娯楽ゼロの月…幸福度が下がった');
+  if(BD.invest > 0){
+    const r = pick([-0.2,-0.1,-0.1,0,0,0.1,0.1,0.1,0.2,0.2,0.3]);
+    const gain = Math.round(BD.invest*r);
+    BD.invest += gain;
+    if(gain!==0) logs.push(`📈 投資が${r>0?'上昇':'下落'} <b class="${gain>0?'mg-p':'mg-m'}">${gain>0?'+':''}${fmtM(gain)}</b>（${r>0?'+':''}${Math.round(r*100)}%）`);
+  }
+  if(Math.random() < 0.3){
+    const ev = pick([
+      {n:'💻 家電が故障！', v:-50000},{n:'💒 冠婚葬祭のご祝儀', v:-30000},
+      {n:'🤒 風邪で病院へ', v:-20000},{n:'🎊 フリマで売れた！', v:+20000},
+    ]);
+    BD.cash += ev.v;
+    logs.push(`${ev.n} <b class="${ev.v>0?'mg-p':'mg-m'}">${ev.v>0?'+':''}${fmtM(ev.v)}</b>`);
+  }
+  if(BD.happy < 30 && Math.random() < 0.5){
+    BD.cash -= 50000;
+    logs.push(`😫 ストレスで衝動買い！ <b class="mg-m">-${fmtM(50000)}</b>`);
+  }
+  if(BD.cash < 0){
+    const int = Math.round(Math.abs(BD.cash)*0.05);
+    BD.cash -= int;
+    logs.push(`💳 借金の利子(5%) <b class="mg-m">-${fmtM(int)}</b>`);
+  }
+  BD.log.unshift(`<b>── ${m}月 ──</b> ${logs.join('　')||'穏やかな1ヶ月だった'}`);
+  BD.month++;
+  budShowMonth(m, logs);
+}
+function budShowMonth(m, logs){
+  const isLast = BD.month > 12;
+  const total = BD.cash + BD.invest;
+  const a = BD.alloc;
+  const dRow = (label, before, after) => {
+    const d = after - before;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:13.5px;margin-top:8px;gap:8px">
+      <span style="flex:none">${label}</span>
+      <span style="text-align:right">${fmtM(before)} → <b>${fmtM(after)}</b> <span style="color:${d>=0?'#16a34a':'var(--red)'}">(${d>=0?'+':''}${fmtM(d)})</span></span>
+    </div>`;
+  };
+  const ov = document.createElement('div'); ov.className='mg-howto-ov'; ov.id='mg-bud-month-ov';
+  ov.innerHTML = `<div class="mg-howto-bx">
+    <h2>📅 ${m}月のけっか</h2>
+    <div style="font-size:12px;font-weight:700;color:var(--text2);text-align:center;margin-bottom:8px">
+      💰 給料 +${fmtM(BUD_INCOME)}（生活費 -${fmtM(BUD_LIVING)}）／ 配分：🏦${a.save}万・📈${a.inv}万・🎮${a.fun}万</div>
+    <div style="border:3px solid var(--border);border-radius:12px;padding:8px 10px;background:#fffbeb">
+      ${logs.length ? logs.map(l=>`<div style="font-size:12.5px;font-weight:700;line-height:1.6;padding:3px 0">${l}</div>`).join('') : '<div style="font-size:12.5px;font-weight:700;padding:3px 0">😌 穏やかな1ヶ月だった</div>'}
+    </div>
+    ${dRow('💵 現金', BD._cashB, BD.cash)}
+    ${dRow('📈 投資残高', BD._investB, BD.invest)}
+    <div style="display:flex;justify-content:space-between;font-weight:900;font-size:13.5px;margin-top:8px">
+      <span>${BD.happy>=60?'😊':BD.happy>=30?'😐':'😞'} 幸福度</span>
+      <span>${BD._happyB} → <b>${BD.happy}</b> <span style="color:${BD.happy>=BD._happyB?'#16a34a':'var(--red)'}">(${BD.happy>=BD._happyB?'+':''}${BD.happy-BD._happyB})</span></span>
+    </div>
+    <div style="text-align:center;font-weight:900;font-size:17px;margin-top:14px;background:var(--bg2);border:3px solid var(--border);border-radius:12px;padding:8px">📊 総資産 ${fmtM(total)}</div>
+    <button class="mg-btn" id="mg-bud-month-next">${isLast ? '🏁 1年のけっかを見る' : `翌月（${BD.month}月）へ ▶`}</button>
+  </div>`;
+  document.body.appendChild(ov);
+  $('mg-bud-month-next').onclick = ()=>{ ov.remove(); if(isLast) budResult(); else budRender(); };
+}
+function budResult(){
+  const total = BD.cash + BD.invest;
+  const happyBonus = BD.happy>=60 ? '😊 幸福度も高い、理想的な1年！' : BD.happy>=30 ? '😐 もう少し潤いがあってもいいかも？' : '😞 お金はあっても心が疲れた1年…';
+  const rank = total>=1200000?['👑','家計の達人！']: total>=900000?['🥇','堅実なやりくり！']: total>=600000?['🥈','まずまずの1年！']: total>=300000?['🥉','来年がんばろう！']:['💦','家計は火の車…'];
+  const isBest = saveBest('bud', total);
+  $('mg-bud-body').innerHTML = `
+    <div class="mg-panel">
+      <div class="mg-result-big">${rank[0]}</div>
+      <div class="mg-result-rank">1年後の総資産 ${fmtM(total)}</div>
+      <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
+        現金 ${fmtM(BD.cash)} ＋ 投資 ${fmtM(BD.invest)}　/　最終幸福度 ${BD.happy}<br>${happyBonus}<br>
+        💡 貯金・投資・楽しみのバランスこそ家計の極意！</div>
+      <button class="mg-btn" onclick="MG.budStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
+    </div>`;
+}
+
+window.MG = { open, close, openGame, goMenu, showHowto, quizStart, quizBegin, mktStart, mktTrade, mktNextTurn, insStart, insDraw, insNext, insResult, budStart, budAdj, budNextMonth };
+})();
 </script>
 </body>
 </html>
