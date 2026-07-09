@@ -1620,6 +1620,13 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     </div>
     <div class="sp-row">
       <div class="sp-info">
+        <div class="sp-label">⚡ サクサクモード</div>
+        <div class="sp-desc">ルーレット・サイコロ・文字送りなど<strong>演出の待ち時間を短縮</strong>します。ゲームのルールや進行手順は変わりません。<br><strong>ローカルモード専用</strong>（オンライン対戦では通常速度で動作します）。</div>
+      </div>
+      <div class="toggle" id="fastfx-toggle" onclick="toggleFastFx()"></div>
+    </div>
+    <div class="sp-row">
+      <div class="sp-info">
         <div class="sp-label">📖 ルールブック</div>
         <div class="sp-desc">公式ルールブックを別タブで開きます。</div>
       </div>
@@ -1777,7 +1784,10 @@ function pBonds(p)   { return p.bonds   || []; }
 function pEstates(p) { return p.estates || []; }
 
 
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
+// ⚡ サクサクモード：演出の待ち時間だけ短縮する係数（ローカルモード限定。進行手順・イベント順序は一切変えない）
+window._fastFx = localStorage.getItem('tousika_fastfx') === '1';
+function fx(ms){ return (window._fastFx && LOCAL_MODE) ? Math.max(30, Math.round(ms * 0.4)) : ms; }
+const sleep = ms => new Promise(r=>setTimeout(r, fx(ms)));
 // renderPlayers は renderAll の別名（複数箇所から呼ばれるため）
 function renderPlayers() { renderAll(); }
 
@@ -1869,6 +1879,13 @@ function openSettings() {
   const panel = document.getElementById('settings-panel');
   if(panel) panel.classList.add('open');
   _syncBeginnerUI();
+  document.getElementById('fastfx-toggle')?.classList.toggle('on', !!window._fastFx);
+}
+function toggleFastFx() {
+  window._fastFx = !window._fastFx;
+  localStorage.setItem('tousika_fastfx', window._fastFx ? '1' : '0');
+  document.getElementById('fastfx-toggle')?.classList.toggle('on', !!window._fastFx);
+  toast(window._fastFx ? '⚡ サクサクモード ON（ローカルモードで演出短縮）' : '⚡ サクサクモード OFF');
 }
 function closeSettings() {
   document.getElementById('settings-panel')?.classList.remove('open');
@@ -2527,7 +2544,7 @@ async function spinRoulette(title, items, typeClass, finalDelay=1000, fixedResul
       rBox.textContent = cur.name;
       count++;
       if(count > 18) delay = Math.min(delay + 20, 200); // 後半は減速（上限0.2秒）
-      if(count < 28) { setTimeout(spin, delay); }
+      if(count < 28) { setTimeout(spin, fx(delay)); }
       else {
         const finalItem = fixedResultId
           ? (items.find(i => i.id === fixedResultId) || items[Math.floor(Math.random()*items.length)])
@@ -2538,7 +2555,7 @@ async function spinRoulette(title, items, typeClass, finalDelay=1000, fixedResul
           desc: finalItem.name, eff: finalItem.name, effc:'gold',
           _rouletteFinal: true
         }, true).catch(()=>{});
-        setTimeout(() => { resolve(finalItem); }, finalDelay);
+        setTimeout(() => { resolve(finalItem); }, fx(finalDelay));
       }
     };
     spin();
@@ -2565,7 +2582,7 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
                    die.textContent = face;
                    c++;
                    if(c>25) delay+=25;
-                   if(c<45) { setTimeout(spin, delay); }
+                   if(c<45) { setTimeout(spin, fx(delay)); }
                    else {
                        const roll = fixedRoll !== null ? fixedRoll : (Math.floor(Math.random()*6)+1);
                        die.textContent = ['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]; die.style.color='var(--red)'; die.style.transform='scale(1.3)';
@@ -2574,7 +2591,7 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
                          desc:`出目: ${roll}`, eff:['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1], effc:'gold',
                          _rouletteFinal: true
                        }, true).catch(()=>{});
-                       setTimeout(()=>resolve(roll), 1500);
+                       setTimeout(()=>resolve(roll), fx(1500));
                    }
                }
                spin();
@@ -3233,7 +3250,7 @@ function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', ac
   const typeNext = () => {
     if(ti < title.length) {
       titleEl.textContent += title[ti++];
-      window._twTimer = setTimeout(typeNext, msPerChar);
+      window._twTimer = setTimeout(typeNext, fx(msPerChar));
     }
   };
   typeNext();
@@ -6984,8 +7001,9 @@ function quizResult(){
     <div class="mg-panel">
       <div class="mg-result-big">${rank[0]}</div>
       <div class="mg-result-rank">【${dn}】${s} / 10問正解　${rank[1]}</div>
-      <div class="mg-result-note">${isBest?'🎉 自己ベスト更新！':''}<br>クイズの内容は本編のマスにも登場するよ！</div>
+      <div class="mg-result-note">${isBest?'🎉 自己ベスト更新！':''}<br>クイズの知識は本編のマスや投資メニューでそのまま活きるよ！</div>
       <button class="mg-btn" onclick="MG.quizBegin('${QZ.d}')">🔄 もう一度（${dn}・問題は毎回変わる）</button>
+      <button class="mg-btn mg-grn" onclick="MG.close()">🎲 本編で腕試し！</button>
       <button class="mg-btn mg-sec" onclick="MG.quizStart()">難易度をえらび直す</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
@@ -7065,8 +7083,9 @@ function mktFinal(){
       <div class="mg-result-rank">総資産 ${fmtM(total)}<br><span style="font-size:14px;color:${diff>=0?'#16a34a':'var(--red)'}">（${diff>=0?'+':''}${fmtM(diff)}）</span></div>
       <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         内訳：現金${fmtM(MK.cash)} / 株${fmtM(sv)} / 金${fmtM(gv)} / 国債${fmtM(bv)}<br>
-        💡 最後の相場は選べない…だから「売り時」も実力のうち！</div>
+        💡 最後の相場は選べない…だから「売り時」も実力のうち！<br>📈 この売買、本編の「市場マス」でライバルと駆け引きしながら体験できる！</div>
       <button class="mg-btn" onclick="MG.mktStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-grn" onclick="MG.close()">🎲 本編で腕試し！</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
@@ -7151,8 +7170,9 @@ function insResult(survived){
       <div class="mg-result-rank">${survived?`生存！ 最終資産 ${fmtM(s)}`:`ラウンド${IN_.round}で破産…`}</div>
       <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         支払った保険料：${fmtM(IN_.paid)}　/　保険が防いだ損失：${fmtM(IN_.saved)}<br>
-        💡 ${IN_.saved > IN_.paid ? '今回は保険が大活躍！でも毎回そうとは限らない。' : '今回は保険料の方が高くついた。それでも「破産しない」ことに価値がある！'}</div>
+        💡 ${IN_.saved > IN_.paid ? '今回は保険が大活躍！でも毎回そうとは限らない。' : '今回は保険料の方が高くついた。それでも「破産しない」ことに価値がある！'}<br>🛡️ 本編では毎年の決算で保険に入るか選べる。ハプニングに備えろ！</div>
       <button class="mg-btn" onclick="MG.insStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-grn" onclick="MG.close()">🎲 本編で腕試し！</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
@@ -7280,8 +7300,9 @@ function budResult(){
       <div class="mg-result-rank">1年後の総資産 ${fmtM(total)}</div>
       <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         現金 ${fmtM(BD.cash)} ＋ 投資 ${fmtM(BD.invest)}　/　最終幸福度 ${BD.happy}<br>${happyBonus}<br>
-        💡 貯金・投資・楽しみのバランスこそ家計の極意！</div>
+        💡 貯金・投資・楽しみのバランスこそ家計の極意！<br>🏦 この配分感覚は、本編の投資メニュー（株・国債・不動産・金）でそのまま活きる！</div>
       <button class="mg-btn" onclick="MG.budStart()">🔄 もう一度</button>
+      <button class="mg-btn mg-grn" onclick="MG.close()">🎲 本編で腕試し！</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
