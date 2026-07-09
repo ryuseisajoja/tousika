@@ -1062,6 +1062,9 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 }
 .toggle.on::after { transform:translateX(24px); }
 
+/* 🔰 はじめてガイド（初登場要素の1行メモ） */
+.jit-tip { background:#ecfdf5; border:3px solid #34d399; border-radius:12px; padding:8px 12px; font-size:12.5px; font-weight:700; line-height:1.6; margin-bottom:10px; text-align:left; }
+
 /* 初心者モード ヒントボックス */
 .hint-box {
   background:#eff6ff;
@@ -1620,6 +1623,13 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     </div>
     <div class="sp-row">
       <div class="sp-info">
+        <div class="sp-label">🔰 はじめてガイド</div>
+        <div class="sp-desc">ゲーム中に<strong>初めて登場した要素だけ</strong>、その場に1行の解説メモを表示します（各要素につき1回だけ・じゃまになりません）。<br><button onclick="resetJitGuide()" style="margin-top:6px;background:#f1f5f9;border:2px solid var(--border);border-radius:10px;padding:3px 10px;font-size:11px;font-weight:900;cursor:pointer;font-family:inherit">表示履歴をリセット</button></div>
+      </div>
+      <div class="toggle" id="jit-toggle" onclick="toggleJitGuide()"></div>
+    </div>
+    <div class="sp-row">
+      <div class="sp-info">
         <div class="sp-label">⚡ サクサクモード</div>
         <div class="sp-desc">ルーレット・サイコロ・文字送りなど<strong>演出の待ち時間を短縮</strong>します。ゲームのルールや進行手順は変わりません。<br><strong>ローカルモード専用</strong>（オンライン対戦では通常速度で動作します）。</div>
       </div>
@@ -1788,6 +1798,34 @@ function pEstates(p) { return p.estates || []; }
 window._fastFx = localStorage.getItem('tousika_fastfx') === '1';
 function fx(ms){ return (window._fastFx && LOCAL_MODE) ? Math.max(30, Math.round(ms * 0.4)) : ms; }
 const sleep = ms => new Promise(r=>setTimeout(r, fx(ms)));
+
+// 🔰 はじめてガイド：初登場の要素にだけ、その場で1行メモを表示（端末ごとに各1回・表示専用）
+window._jitGuide = localStorage.getItem('tousika_jitguide') !== '0'; // 既定ON
+function _jitSeen(){ try { return JSON.parse(localStorage.getItem('tousika_jit_seen_v1')) || []; } catch(e){ return []; } }
+const JIT_TIPS = [
+  {key:'forced', test:(tg,ti)=> tg==='強制ストップ', tip:'強制ストップ＝1年の決算。給料や配当を受け取り、🛡️保険（次の1年のハプニング被害を防ぐ）に入るか選び、そのあと投資ができる大事な場面！'},
+  {key:'invest', test:(tg,ti)=> tg==='投資フェーズ', tip:'決算の投資タイム。いまの相場を見て、株や国債を買うか売るか決めよう！'},
+  {key:'trade',  test:(tg,ti)=> tg==='市場取引', tip:'株は10株単位で売買。相場（デフレ⇄インフレ）で値段が大きく変わるので「安く買って高く売る」が基本！'},
+  {key:'happen', test:(tg,ti)=> tg.includes('ルーレット') && ti.includes('ハプニング'), tip:'ハプニングカードはお金を脅かすトラブル！🛡️保険に入っていれば防げるものもある。'},
+  {key:'market', test:(tg,ti)=> tg.includes('ルーレット') && (ti.includes('市場') || ti.includes('相場')), tip:'ルーレットで相場が決まる。📉デフレは金が高く、📈インフレは株が高い！'},
+  {key:'event',  test:(tg,ti)=> tg.includes('ルーレット') && ti.includes('イベント'), tip:'イベントカードは基本ラッキー系。ピンチを招くハプニングカードとの違いを覚えよう！'},
+  {key:'nisa',   test:(tg,ti)=> ti.includes('NISA'), tip:'積立NISAはゴール時に3倍！早く・多く積み立てるほどお得。'},
+  {key:'gold',   test:(tg,ti)=> ti.includes('金を購入'), tip:'金は「有事の金」。デフレのとき高く売れる安全資産。ゴール時の相場で換金されるよ。'},
+  {key:'ipo',    test:(tg,ti)=> tg==='IPO', tip:'未上場株はゴールのサイコロ判定で大化けか紙切れか…ハイリスク・ハイリターンの投資！'},
+  {key:'estate', test:(tg,ti)=> (tg+ti).includes('不動産購入') || ti.includes('不動産を購入'), tip:'不動産はゴール時に購入額の3倍で売却できる、インフレに強い実物資産！'},
+  {key:'bond',   test:(tg,ti)=> ti.includes('国債') && (ti.includes('買') || ti.includes('購入')), tip:'国債＝国にお金を貸して利子をもらう堅実な投資。決算のたびに利子や満期が処理されるよ。'},
+  {key:'keiba',  test:(tg,ti)=> tg.includes('競馬'), tip:'ギャンブルは続けるほど期待値どおり損しやすい。遊びの範囲で楽しもう！'},
+];
+function jitTipFor(tag, title){
+  if(!window._jitGuide) return '';
+  const tg = String(tag||''), ti = String(title||'');
+  const seen = _jitSeen();
+  const hit = JIT_TIPS.find(t => !seen.includes(t.key) && t.test(tg, ti));
+  if(!hit) return '';
+  seen.push(hit.key);
+  try { localStorage.setItem('tousika_jit_seen_v1', JSON.stringify(seen)); } catch(e){}
+  return `<div class="jit-tip">🔰 <strong>はじめてメモ</strong>：${hit.tip}</div>`;
+}
 // renderPlayers は renderAll の別名（複数箇所から呼ばれるため）
 function renderPlayers() { renderAll(); }
 
@@ -1880,6 +1918,17 @@ function openSettings() {
   if(panel) panel.classList.add('open');
   _syncBeginnerUI();
   document.getElementById('fastfx-toggle')?.classList.toggle('on', !!window._fastFx);
+  document.getElementById('jit-toggle')?.classList.toggle('on', !!window._jitGuide);
+}
+function toggleJitGuide() {
+  window._jitGuide = !window._jitGuide;
+  localStorage.setItem('tousika_jitguide', window._jitGuide ? '1' : '0');
+  document.getElementById('jit-toggle')?.classList.toggle('on', !!window._jitGuide);
+  toast(window._jitGuide ? '🔰 はじめてガイド ON' : '🔰 はじめてガイド OFF');
+}
+function resetJitGuide() {
+  localStorage.removeItem('tousika_jit_seen_v1');
+  toast('🔰 はじめてメモの表示履歴をリセットしました');
 }
 function toggleFastFx() {
   window._fastFx = !window._fastFx;
@@ -3226,7 +3275,7 @@ function showModal({type, tag, title, desc='', extra='', eff='', effc='gold', ac
 
   // desc・extra・eff は即時セット（eff は後でフェードイン）
   const descEl = document.getElementById('mdesc');
-  descEl.innerHTML = desc;
+  descEl.innerHTML = jitTipFor(tag, title) + desc; // 🔰 はじめてメモ（表示専用・broadcast対象外）
   descEl.style.opacity = '0';
   descEl.style.transition = 'none';
   document.getElementById('mextra').innerHTML = extra;
