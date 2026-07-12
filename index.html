@@ -203,6 +203,12 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .wagain { padding: 14px 36px; background: #fff; border: 4px solid var(--border); color: var(--text); font-size: 18px; font-weight: 900; cursor: pointer; border-radius: 24px; box-shadow: 0 6px 0 var(--border); font-family: 'M PLUS Rounded 1c', sans-serif; margin-top: 10px; }
 
 /* ===== START SCREEN ===== */
+/* サブ機能のコンパクトなアイコン行 */
+.ss-mini-row { display:flex; gap:8px; width:100%; }
+.ss-mini { flex:1; background:#fff; border:3px solid var(--border); border-radius:14px; padding:8px 4px 6px; font-family:inherit; font-weight:900; font-size:11px; cursor:pointer; box-shadow:3px 3px 0 var(--border); display:flex; flex-direction:column; align-items:center; gap:2px; color:var(--text); }
+.ss-mini span { font-size:20px; line-height:1; }
+.ss-mini:active { transform:translate(2px,2px); box-shadow:1px 1px 0 var(--border); }
+
 #start-screen {
   background: #ffde59 !important;
   overflow-x: hidden;            /* 横はみ出しのみ抑制。縦はスクロール可（小さい画面対策） */
@@ -1223,32 +1229,23 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
         <div class="ss-btn-desc">同じ画面を囲んで1台で遊ぶ</div>
       </div>
     </button>
-    <!-- その他は2列グリッド -->
+    <!-- 学ぶ・遊ぶは2列グリッド -->
     <div class="ss-grid2">
       <button class="ss-btn" onclick="openTutorial()" style="background:#8b5cf6">
         <span class="ss-btn-icon">🎓</span>
         <div class="ss-btn-label" style="color:#fff">遊び方</div>
       </button>
-      <button class="ss-btn" onclick="openRanking()" style="background:#fbcfe8">
-        <span class="ss-btn-icon">🏆</span>
-        <div class="ss-btn-label">ランキング</div>
-      </button>
-      <button class="ss-btn" onclick="window.open('rules.html','_blank')" style="background:#fde047">
-        <span class="ss-btn-icon">📖</span>
-        <div class="ss-btn-label">ルール</div>
-      </button>
-      <button class="ss-btn" onclick="openSettings()" style="background:#e2e8f0">
-        <span class="ss-btn-icon">⚙️</span>
-        <div class="ss-btn-label">設定</div>
-      </button>
-      <button class="ss-btn" onclick="openAchievements()" style="background:#fbbf24">
-        <span class="ss-btn-icon">🎖️</span>
-        <div class="ss-btn-label">やりこみ・実績</div>
-      </button>
       <button class="ss-btn" onclick="MG.open()" style="background:#2dd4bf">
         <span class="ss-btn-icon">🎮</span>
         <div class="ss-btn-label">ミニゲーム</div>
       </button>
+    </div>
+    <!-- サブ機能はコンパクトなアイコン行 -->
+    <div class="ss-mini-row">
+      <button class="ss-mini" onclick="openAchievements()"><span>🎖️</span>実績</button>
+      <button class="ss-mini" onclick="openRanking()"><span>🏆</span>ランキング</button>
+      <button class="ss-mini" onclick="window.open('rules.html','_blank')"><span>📖</span>ルール</button>
+      <button class="ss-mini" onclick="openSettings()"><span>⚙️</span>設定</button>
     </div>
   </div>
 </div>
@@ -6667,7 +6664,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 
 <!-- ═══════════════ ミニゲーム（短時間金融学習）═══════════════ -->
 <style>
-#mg-root { position:fixed; inset:0; background:var(--bg); background-image:radial-gradient(#dfe6e9 2px, transparent 2px); background-size:24px 24px; z-index:1300; display:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+#mg-root { position:fixed; inset:0; background:var(--bg); background-image:radial-gradient(#dfe6e9 2px, transparent 2px); background-size:24px 24px; z-index:3000; display:none; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 #mg-root.on { display:block; }
 .mg-wrap { max-width:560px; margin:0 auto; padding:16px 14px 40px; }
 .mg-scr { display:none; }
@@ -6736,7 +6733,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 .mg-log-line { font-size:12px; font-weight:700; padding:6px 8px; border-bottom:2px dashed #e2e8f0; line-height:1.5; }
 .mg-log-line b.mg-m { color:var(--red); } .mg-log-line b.mg-p { color:#16a34a; }
 .mg-note { font-size:11.5px; color:var(--text2); font-weight:700; line-height:1.6; margin-top:8px; }
-.mg-howto-ov { position:fixed; inset:0; background:rgba(45,52,54,.55); display:flex; align-items:center; justify-content:center; z-index:1400; padding:16px; }
+.mg-howto-ov { position:fixed; inset:0; background:rgba(45,52,54,.55); display:flex; align-items:center; justify-content:center; z-index:3100; padding:16px; }
 .mg-howto-bx { background:#fff; border:4px solid var(--border); border-radius:20px; box-shadow:6px 6px 0 var(--border); max-width:480px; width:100%; padding:18px; max-height:85vh; overflow-y:auto; animation:mgPopIn .2s ease both; }
 .mg-howto-bx h2 { font-size:19px; margin-bottom:12px; text-align:center; }
 .mg-howto-step { display:flex; gap:10px; align-items:flex-start; font-size:13px; font-weight:700; line-height:1.6; margin-top:10px; }
