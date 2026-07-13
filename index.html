@@ -1199,19 +1199,6 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <div class="ss-sub">知識・運・決断力が試される<br>超実践型金融ボードゲーム</div>
   </div>
 
-  <!-- 解説モードトグル -->
-  <div style="width:100%;max-width:380px;margin-bottom:-6px;z-index:1;position:relative">
-    <div class="hint-bar off" id="hint-bar-title" onclick="toggleBeginnerBar()">
-      <div class="hint-bar-icon">💡</div>
-      <div class="hint-bar-text">
-        <div class="hint-bar-label">かんたん解説モード</div>
-        <div class="hint-bar-desc">投資商品の解説をゲーム中に表示</div>
-      </div>
-      <div class="hint-bar-state" id="hint-bar-title-state">OFF</div>
-      <div class="hint-bar-toggle"></div>
-    </div>
-  </div>
-
   <!-- ボタン -->
   <div class="ss-btns">
     <!-- オンライン・ローカルは1列（全幅） -->
@@ -1423,6 +1410,16 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="setup">
     <button class="rule-btn" onclick="backToStart()" style="background:#fff">← タイトルに戻る</button>
     <button class="rule-btn" onclick="window.open('rules.html', '_blank')">📖 ルール説明を読む</button>
+    <!-- 解説モードトグル（ローカルセットアップ） -->
+    <div class="hint-bar off" id="hint-bar-title" onclick="toggleBeginnerBar()" style="margin:8px 0 4px">
+      <div class="hint-bar-icon">💡</div>
+      <div class="hint-bar-text">
+        <div class="hint-bar-label">かんたん解説モード</div>
+        <div class="hint-bar-desc">投資商品の解説をゲーム中に表示</div>
+      </div>
+      <div class="hint-bar-state" id="hint-bar-title-state">OFF</div>
+      <div class="hint-bar-toggle"></div>
+    </div>
     <div class="s-lbl">プレイヤー人数 (3〜6人)</div>
     <div class="cnt-row">
       <button class="cnt-btn active" onclick="setCount(3)">3</button>
