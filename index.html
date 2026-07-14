@@ -134,6 +134,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .turn-chip.bot { background:#e2e8f0; color:var(--text2); animation: botPulse 1.6s ease-in-out infinite; }
 .turn-chip.you { background:var(--gold); color:var(--text); }
 @keyframes botPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+@keyframes shakeX { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
 /* ===== SIDEBAR ===== */
@@ -1495,7 +1496,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <div class="s-lbl">🤖 Botの強さ</div>
     <div class="cnt-row" id="bot-level-row">
       <button class="cnt-btn" onclick="setBotLevel('easy')">かんたん</button>
-      <button class="cnt-btn active" onclick="setBotLevel('normal')">ふつう</button>
+      <button class="cnt-btn" onclick="setBotLevel('normal')">ふつう</button>
       <button class="cnt-btn" onclick="setBotLevel('hard')">つよい</button>
     </div>
     <div class="s-lbl"><svg class="ic"><use href="#ic-chart"></use></svg> 相場の荒れ方</div>
@@ -2343,7 +2344,7 @@ function buildHint(key) {
   </div>`;
 }
 
-window._botLevel = window._botLevel || 'normal';
+window._botLevel = window._botLevel || null; // ローカルは明示選択が必須（オンライン待合室はnormalにフォールバック）
 function setBotLevel(lv){
   window._botLevel = lv;
   const row = document.getElementById('bot-level-row');
@@ -2364,6 +2365,14 @@ function setCount(n){
 }
 
 async function startGame(){
+  // Botがいるのに「Botの強さ」未選択なら開始しない
+  const _anyBot = Array.from({length:_pc}, (_,i)=>!!document.getElementById(`bot-${i}`)?.checked).some(Boolean);
+  if(_anyBot && !window._botLevel){
+    toast('🤖 「Botの強さ」を選んでからスタートしてね！');
+    const row = document.getElementById('bot-level-row');
+    if(row){ row.style.animation='none'; void row.offsetWidth; row.style.animation='shakeX .5s'; }
+    return;
+  }
   window._settlementStarted = false; window._waitSettleId = null; window._waitSettleResolve = null; window._mySettlementActive = false;
   G.players=[]; G.ci=0; G.turn=1; G.year=1; G.pc=_pc; G.goalOrder=[]; // ← G.pcをプレイヤー数で更新
   G.realMode = !!window._realMode; // ← リアル志向モードを確定（以後はGで一元管理）
@@ -6940,7 +6949,7 @@ const HOWTO = {
     '「＋」で買う、「−」で売る。国債🏛️は毎ターン利子+10%で安定',
     '最終ターンの後は、選べない相場で全資産を強制精算。売り時も実力！']},
   ins:{ic:'🛡️', ttl:'保険ディフェンス 遊び方', steps:[
-    '毎ラウンド給料+10万円。そのあと保険に入るか選ぶ（保険料は毎月2〜5万円で変動！）',
+    '毎ラウンド給料をもらう（5〜20万円で毎月変動！）。そのあと保険（3万円）に入るか選ぶ',
     'ハプニングカードをめくる。保険に入っていれば「保険対象」の被害はゼロに！',
     '「保険対象外」のカードは保険でも防げないので注意',
     '現金がマイナスになったら破産。10ラウンド生き残って資産を競おう']},
@@ -7261,30 +7270,30 @@ const INS_DECK = [
   {name:'平穏な日々',       ins:null,  val:0, desc:'今日も無事に終わった。'},
   {name:'臨時ボーナス',     ins:null,  val:100000, desc:'ラッキー！臨時収入ゲット。'},
 ];
-const INS_ROUNDS = 10, INS_SALARY = 100000;
+const INS_ROUNDS = 10, INS_COST = 30000;
 let IN_ = null;
 function insStart(){
-  IN_ = { round:1, cash:300000, paid:0, saved:0, prem:30000 };
+  IN_ = { round:1, cash:300000, paid:0, saved:0, sal:100000 };
   insAsk();
 }
 function insAsk(){
-  IN_.prem = 20000 + 10000 * Math.floor(Math.random() * 4); // 保険料は毎月変動（2〜5万円）
-  const premHot = IN_.prem >= 40000;
+  IN_.sal = (5 + Math.floor(Math.random() * 16)) * 10000; // 給料は毎月変動（5〜20万円）
+  const salHigh = IN_.sal >= 150000, salLow = IN_.sal <= 80000;
   $('mg-ins-body').innerHTML = `
     <div class="mg-stat-row">
       <div class="mg-stat"><div class="mg-lb">ラウンド</div><div class="mg-vl">${IN_.round}/${INS_ROUNDS}</div></div>
       <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${IN_.cash<0?'mg-minus':''}">${fmtM(IN_.cash)}</div></div>
     </div>
     <div class="mg-panel">
-      <div class="mg-qtxt">💰 給料 +${fmtM(INS_SALARY)} を受け取った。<br>今月の保険料は <b style="color:${premHot?'var(--red)':'var(--text)'}">${fmtM(IN_.prem)}</b>${premHot?'（今月は高い…）':'（今月はお得！）'}。入る？</div>
-      <div class="mg-note"><svg class="ic"><use href="#ic-shield"></use></svg>保険は「保険対象」のハプニングの損失をゼロにする。ただし対象外のカードは防げない！保険料は毎月変わる。</div>
-      <button class="mg-btn mg-grn" onclick="MG.insDraw(true)"><svg class="ic"><use href="#ic-shield"></use></svg> 保険に入る（-${fmtM(IN_.prem)}）</button>
+      <div class="mg-qtxt">💰 今月の給料は <b style="color:${salHigh?'#16a34a':salLow?'var(--red)':'var(--text)'}">+${fmtM(IN_.sal)}</b>${salHigh?'（多い月！）':salLow?'（少ない月…）':''}。<br>保険（${fmtM(INS_COST)}）に入る？</div>
+      <div class="mg-note"><svg class="ic"><use href="#ic-shield"></use></svg>保険は「保険対象」のハプニングの損失をゼロにする。ただし対象外のカードは防げない！給料は毎月変わる。</div>
+      <button class="mg-btn mg-grn" onclick="MG.insDraw(true)"><svg class="ic"><use href="#ic-shield"></use></svg> 保険に入る（-${fmtM(INS_COST)}）</button>
       <button class="mg-btn mg-sec" onclick="MG.insDraw(false)">💪 入らない（節約する）</button>
     </div>`;
-  IN_.cash += INS_SALARY;
+  IN_.cash += IN_.sal;
 }
 function insDraw(insured){
-  if(insured){ IN_.cash -= IN_.prem; IN_.paid += IN_.prem; }
+  if(insured){ IN_.cash -= INS_COST; IN_.paid += INS_COST; }
   const card = pick(INS_DECK);
   let cls='mg-good', eff='±0', effCls='', note='';
   if(card.val > 0){ IN_.cash += card.val; eff = '+'+fmtM(card.val); effCls='mg-plus'; }
@@ -7321,7 +7330,7 @@ function insNext(){
 }
 function insResult(survived){
   const s = IN_.cash;
-  const rank = !survived?['💥','リスク管理は難しい…']: s>=800000?['👑','完璧なリスク管理！']: s>=650000?['🥇','見事な判断力！']: s>=450000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
+  const rank = !survived?['💥','リスク管理は難しい…']: s>=1000000?['👑','完璧なリスク管理！']: s>=800000?['🥇','見事な判断力！']: s>=550000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
   const isBest = survived ? saveBest('ins', s) : false;
   $('mg-ins-body').innerHTML = `
     <div class="mg-panel">
