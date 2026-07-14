@@ -6837,7 +6837,11 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 .mg-tbtn:active { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--border); }
 .mg-tbtn.mg-buy { background:var(--green); } .mg-tbtn.mg-sell { background:var(--red); color:#fff; }
 .mg-tbtn:disabled { opacity:.35; pointer-events:none; }
-.mg-card-face { border:4px solid var(--border); border-radius:16px; padding:18px 14px; text-align:center; box-shadow:4px 4px 0 var(--border); animation:mgPopIn .25s ease both; margin-top:12px; }
+.mg-card-face { border:4px solid var(--border); border-radius:16px; padding:18px 14px; text-align:center; box-shadow:4px 4px 0 var(--border); animation:mgPopIn .25s ease both; margin-top:12px; position:relative; }
+/* 本編のモーダルタグ（.mtag）と同じ文法のカードタグ */
+.mg-card-tag { position:absolute; top:-12px; left:50%; transform:translateX(-50%) rotate(-1.5deg); font-size:11px; font-weight:900; color:#fff; background:var(--border); padding:3px 14px; border-radius:16px; box-shadow:2px 2px 0 rgba(0,0,0,.2); white-space:nowrap; }
+.mg-card-tag.t-happen { color:var(--red); } .mg-card-tag.t-event { color:var(--gold); }
+.mg-mkt-tag { display:inline-block; font-size:10px; font-weight:900; color:var(--gold); background:var(--border); padding:2px 10px; border-radius:12px; margin-right:8px; transform:rotate(-1.5deg); vertical-align:2px; }
 .mg-card-face.mg-bad { background:#fee2e2; } .mg-card-face.mg-good { background:#dcfce7; } .mg-card-face.mg-shield { background:#dbeafe; }
 .mg-card-face .mg-cnm { font-size:19px; font-weight:900; }
 .mg-card-face .mg-cds { font-size:12.5px; font-weight:700; color:var(--text2); margin-top:6px; line-height:1.6; }
@@ -6852,6 +6856,22 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 .mg-log-line { font-size:12px; font-weight:700; padding:6px 8px; border-bottom:2px dashed #e2e8f0; line-height:1.5; }
 .mg-log-line b.mg-m { color:var(--red); } .mg-log-line b.mg-p { color:#16a34a; }
 .mg-note { font-size:11.5px; color:var(--text2); font-weight:700; line-height:1.6; margin-top:8px; }
+/* ── 投資家免許スタンプ ── */
+#mg-stamp-bar { background:#fff; border:3px solid var(--border); border-radius:14px; padding:10px 12px; margin-bottom:14px; box-shadow:4px 4px 0 var(--border); }
+.mg-stamp-ttl { font-size:12px; font-weight:900; text-align:center; margin-bottom:8px; }
+.mg-stamp-row { display:flex; gap:8px; justify-content:center; }
+.mg-stamp { flex:1; max-width:92px; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px; border:2px dashed #cbd5e1; border-radius:12px; opacity:.55; filter:grayscale(70%); }
+.mg-stamp span { font-size:8.5px; font-weight:800; color:var(--text2); text-align:center; line-height:1.3; }
+.mg-stamp svg { width:26px; height:26px; }
+.mg-stamp.on { border:2px solid var(--border); background:var(--gold); opacity:1; filter:none; box-shadow:2px 2px 0 var(--border); }
+.mg-stamp.on span { color:var(--text); }
+.mg-stamp-get { background:var(--gold); border:3px solid var(--border); border-radius:12px; padding:8px 12px; font-size:12px; font-weight:800; margin-bottom:10px; box-shadow:3px 3px 0 var(--border); animation:bounceIn .5s ease both; }
+.mg-lic-card { background:linear-gradient(0deg,#fde047,#fde047); background:#fde047; border:4px solid var(--border); border-radius:14px; padding:12px; margin:8px auto; max-width:300px; box-shadow:4px 4px 0 var(--border); }
+.mg-lic-ttl { font-size:10px; font-weight:900; letter-spacing:2px; color:var(--text2); }
+.mg-lic-row { display:flex; gap:6px; justify-content:center; margin:8px 0; }
+.mg-lic-row .mg-stamp { flex:none; width:52px; padding:6px 2px; }
+.mg-lic-row .mg-stamp span { display:none; }
+.mg-lic-nm { font-size:16px; font-weight:900; }
 .mg-howto-ov { position:fixed; inset:0; background:rgba(45,52,54,.55); display:flex; align-items:center; justify-content:center; z-index:3100; padding:16px; }
 .mg-howto-bx { background:#fff; border:4px solid var(--border); border-radius:20px; box-shadow:6px 6px 0 var(--border); max-width:480px; width:100%; padding:18px; max-height:85vh; overflow-y:auto; animation:mgPopIn .2s ease both; }
 .mg-howto-bx h2 { font-size:19px; margin-bottom:12px; text-align:center; }
@@ -6867,6 +6887,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
     <div class="mg-hdr"><button class="mg-back" onclick="MG.close()">✕ とじる</button><div style="margin-left:auto"><span class="mg-badge">BILLION BATTLE MINI</span></div></div>
     <div class="mg-menu-ttl"><svg class="ic"><use href="#ic-game"></use></svg> ミニゲーム</div>
     <div class="mg-menu-sub">短い時間で金融知識をゲット！</div>
+    <div id="mg-stamp-bar"></div>
     <button class="mg-mcard mg-c1" onclick="MG.openGame('quiz')">
       <span class="mg-ic"><svg class="ic"><use href="#ic-question"></use></svg></span><div class="mg-nm">金融クイズ 10問チャレンジ</div>
       <div class="mg-ds">難易度3段階の4択＆○×クイズ。NISA・国債・金利…どこまで分かる？（約3分）</div>
@@ -6923,6 +6944,77 @@ function saveBest(game, score){
   if(b[game] === undefined || score > b[game]) { b[game] = score; localStorage.setItem(STORE_KEY, JSON.stringify(b)); return true; }
   return false;
 }
+// ── 投資家見習い免許（スタンプカード）──────────────────
+// 各ミニゲーム＝本編の1技能。4つ合格で免許→デビュー戦（おまかせ設定の本編）へ
+const STAMPS = [
+  {id:'quiz', ic:'question', nm:'金融クイズ',       cond:'ふつう以上で6問正解', link:'投資の用語',        pass:b=> (b.quiz_n||0)>=6 || (b.quiz_h||0)>=6},
+  {id:'mkt',  ic:'chart',    nm:'相場チャレンジ',   cond:'110万円以上でゴール', link:'市場マスの売買',    pass:b=> (b.mkt||0)>=1100000},
+  {id:'ins',  ic:'shield',   nm:'保険ディフェンス', cond:'10ラウンド生き残る',  link:'決算の保険えらび',  pass:b=> b.ins!==undefined},
+  {id:'bud',  ic:'house',    nm:'家計やりくり',     cond:'資産60万円以上',      link:'資産のバランス配分', pass:b=> (b.bud||0)>=600000},
+];
+function stampState(){ const b=loadBests(); return STAMPS.map(s=>s.pass(b)); }
+function isLicensed(){ return stampState().every(Boolean); }
+function saveBestChecked(game, score){
+  const prev = stampState();
+  const r = saveBest(game, score);
+  setTimeout(()=>stampCheck(prev), 0); // 結果画面の描画後にスタンプ判定
+  return r;
+}
+function stampCheck(prevSt){
+  const st = stampState();
+  const newly = STAMPS.filter((s,i)=>st[i] && !prevSt[i]);
+  if(newly.length){
+    const panel = document.querySelector('#mg-root .mg-scr.on .mg-panel');
+    if(panel){
+      const d = document.createElement('div');
+      d.className = 'mg-stamp-get';
+      d.innerHTML = `${IC(newly[0].ic)} <b>スタンプGET！</b>「${newly[0].nm}」合格 — 本編の<b>${newly[0].link}</b>はもうバッチリ！`;
+      panel.prepend(d);
+    }
+  }
+  const b = loadBests();
+  if(isLicensed() && !b._licShown){
+    b._licShown = true; localStorage.setItem(STORE_KEY, JSON.stringify(b));
+    setTimeout(showLicense, 800);
+  }
+}
+function showLicense(){
+  const old = document.getElementById('mg-lic-ov'); if(old) old.remove();
+  const ov = document.createElement('div'); ov.className='mg-howto-ov'; ov.id='mg-lic-ov';
+  ov.innerHTML = `<div class="mg-howto" style="text-align:center">
+    <svg style="width:76px;height:76px"><use href="#ic-owl"></use></svg>
+    <h2 style="margin:6px 0">投資家見習い免許 交付！</h2>
+    <div class="mg-lic-card">
+      <div class="mg-lic-ttl">BILLION BATTLE LICENSE</div>
+      <div class="mg-lic-row">${STAMPS.map(s=>`<span class="mg-stamp on" style="pointer-events:none">${IC(s.ic)}</span>`).join('')}</div>
+      <div class="mg-lic-nm">投資家見習い</div>
+    </div>
+    <p style="font-size:12.5px;font-weight:700;text-align:left;line-height:1.8;margin:10px 0">
+      じつは…4つのミニゲームは<b>ぜんぶ本編の1マスずつ</b>だったんだ！<br>
+      ・相場チャレンジ＝<b>市場マス</b>の売買<br>
+      ・保険ディフェンス＝<b>決算</b>の保険えらび<br>
+      ・家計やりくり＝<b>資産の配分</b><br>
+      ・金融クイズ＝<b>投資の用語</b><br>
+      きみはもう全部知ってる。本編は、これがサイコロでつながるだけ！</p>
+    <button class="mg-btn mg-grn" onclick="MG.debut()"><svg class="ic"><use href="#ic-dice"></use></svg> デビュー戦へ！（おまかせ設定で本編スタート）</button>
+    <button class="mg-btn mg-sec" onclick="document.getElementById('mg-lic-ov').remove()">あとで（メニューからいつでも行ける）</button>
+  </div>`;
+  document.body.appendChild(ov);
+}
+// おまかせ設定（自分＋かんたんBot3・解説ON・サクサクON）で本編を即開始
+function debut(){
+  const lic = document.getElementById('mg-lic-ov'); if(lic) lic.remove();
+  close();
+  useLocalMode();
+  setCount(4); // 自分＋Bot3（デフォルトでbot-1〜3にチェック）
+  const c0 = document.getElementById('bot-0'); if(c0) c0.checked = false;
+  setBotLevel('easy');
+  if(!BEGINNER_MODE) toggleBeginnerBar();          // かんたん解説モードON
+  if(window._realMode) toggleRealMode();            // 相場は通常
+  if(!window._fastFx) { try{ toggleFastFx(); }catch(e){} } // サクサクON
+  startGame();
+  toast('🔰 デビュー戦！かんたんBot3人と対戦（解説つき）');
+}
 function renderBests(){
   const b = loadBests();
   const qb = d => b['quiz_'+d] !== undefined ? b['quiz_'+d] : '-';
@@ -6930,6 +7022,17 @@ function renderBests(){
   $('mg-best-mkt').textContent  = 'ベスト: ' + (b.mkt !== undefined ? fmtM(b.mkt) : '-');
   $('mg-best-ins').textContent  = 'ベスト: ' + (b.ins !== undefined ? fmtM(b.ins) : '-');
   $('mg-best-bud').textContent  = 'ベスト: ' + (b.bud !== undefined ? fmtM(b.bud) : '-');
+  // スタンプ台
+  const bar = $('mg-stamp-bar');
+  if(bar){
+    const st = stampState(), got = st.filter(Boolean).length, lic = got === STAMPS.length;
+    bar.innerHTML = `
+      <div class="mg-stamp-ttl">${lic ? '🎉 投資家見習い免許 取得済み！' : `4つ合格で<b>投資家見習い免許</b>GET！（あと${STAMPS.length-got}つ）`}</div>
+      <div class="mg-stamp-row">${STAMPS.map((s,i)=>`
+        <div class="mg-stamp${st[i]?' on':''}">${IC(s.ic)}<span>${st[i]?'合格！':s.cond}</span></div>`).join('')}
+      </div>
+      ${lic ? `<button class="mg-btn mg-grn" style="margin-top:8px" onclick="MG.debut()"><svg class="ic"><use href="#ic-dice"></use></svg> デビュー戦へ！（おまかせ設定で本編スタート）</button>` : ''}`;
+  }
 }
 function showScr(id){ document.querySelectorAll('#mg-root .mg-scr').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); $('mg-root').scrollTo(0,0); }
 function goMenu(){ renderBests(); showScr('mg-scr-menu'); }
@@ -7161,7 +7264,7 @@ function quizResult(){
   const s = QZ.score;
   const dn = QUIZ_DIFFS.find(x=>x.id===QZ.d).nm;
   const rank = s===10?['👑','金融マスター！']: s>=8?['🥇','金融上級者！']: s>=6?['🥈','なかなかの知識！']: s>=4?['🥉','伸びしろあり！']:['📖','これから一緒に学ぼう！'];
-  const isBest = saveBest('quiz_'+QZ.d, s);
+  const isBest = saveBestChecked('quiz_'+QZ.d, s);
   $('mg-quiz-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
@@ -7196,7 +7299,7 @@ function mktRender(first){
   const m = MK.market;
   const total = MK.cash + MK.stocks*m.stockPrice + MK.gold*m.gold + MK.bonds*50000;
   $('mg-mkt-body').innerHTML = `
-    <div class="mg-mkt-banner">${icoAll(m.emoji)} ${m.name}　<small style="font-size:11px">ターン ${MK.turn}/${MK.maxTurn}</small></div>
+    <div class="mg-mkt-banner"><span class="mg-mkt-tag">いまの相場</span>${icoAll(m.emoji)} ${m.name}　<small style="font-size:11px">ターン ${MK.turn}/${MK.maxTurn}</small></div>
     <div class="mg-stat-row">
       <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${MK.cash<0?'mg-minus':''}">${fmtM(MK.cash)}</div></div>
       <div class="mg-stat"><div class="mg-lb">📊 総資産(時価)</div><div class="mg-vl">${fmtM(total)}</div></div>
@@ -7240,7 +7343,7 @@ function mktFinal(){
   const total = MK.cash + sv + gv + bv;
   const diff = total - 1000000;
   const rank = total>=1600000?['👑','伝説の投資家！']: total>=1350000?['🥇','敏腕トレーダー！']: total>=1100000?['🥈','堅実な運用！']: total>=900000?['🥉','あと一歩！']:['💦','相場は厳しい…'];
-  const isBest = saveBest('mkt', total);
+  const isBest = saveBestChecked('mkt', total);
   $('mg-mkt-body').innerHTML = `
     <div class="mg-mkt-banner"><svg class="ic"><use href="#ic-flag"></use></svg> 最終決算の相場：${icoAll(final.emoji)} ${final.name}</div>
     <div class="mg-panel">
@@ -7314,6 +7417,7 @@ function insDraw(insured){
     <div class="mg-panel">
       <div style="text-align:center;font-weight:900;font-size:13px">${insured?'🛡️ 保険加入中で…':'保険なしで…'} カードをめくった！</div>
       <div class="mg-card-face ${cls}">
+        <div class="mg-card-tag ${card.val<0?'t-happen':'t-event'}">${card.val<0?'ハプニング':'イベント'}</div>
         <div class="mg-cnm">${card.val<0?'⚡':''}${card.name}</div>
         <div class="mg-cds">${card.desc}${card.ins===false && card.val<0 ? '<br><b style="color:var(--red)">（保険対象外）</b>':''}</div>
         <div class="mg-ceff ${effCls}">${eff}</div>
@@ -7331,7 +7435,7 @@ function insNext(){
 function insResult(survived){
   const s = IN_.cash;
   const rank = !survived?['💥','リスク管理は難しい…']: s>=1000000?['👑','完璧なリスク管理！']: s>=800000?['🥇','見事な判断力！']: s>=550000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
-  const isBest = survived ? saveBest('ins', s) : false;
+  const isBest = survived ? saveBestChecked('ins', s) : false;
   $('mg-ins-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
@@ -7461,7 +7565,7 @@ function budResult(){
   const total = BD.cash + BD.invest;
   const happyBonus = BD.happy>=60 ? '😊 幸福度も高い、理想的な1年！' : BD.happy>=30 ? '😐 もう少し潤いがあってもいいかも？' : '😞 お金はあっても心が疲れた1年…';
   const rank = total>=1200000?['👑','家計の達人！']: total>=900000?['🥇','堅実なやりくり！']: total>=600000?['🥈','まずまずの1年！']: total>=300000?['🥉','来年がんばろう！']:['💦','家計は火の車…'];
-  const isBest = saveBest('bud', total);
+  const isBest = saveBestChecked('bud', total);
   $('mg-bud-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
@@ -7475,7 +7579,7 @@ function budResult(){
     </div>`;
 }
 
-window.MG = { open, close, openGame, goMenu, showHowto, quizStart, quizBegin, mktStart, mktTrade, mktNextTurn, insStart, insDraw, insNext, insResult, budStart, budAdj, budNextMonth };
+window.MG = { open, close, openGame, goMenu, showHowto, quizStart, quizBegin, mktStart, mktTrade, mktNextTurn, insStart, insDraw, insNext, insResult, budStart, budAdj, budNextMonth, debut };
 })();
 </script>
 </body>

@@ -4,7 +4,7 @@
 //    → ローカルモードはオフラインでも遊べる。アップデートも自然に反映される。
 //  - アイコン等の静的ファイルはキャッシュ優先。
 //  - Firebase / Google認証への通信は一切キャッシュしない（オンライン対戦はリアルタイムが命）。
-const CACHE = 'biribato-v6';
+const CACHE = 'biribato-v7';
 const CORE = ['./index.html', './rules.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
