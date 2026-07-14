@@ -74,10 +74,11 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .main-area { display: flex; flex-direction: row; gap: 20px; align-items: flex-start; justify-content: center;}
 
 /* ===== BOARD ===== */
-.board-wrap { 
-  flex: 1; overflow: auto; 
+.board-wrap {
+  flex: 1; overflow: auto;
   padding: 8px;
   display: flex; justify-content: center; align-items: flex-start;
+  justify-content: safe center; /* はみ出し時に左端が切れない（未対応ブラウザはcenterにフォールバック） */
   -webkit-overflow-scrolling: touch;
 }
 #board { display: grid; gap: 4px; background: transparent; width: max-content; position: relative; }
@@ -129,6 +130,10 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 .die.spin { animation: dSpin .4s ease; box-shadow: 0 2px 0 var(--border); transform: translateY(4px); }
 @keyframes dSpin { 0%,100% {transform: rotate(0) scale(1)} 25% {transform: rotate(-15deg) scale(1.1) translateY(-10px)} 75% {transform: rotate(15deg) scale(1.1) translateY(-10px)} }
 .roll-hint { background: var(--red); color: #fff; font-size: 11px; font-weight: 900; padding: 4px 16px; border-radius: 16px; border: 3px solid var(--border); box-shadow: 0 3px 0 var(--border); animation: float 2s infinite ease-in-out; }
+.turn-chip { display:inline-block; font-size:10px; font-weight:900; padding:2px 10px; border-radius:12px; border:2px solid var(--border); margin-top:4px; }
+.turn-chip.bot { background:#e2e8f0; color:var(--text2); animation: botPulse 1.6s ease-in-out infinite; }
+.turn-chip.you { background:var(--gold); color:var(--text); }
+@keyframes botPulse { 0%,100%{opacity:1} 50%{opacity:.55} }
 @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 
 /* ===== SIDEBAR ===== */
@@ -387,7 +392,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   .gwrap { padding: 4px 8px 0; gap: 4px; }
   .ghdr { padding: 5px 10px; border-radius: 10px; border-width: 3px; box-shadow: 2px 2px 0 var(--border); flex-wrap: nowrap; gap: 6px; }
   .g-logo { font-size: 13px; white-space: nowrap; -webkit-text-stroke: 1px var(--border); }
-  .rule-btn { display: none; }
+  .ghdr .rule-btn { display: none; } /* ゲームヘッダーのルールボタンだけ隠す（セットアップ画面の戻るボタンは残す） */
   .yr-badge { font-size: 9px; padding: 2px 7px; border-width: 2px; }
   .g-meta { gap: 5px; }
   .room-info-pill { font-size: 9px; padding: 2px 7px; gap: 3px; }
@@ -1453,11 +1458,11 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 
 <div id="title-screen" class="hidden">
   <div class="ss-bg">
-    <div class="ss-coin" style="--d:0s;--x:8%;--s:1.2">💰</div>
-    <div class="ss-coin" style="--d:.5s;--x:28%;--s:.8">📈</div>
-    <div class="ss-coin" style="--d:.9s;--x:52%;--s:1.0">💎</div>
-    <div class="ss-coin" style="--d:.2s;--x:73%;--s:.9">🏆</div>
-    <div class="ss-coin" style="--d:1.2s;--x:90%;--s:1.1">🏦</div>
+    <div class="ss-coin" style="--d:0s;--x:8%;--s:1.2"><svg class="ic"><use href="#ic-coin"></use></svg></div>
+    <div class="ss-coin" style="--d:.5s;--x:28%;--s:.8"><svg class="ic"><use href="#ic-chart"></use></svg></div>
+    <div class="ss-coin" style="--d:.9s;--x:52%;--s:1.0"><svg class="ic"><use href="#ic-dice"></use></svg></div>
+    <div class="ss-coin" style="--d:.2s;--x:73%;--s:.9"><svg class="ic"><use href="#ic-trophy"></use></svg></div>
+    <div class="ss-coin" style="--d:1.2s;--x:90%;--s:1.1"><svg class="ic"><use href="#ic-bank"></use></svg></div>
   </div>
   <div class="ss-logo">
     <div class="ss-badge">FINANCIAL BOARD GAME</div>
@@ -2509,6 +2514,19 @@ function buildBoard(){
     </div>`;
 
   if(isLandscapeMobile()) requestAnimationFrame(scaleBoardForLandscape);
+  else fitPcBoard();
+}
+
+// PCボードがラップより広い場合は縮小して全体を表示（769〜1100px幅の窓など）
+function fitPcBoard(){
+  if(isPortraitMobile() || isLandscapeMobile()) return;
+  const board = document.getElementById('board');
+  const wrap  = document.querySelector('.board-wrap');
+  if(!board || !wrap) return;
+  board.style.zoom = '';
+  const bw = board.offsetWidth;
+  const ww = wrap.clientWidth - 16;
+  if(bw > 0 && ww > 0 && bw > ww) board.style.zoom = Math.max(0.45, ww / bw);
 }
 
 // ─── モバイル専用: 4列縦長スネークボード ─────────────────
@@ -2516,6 +2534,7 @@ function buildMobileBoard() {
   const MOB_COLS = 4;
   const board = document.getElementById('board-mobile');
   board.innerHTML = '';
+  document.getElementById('board').style.zoom = '';
 
   // スネークパス生成（0→3, 7→4, 8→11, ...）
   const snake = [];
@@ -2561,6 +2580,9 @@ function showCellInfo(idx){
 }
 
 function renderAll(){
+  // 自己修復: 表示すべき盤面が空なら再構築（画面幅カテゴリの切替漏れ対策）
+  const _ab = document.getElementById(isPortraitMobile() ? 'board-mobile' : 'board');
+  if(_ab && _ab.children.length === 0) buildBoard();
   const list=document.getElementById('plist'); list.innerHTML='';
   G.players.forEach((p,i)=>{
     const act=i===G.ci?' active':'';
@@ -2595,8 +2617,19 @@ function renderAll(){
           <span style="background:var(--green);color:#fff;font-size:11px;font-weight:900;padding:3px 10px;border-radius:12px;border:2px solid var(--border)">💰 3年目給料</span>
         </div>`;
     } else {
-      turnAnn.innerHTML=`<span style="color:var(--orange); font-size:13px; display:block; margin-bottom:2px;">ビリオンバトル</span><strong style="color:${curP.color?.bg||'#333'}; font-size:20px;">${curP.name}</strong> <span style="font-size:12px;">のターン</span>`;
+      const turnChip = LOCAL_MODE
+        ? (curP.isBot
+            ? `<span class="turn-chip bot">🤖 Botが自動プレイ中…</span>`
+            : `<span class="turn-chip you">${IC('dice')} サイコロを振ろう！</span>`)
+        : '';
+      turnAnn.innerHTML=`<span style="color:var(--orange); font-size:13px; display:block; margin-bottom:2px;">ビリオンバトル</span><strong style="color:${curP.color?.bg||'#333'}; font-size:20px;">${curP.name}</strong> <span style="font-size:12px;">のターン</span>${turnChip}`;
     }
+    // ローカル: Bot手番中はサイコロをグレーアウト（Botのタイマー起動はpointer-eventsの影響を受けない）
+    const diceArea = document.getElementById('dice-area');
+    const rollHint = document.querySelector('#dice-area .roll-hint');
+    const _botTurn = LOCAL_MODE && !!curP?.isBot;
+    if(diceArea) diceArea.classList.toggle('disabled', _botTurn || (typeof isMoving!=='undefined' && isMoving));
+    if(rollHint) rollHint.innerHTML = _botTurn ? '🤖 Bot操作中…' : 'タップして振る！';
   }
 
   // ─ モバイル縦画面のみ下部バー更新 ─
@@ -2609,7 +2642,8 @@ function renderAll(){
       if(curP.pos === 31) {
         mTurn.innerHTML = `<strong style="color:${curP.color.bg}">${curP.name}</strong> <span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:8px">2年目終わり</span> <span style="font-size:10px;background:var(--green);color:#fff;padding:1px 6px;border-radius:8px">3年目給料</span>`;
       } else {
-        mTurn.innerHTML = `<strong style="color:${curP.color.bg}">${curP.name}</strong>のターン`;
+        const mChip = LOCAL_MODE ? (curP.isBot ? ' <span style="font-size:10px;background:#e2e8f0;color:var(--text2);padding:1px 6px;border-radius:8px;font-weight:900">🤖 自動</span>' : ' <span style="font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:8px;font-weight:900">振ってね！</span>') : '';
+        mTurn.innerHTML = `<strong style="color:${curP.color.bg}">${curP.name}</strong>のターン${mChip}`;
       }
     }
     // プレイヤーストリップ
@@ -2628,8 +2662,9 @@ function renderAll(){
     // サイコロ有効/無効
     const mobDiceArea = document.getElementById('mob-dice-area');
     if(mobDiceArea) {
-      mobDiceArea.style.opacity = isMyTurn() ? '1' : '0.45';
-      mobDiceArea.style.pointerEvents = isMyTurn() ? 'auto' : 'none';
+      const mobActive = isMyTurn() && !(LOCAL_MODE && curP.isBot);
+      mobDiceArea.style.opacity = mobActive ? '1' : '0.45';
+      mobDiceArea.style.pointerEvents = mobActive ? 'auto' : 'none';
     }
   }
 }
@@ -6450,6 +6485,15 @@ window.addEventListener('orientationchange', () => {
     showMobTabs();
   }, 400);
 });
+// 幅カテゴリ（モバイル/PC盤面）が切り替わった瞬間にも再構築
+try {
+  matchMedia('(max-width: 768px) and (orientation: portrait)').addEventListener('change', () => {
+    if(document.getElementById('game-screen').style.display !== 'block') return;
+    buildBoard();
+    renderAll();
+    showMobTabs();
+  });
+} catch(e) {}
 
 // ═══════════════════════════════════════════
 //  OPENING ANIMATION
@@ -6896,7 +6940,7 @@ const HOWTO = {
     '「＋」で買う、「−」で売る。国債🏛️は毎ターン利子+10%で安定',
     '最終ターンの後は、選べない相場で全資産を強制精算。売り時も実力！']},
   ins:{ic:'🛡️', ttl:'保険ディフェンス 遊び方', steps:[
-    '毎ラウンド給料+10万円。そのあと保険（3万円）に入るか選ぶ',
+    '毎ラウンド給料+10万円。そのあと保険に入るか選ぶ（保険料は毎月2〜5万円で変動！）',
     'ハプニングカードをめくる。保険に入っていれば「保険対象」の被害はゼロに！',
     '「保険対象外」のカードは保険でも防げないので注意',
     '現金がマイナスになったら破産。10ラウンド生き残って資産を競おう']},
@@ -7204,40 +7248,43 @@ function mktFinal(){
 
 // ═══ ③ 保険ディフェンス ═══
 const INS_DECK = [
-  {name:'巨大地震発生',     ins:true,  val:-400000, desc:'家に大きな被害が…'},
-  {name:'交通事故',         ins:true,  val:-300000, desc:'修理費と治療費を支払う。'},
-  {name:'緊急入院',         ins:true,  val:-150000, desc:'入院費を支払う。'},
-  {name:'クレカ不正利用',   ins:true,  val:-200000, desc:'身に覚えのない請求が…'},
-  {name:'ロストバッゲージ', ins:true,  val:-100000, desc:'旅行の荷物が消えた。'},
+  {name:'巨大地震発生',     ins:true,  val:-500000, desc:'家に大きな被害が…'},
+  {name:'交通事故',         ins:true,  val:-350000, desc:'修理費と治療費を支払う。'},
+  {name:'クレカ不正利用',   ins:true,  val:-250000, desc:'身に覚えのない請求が…'},
+  {name:'緊急入院',         ins:true,  val:-200000, desc:'入院費を支払う。'},
+  {name:'ロストバッゲージ', ins:true,  val:-120000, desc:'旅行の荷物が消えた。'},
+  {name:'スマホ画面バキバキ', ins:true, val:-80000, desc:'ポケットから落とした…'},
   {name:'追徴課税',         ins:false, val:-200000, desc:'税金の申告漏れ。保険では防げない！'},
-  {name:'スマホ画面バキバキ', ins:true, val:-50000, desc:'ポケットから落とした…'},
+  {name:'投資詐欺',         ins:false, val:-250000, desc:'「絶対もうかる」は絶対ウソ。保険でも防げない！'},
   {name:'平穏な日々',       ins:null,  val:0, desc:'何も起きなかった。それが一番の幸せ。'},
   {name:'平穏な日々',       ins:null,  val:0, desc:'何も起きなかった。保険料だけが飛んでいく…？'},
   {name:'平穏な日々',       ins:null,  val:0, desc:'今日も無事に終わった。'},
   {name:'臨時ボーナス',     ins:null,  val:100000, desc:'ラッキー！臨時収入ゲット。'},
 ];
-const INS_COST = 30000, INS_ROUNDS = 10, INS_SALARY = 100000;
+const INS_ROUNDS = 10, INS_SALARY = 100000;
 let IN_ = null;
 function insStart(){
-  IN_ = { round:1, cash:500000, paid:0, saved:0 };
+  IN_ = { round:1, cash:300000, paid:0, saved:0, prem:30000 };
   insAsk();
 }
 function insAsk(){
+  IN_.prem = 20000 + 10000 * Math.floor(Math.random() * 4); // 保険料は毎月変動（2〜5万円）
+  const premHot = IN_.prem >= 40000;
   $('mg-ins-body').innerHTML = `
     <div class="mg-stat-row">
       <div class="mg-stat"><div class="mg-lb">ラウンド</div><div class="mg-vl">${IN_.round}/${INS_ROUNDS}</div></div>
       <div class="mg-stat"><div class="mg-lb">💵 現金</div><div class="mg-vl ${IN_.cash<0?'mg-minus':''}">${fmtM(IN_.cash)}</div></div>
     </div>
     <div class="mg-panel">
-      <div class="mg-qtxt">💰 給料 +${fmtM(INS_SALARY)} を受け取った。<br>今月、保険（${fmtM(INS_COST)}）に入る？</div>
-      <div class="mg-note"><svg class="ic"><use href="#ic-shield"></use></svg>保険は「保険対象」のハプニングの損失をゼロにする。ただし対象外のカードは防げない！</div>
-      <button class="mg-btn mg-grn" onclick="MG.insDraw(true)"><svg class="ic"><use href="#ic-shield"></use></svg> 保険に入る（-${fmtM(INS_COST)}）</button>
+      <div class="mg-qtxt">💰 給料 +${fmtM(INS_SALARY)} を受け取った。<br>今月の保険料は <b style="color:${premHot?'var(--red)':'var(--text)'}">${fmtM(IN_.prem)}</b>${premHot?'（今月は高い…）':'（今月はお得！）'}。入る？</div>
+      <div class="mg-note"><svg class="ic"><use href="#ic-shield"></use></svg>保険は「保険対象」のハプニングの損失をゼロにする。ただし対象外のカードは防げない！保険料は毎月変わる。</div>
+      <button class="mg-btn mg-grn" onclick="MG.insDraw(true)"><svg class="ic"><use href="#ic-shield"></use></svg> 保険に入る（-${fmtM(IN_.prem)}）</button>
       <button class="mg-btn mg-sec" onclick="MG.insDraw(false)">💪 入らない（節約する）</button>
     </div>`;
   IN_.cash += INS_SALARY;
 }
 function insDraw(insured){
-  if(insured){ IN_.cash -= INS_COST; IN_.paid += INS_COST; }
+  if(insured){ IN_.cash -= IN_.prem; IN_.paid += IN_.prem; }
   const card = pick(INS_DECK);
   let cls='mg-good', eff='±0', effCls='', note='';
   if(card.val > 0){ IN_.cash += card.val; eff = '+'+fmtM(card.val); effCls='mg-plus'; }
@@ -7274,7 +7321,7 @@ function insNext(){
 }
 function insResult(survived){
   const s = IN_.cash;
-  const rank = !survived?['💥','リスク管理は難しい…']: s>=1300000?['👑','完璧なリスク管理！']: s>=1100000?['🥇','見事な判断力！']: s>=900000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
+  const rank = !survived?['💥','リスク管理は難しい…']: s>=800000?['👑','完璧なリスク管理！']: s>=650000?['🥇','見事な判断力！']: s>=450000?['🥈','しっかり生き残った！']:['🥉','ギリギリセーフ！'];
   const isBest = survived ? saveBest('ins', s) : false;
   $('mg-ins-body').innerHTML = `
     <div class="mg-panel">
