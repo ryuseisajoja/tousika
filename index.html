@@ -7094,9 +7094,10 @@ function renderBests(){
   $('mg-best-mkt').textContent  = `ベスト: 🌱${mn(b.mkt_e)} 🔥${mn(b.mkt)} 👑${mn(b.mkt_h)}`;
   $('mg-best-ins').textContent  = `ベスト: 🌱${mn(b.ins_e)} 🔥${mn(b.ins)} 👑${mn(b.ins_h)}`;
   $('mg-best-bud').textContent  = `ベスト: 🌱${mn(b.bud_e)} 🔥${mn(b.bud)} 👑${mn(b.bud_h)}`;
-  $('mg-best-scam').textContent = 'ベスト: ' + (b.scam !== undefined ? b.scam+'/10' : '-');
-  $('mg-best-pf').textContent   = 'ベスト: ' + (b.pf !== undefined ? fmtM(b.pf) : '-');
-  $('mg-best-cmp').textContent  = 'ベスト: ' + (b.cmp !== undefined ? fmtM(b.cmp) : '-');
+  const sb = v => v !== undefined ? v : '-';
+  $('mg-best-scam').textContent = `ベスト: 🌱${sb(b.scam_e)} 🔥${sb(b.scam)} 👑${sb(b.scam_h)}`;
+  $('mg-best-pf').textContent   = `ベスト: 🌱${mn(b.pf_e)} 🔥${mn(b.pf)} 👑${mn(b.pf_h)}`;
+  $('mg-best-cmp').textContent  = `ベスト: 🌱${mn(b.cmp_e)} 🔥${mn(b.cmp)} 👑${mn(b.cmp_h)}`;
   // スタンプ台
   const bar = $('mg-stamp-bar');
   if(bar){
@@ -7751,30 +7752,57 @@ function budResult(){
 }
 
 // ═══ ⑤ 詐欺を見抜け！ ═══
+// d: 見抜きにくさ（1=わかりやすい / 2=ふつう / 3=まぎらわしい上級）
 const SCAM_POOL = [
-  {t:'【必ず儲かる】AIが選ぶ株で月利20%保証！今なら登録無料！', scam:true,  e:'「必ず」「保証」で月利20%はありえない。うまい話には必ず裏がある！'},
-  {t:'○○銀行です。定期預金（年0.3%）が満期になりました。お手続きは窓口までお越しください。', scam:false, e:'現実的な金利で、URLも暗証番号も要求していない。それでも心配なら公式アプリで確認！'},
-  {t:'有名人の△△さんも使ってる投資アプリ！DMをくれた人だけにこっそり教えます', scam:true,  e:'有名人をかたる投資広告詐欺が急増中。「DMで特別に」は典型パターン！'},
-  {t:'当選おめでとうございます！手数料5,000円を先に振り込めば賞金100万円が受け取れます', scam:true,  e:'「先にお金を払えばもらえる」は100%詐欺。本物の当選金に先払い手数料はない！'},
-  {t:'つみたてNISAのご案内：投資の利益が非課税になる国の制度です。※元本割れのリスクがあります', scam:false, e:'リスクをきちんと説明しているのは本物のサイン。制度自体は国のもの（商品選びは慎重に）。'},
-  {t:'警告！あなたのスマホがウイルスに感染しました！今すぐこの番号に電話してください！', scam:true,  e:'ニセの警告画面で電話させる「サポート詐欺」。あわてず画面を閉じるのが正解！'},
-  {t:'上場前の未公開株を特別に販売します。上場したら10倍確実です', scam:true,  e:'「未公開株」「確実に10倍」は古典的な詐欺ワード。一般人が買える未公開株はまずない！'},
-  {t:'クレジットカードのご利用明細が確定しました。金額は公式アプリからご確認ください。', scam:false, e:'リンクを踏ませず「公式アプリで確認」と案内するのは本物の特徴。自分でアプリを開くのが安全！'},
-  {t:'お荷物をお届けしましたが不在でした。再配達はこちら → http://takuhai-x.tk', scam:true,  e:'不在通知SMSのあやしいURLはフィッシング詐欺の定番。公式アプリや追跡番号で確認！'},
-  {t:'かんたんな作業で日給5万円！まずは身分証の写真と銀行口座を送ってください', scam:true,  e:'高すぎる報酬＋口座や身分証の要求は闇バイトや口座売買。犯罪に巻き込まれる危険！'},
-  {t:'株式投資セミナー（無料）のご案内。※投資は自己責任です。金融商品取引業 登録番号:第123号', scam:false, e:'登録番号やリスク説明があるのは本物の特徴。ただし無料セミナー→高額商品の勧誘には注意。'},
-  {t:'投資で損した分を取り戻しませんか？被害回復の専門家です。着手金は10万円', scam:true,  e:'詐欺被害者をもう一度ねらう「二次被害詐欺」。先払いの着手金がサイン！'},
-  {t:'ポイント2倍キャンペーン開催中！エントリーは公式サイトのマイページから', scam:false, e:'先払いも個人情報の要求もなし。URLは検索やブックマークから自分で開くとさらに安全！'},
-  {t:'仮想通貨の自動売買で参加者全員が儲かっています。友達を紹介するとボーナス進呈！', scam:true,  e:'「全員儲かる」＋紹介ボーナスはポンジ・スキーム（ねずみ講）の典型！'},
-  {t:'お母さん助けて！スマホが壊れて友達の携帯から送ってる。今日中にお金を振り込んで', scam:true,  e:'家族をかたる振り込め詐欺。まず本人の元の番号に電話して確認しよう！'},
-  {t:'普通預金（年0.02%）よりネット銀行の定期（年0.2%）の方が金利が高いというニュース記事', scam:false, e:'現実的な金利差の情報。ただし口座開設は必ず自分で公式サイトから！'},
-  {t:'このFX自動売買ツール（30万円）を買えば、寝ているだけで億り人になれます！', scam:true,  e:'高額ツール販売×「寝てるだけで」は情報商材詐欺の王道。楽して確実は存在しない！'},
-  {t:'日本年金機構より：国民年金保険料の口座振替のお知らせ。お手続きは年金事務所で承ります。', scam:false, e:'窓口手続きの案内で、URLも振込も要求していない公的機関の通常のお知らせ。'},
-  {t:'今から30分限定！このQRコードから入金すれば2倍にしてお返しします', scam:true,  e:'「今だけ」「時間限定」で焦らせるのは常套手段。考える時間を奪うのが詐欺のねらい！'},
-  {t:'「あなただけに特別なお話があります」と知らない人からDMが届いた', scam:true,  e:'「あなただけ」「特別」は詐欺ワード。知らない人からの投資の誘いは全部無視でOK！'},
+  {d:1, t:'【必ず儲かる】AIが選ぶ株で月利20%保証！今なら登録無料！', scam:true,  e:'「必ず」「保証」で月利20%はありえない。うまい話には必ず裏がある！'},
+  {d:2, t:'○○銀行です。定期預金（年0.3%）が満期になりました。お手続きは窓口までお越しください。', scam:false, e:'現実的な金利で、URLも暗証番号も要求していない。それでも心配なら公式アプリで確認！'},
+  {d:1, t:'有名人の△△さんも使ってる投資アプリ！DMをくれた人だけにこっそり教えます', scam:true,  e:'有名人をかたる投資広告詐欺が急増中。「DMで特別に」は典型パターン！'},
+  {d:1, t:'当選おめでとうございます！手数料5,000円を先に振り込めば賞金100万円が受け取れます', scam:true,  e:'「先にお金を払えばもらえる」は100%詐欺。本物の当選金に先払い手数料はない！'},
+  {d:2, t:'つみたてNISAのご案内：投資の利益が非課税になる国の制度です。※元本割れのリスクがあります', scam:false, e:'リスクをきちんと説明しているのは本物のサイン。制度自体は国のもの（商品選びは慎重に）。'},
+  {d:1, t:'警告！あなたのスマホがウイルスに感染しました！今すぐこの番号に電話してください！', scam:true,  e:'ニセの警告画面で電話させる「サポート詐欺」。あわてず画面を閉じるのが正解！'},
+  {d:2, t:'上場前の未公開株を特別に販売します。上場したら10倍確実です', scam:true,  e:'「未公開株」「確実に10倍」は古典的な詐欺ワード。一般人が買える未公開株はまずない！'},
+  {d:2, t:'クレジットカードのご利用明細が確定しました。金額は公式アプリからご確認ください。', scam:false, e:'リンクを踏ませず「公式アプリで確認」と案内するのは本物の特徴。自分でアプリを開くのが安全！'},
+  {d:1, t:'お荷物をお届けしましたが不在でした。再配達はこちら → http://takuhai-x.tk', scam:true,  e:'不在通知SMSのあやしいURLはフィッシング詐欺の定番。公式アプリや追跡番号で確認！'},
+  {d:1, t:'かんたんな作業で日給5万円！まずは身分証の写真と銀行口座を送ってください', scam:true,  e:'高すぎる報酬＋口座や身分証の要求は闇バイトや口座売買。犯罪に巻き込まれる危険！'},
+  {d:3, t:'株式投資セミナー（無料）のご案内。※投資は自己責任です。金融商品取引業 登録番号:第123号', scam:false, e:'登録番号やリスク説明があるのは本物の特徴。ただし無料セミナー→高額商品の勧誘には注意。'},
+  {d:2, t:'投資で損した分を取り戻しませんか？被害回復の専門家です。着手金は10万円', scam:true,  e:'詐欺被害者をもう一度ねらう「二次被害詐欺」。先払いの着手金がサイン！'},
+  {d:2, t:'ポイント2倍キャンペーン開催中！エントリーは公式サイトのマイページから', scam:false, e:'先払いも個人情報の要求もなし。URLは検索やブックマークから自分で開くとさらに安全！'},
+  {d:1, t:'仮想通貨の自動売買で参加者全員が儲かっています。友達を紹介するとボーナス進呈！', scam:true,  e:'「全員儲かる」＋紹介ボーナスはポンジ・スキーム（ねずみ講）の典型！'},
+  {d:1, t:'お母さん助けて！スマホが壊れて友達の携帯から送ってる。今日中にお金を振り込んで', scam:true,  e:'家族をかたる振り込め詐欺。まず本人の元の番号に電話して確認しよう！'},
+  {d:2, t:'普通預金（年0.02%）よりネット銀行の定期（年0.2%）の方が金利が高いというニュース記事', scam:false, e:'現実的な金利差の情報。ただし口座開設は必ず自分で公式サイトから！'},
+  {d:1, t:'このFX自動売買ツール（30万円）を買えば、寝ているだけで億り人になれます！', scam:true,  e:'高額ツール販売×「寝てるだけで」は情報商材詐欺の王道。楽して確実は存在しない！'},
+  {d:3, t:'日本年金機構より：国民年金保険料の口座振替のお知らせ。お手続きは年金事務所で承ります。', scam:false, e:'窓口手続きの案内で、URLも振込も要求していない公的機関の通常のお知らせ。'},
+  {d:1, t:'今から30分限定！このQRコードから入金すれば2倍にしてお返しします', scam:true,  e:'「今だけ」「時間限定」で焦らせるのは常套手段。考える時間を奪うのが詐欺のねらい！'},
+  {d:1, t:'「あなただけに特別なお話があります」と知らない人からDMが届いた', scam:true,  e:'「あなただけ」「特別」は詐欺ワード。知らない人からの投資の誘いは全部無視でOK！'},
+  {d:3, t:'○○証券です。セキュリティ強化のため、こちらのURLから現在の暗証番号をご入力ください', scam:true,  e:'本物の金融機関がURLから暗証番号を入力させることは絶対にない。「公式」を名乗って暗証番号を聞くのは100%詐欺！'},
+  {d:3, t:'市役所です。医療費の還付金があります。ATMで手続きできますので操作方法をご案内します', scam:true,  e:'還付金詐欺の典型。ATMを操作してお金が「戻ってくる」ことは絶対にない！'},
+  {d:3, t:'フリマアプリ事務局：規約違反が確認されました。24時間以内にこちらのURLから本人確認をしないとアカウント停止します', scam:true,  e:'期限で焦らせて偽サイトへ誘導するフィッシング。アプリを自分で開いて確認すれば一発でわかる！'},
+  {d:3, t:'勤め先の総務部より：年末調整の書類を今月末までに総務部窓口へ提出してください', scam:false, e:'URLも振込も要求せず、提出先も社内窓口。日常の社内連絡まで疑いすぎなくてOK！'},
+  {d:3, t:'証券口座の開設が完了しました。ログインは検索またはブックマークからアクセスした公式サイトで行ってください', scam:false, e:'リンクを踏ませず「自分で公式サイトから」と案内するのは本物の特徴！'},
+  {d:3, t:'大手企業の社債（年利1.2%・5年満期）の募集案内。※価格変動リスク・信用リスクがあります', scam:false, e:'現実的な利回りでリスクも明記されている本物の案内。ただし購入は必ず証券会社の公式窓口から！'},
+  {d:3, t:'SNSの投資グループに招待された。「みんなで勉強しよう！まずは先生に運用を任せてみて」', scam:true,  e:'SNS型投資詐欺の典型。「先生」「グループのみんな」で信用させて入金させる手口が急増中！'},
 ];
+const SCAM_DIFFS = [
+  {id:'e', nm:'かんたん',   ic:'🌱', ds:'わかりやすい手口だけ。ヒント付き！'},
+  {id:'n', nm:'ふつう',     ic:'🔥', ds:'標準。本物もまざってまぎらわしい'},
+  {id:'h', nm:'むずかしい', ic:'👑', ds:'上級問題ぞろい。大人でも迷う…！'},
+];
+const SCAM_FILTER = { e: q=>q.d===1, n: q=>true, h: q=>q.d>=2 };
 let SC = null;
-function scamStart(){ SC = { qs: shuffle(SCAM_POOL).slice(0,10), i:0, score:0 }; scamQ(); }
+function scamStart(){
+  const b = loadBests();
+  $('mg-scam-body').innerHTML = `<div class="mg-panel"><div class="mg-qtxt" style="text-align:center">むずかしさをえらぼう！</div><div id="mg-scam-diffs"></div></div>`;
+  const box = $('mg-scam-diffs');
+  SCAM_DIFFS.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'mg-choice';
+    const best = b[d.id==='n' ? 'scam' : 'scam_'+d.id];
+    btn.innerHTML = `${icoAll(d.ic)} <b>${d.nm}</b>　<small style="font-weight:900;background:var(--gold);border:2px solid var(--border);border-radius:8px;padding:1px 8px">ベスト: ${best!==undefined?best+'/10':'-'}</small><br><small style="font-weight:700;color:var(--text2)">${d.ds}</small>`;
+    btn.onclick = ()=> scamBegin(d.id);
+    box.appendChild(btn);
+  });
+}
+function scamBegin(d){ SC = { qs: shuffle(SCAM_POOL.filter(SCAM_FILTER[d])).slice(0,10), i:0, score:0, d }; scamQ(); }
 function _scamStat(){ return `<div class="mg-stat-row"><div class="mg-stat"><div class="mg-lb">メッセージ</div><div class="mg-vl">${SC.i+1}/10</div></div><div class="mg-stat"><div class="mg-lb">見抜いた数</div><div class="mg-vl">${SC.score}</div></div></div>`; }
 function scamQ(){
   const q = SC.qs[SC.i];
@@ -7782,6 +7810,7 @@ function scamQ(){
     <div class="mg-panel">
       <div style="font-weight:900;font-size:13px;margin-bottom:8px">📩 こんなメッセージが届いた…</div>
       <div class="mg-scam-msg">${q.t}</div>
+      ${SC.d==='e'?`<div class="mg-note"><svg class="ic"><use href="#ic-seed"></use></svg>ヒント：「絶対もうかる」「今だけ」「先にお金」「暗証番号を入力」は詐欺のサイン！</div>`:''}
       <button class="mg-btn mg-red" onclick="MG.scamAns(true)">🚨 あやしい！（詐欺だ）</button>
       <button class="mg-btn mg-grn" onclick="MG.scamAns(false)">😊 だいじょうぶ（本物）</button>
     </div>`;
@@ -7800,17 +7829,19 @@ function scamAns(saidScam){
 function scamNext(){ SC.i++; if(SC.i>=10) scamEnd(); else scamQ(); }
 function scamEnd(){
   const s = SC.score;
+  const dn = SCAM_DIFFS.find(x=>x.id===SC.d).nm;
   const rank = s===10?['👑','詐欺ハンター！']: s>=8?['🥇','鋭い金融センサー！']: s>=6?['🥈','なかなかの防御力！']: s>=4?['🥉','油断は禁物！']:['💦','カモられ注意報…'];
-  const isBest = saveBestChecked('scam', s);
+  const isBest = saveBestChecked(SC.d==='n' ? 'scam' : 'scam_'+SC.d, s);
   $('mg-scam-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
-      <div class="mg-result-rank">${s}/10 見抜いた！</div>
+      <div class="mg-result-rank">【${dn}】${s}/10 見抜いた！</div>
       <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         <svg class="ic"><use href="#ic-hint"></use></svg> 「絶対もうかる」「今だけ」「先にお金」が出たら詐欺と思え！<br>
         <svg class="ic"><use href="#ic-shield"></use></svg> 本編のハプニング「投資詐欺」は保険でも防げない。近づかないのが一番の防御！</div>
-      <button class="mg-btn" onclick="MG.scamStart()"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度（問題は毎回変わる）</button>
+      <button class="mg-btn" onclick="MG.scamBegin('${SC.d}')"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度（${dn}・問題は毎回変わる）</button>
       <button class="mg-btn mg-grn" onclick="MG.close()"><svg class="ic"><use href="#ic-dice"></use></svg> 本編で腕試し！</button>
+      <button class="mg-btn mg-sec" onclick="MG.scamStart()">むずかしさをえらび直す</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
@@ -7830,9 +7861,32 @@ const PF_EVENTS = [
   {n:'💥 巨大地震が発生！',       m:{st:0.90, bd:1.02, gl:1.15, es:0.55}},
   {n:'🏠 不動産ブーム到来！',     m:{st:1.05, bd:1.00, gl:0.95, es:1.35}},
   {n:'😌 おだやかな1年だった',    m:{st:1.05, bd:1.05, gl:1.00, es:1.03}},
+  {n:'🌍 世界金融危機…！',        m:{st:0.40, bd:1.00, gl:1.45, es:0.55}},
+  {n:'🚀 空前の大バブル！',       m:{st:1.70, bd:1.02, gl:0.80, es:1.45}},
+];
+// 難易度: イベントプール（インデックス）とランク閾値。7=金融危機/8=大バブルはむずかしい専用
+const PF_POOLS = { e:[1,2,3,5,6,6,1,5,6,2], n:[0,1,2,3,4,5,6], h:[0,0,1,2,3,4,4,5,7,8,7,8] };
+const PF_RANKS = { e:[1450000,1280000,1100000,980000], n:[1500000,1300000,1100000,950000], h:[1600000,1350000,1050000,850000] };
+const PF_DIFFS = [
+  {id:'e', nm:'かんたん',   ic:'🌱', ds:'おだやかな5年間。大事件は起きにくい'},
+  {id:'n', nm:'ふつう',     ic:'🔥', ds:'標準の5年間。暴落も地震も起こりうる'},
+  {id:'h', nm:'むずかしい', ic:'👑', ds:'激動の5年間！金融危機も大バブルも来る'},
 ];
 let PF = null;
-function pfStart(){ PF = { round:1, max:5, total:1000000, alloc:{st:3, bd:3, gl:2, es:2} }; pfRender(); }
+function pfStart(){
+  const b = loadBests();
+  $('mg-pf-body').innerHTML = `<div class="mg-panel"><div class="mg-qtxt" style="text-align:center">むずかしさをえらぼう！</div><div id="mg-pf-diffs"></div></div>`;
+  const box = $('mg-pf-diffs');
+  PF_DIFFS.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'mg-choice';
+    const best = b[d.id==='n' ? 'pf' : 'pf_'+d.id];
+    btn.innerHTML = `${icoAll(d.ic)} <b>${d.nm}</b>　<small style="font-weight:900;background:var(--gold);border:2px solid var(--border);border-radius:8px;padding:1px 8px">ベスト: ${best!==undefined?fmtM(best):'-'}</small><br><small style="font-weight:700;color:var(--text2)">${d.ds}</small>`;
+    btn.onclick = ()=> pfBegin(d.id);
+    box.appendChild(btn);
+  });
+}
+function pfBegin(d){ PF = { round:1, max:5, total:1000000, alloc:{st:3, bd:3, gl:2, es:2}, d }; pfRender(); }
 function pfRender(){
   const a = PF.alloc, total = a.st+a.bd+a.gl+a.es;
   $('mg-pf-body').innerHTML = `
@@ -7858,7 +7912,7 @@ function pfAdj(k, d){
   a[k]+=d; pfRender();
 }
 function pfNext(){
-  const ev = pick(PF_EVENTS);
+  const ev = PF_EVENTS[pick(PF_POOLS[PF.d] || PF_POOLS.n)];
   const a = PF.alloc, per = PF.total/10;
   const before = PF.total;
   let nt = 0;
@@ -7881,25 +7935,54 @@ function pfNext(){
 function pfCont(){ pfRender(); }
 function pfEnd(){
   const total = PF.total;
-  const rank = total>=1500000?['👑','分散投資の達人！']: total>=1300000?['🥇','見事なバランス感覚！']: total>=1100000?['🥈','堅実に増やした！']: total>=950000?['🥉','よく守った！']:['💦','一極集中はキケン…'];
-  const isBest = saveBestChecked('pf', total);
+  const dn = PF_DIFFS.find(x=>x.id===PF.d).nm;
+  const R = PF_RANKS[PF.d] || PF_RANKS.n;
+  const rank = total>=R[0]?['👑','分散投資の達人！']: total>=R[1]?['🥇','見事なバランス感覚！']: total>=R[2]?['🥈','堅実に増やした！']: total>=R[3]?['🥉','よく守った！']:['💦','一極集中はキケン…'];
+  const isBest = saveBestChecked(PF.d==='n' ? 'pf' : 'pf_'+PF.d, total);
   $('mg-pf-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
-      <div class="mg-result-rank">5年後の総資産 ${fmtM(total)}</div>
+      <div class="mg-result-rank">【${dn}】5年後の総資産 ${fmtM(total)}</div>
       <div class="mg-result-note">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         <svg class="ic"><use href="#ic-hint"></use></svg> 「タマゴは1つのカゴに盛るな」— 分散していれば、どんな事件が来ても全滅しない！<br>
         <svg class="ic"><use href="#ic-chart"></use></svg> 本編でも株・国債・金・不動産に分けて持つのが生き残りのコツ！</div>
-      <button class="mg-btn" onclick="MG.pfStart()"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度</button>
+      <button class="mg-btn" onclick="MG.pfBegin('${PF.d}')"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度</button>
       <button class="mg-btn mg-grn" onclick="MG.close()"><svg class="ic"><use href="#ic-dice"></use></svg> 本編で腕試し！</button>
+      <button class="mg-btn mg-sec" onclick="MG.pfStart()">むずかしさをえらび直す</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
 
 // ═══ ⑦ 複利マラソン ═══
+// 難易度: 利回りプール・一発勝負の勝率/配当・比較バーの「毎年積立なら」・ランク閾値
+const CMP_DIFFS = [
+  {id:'e', nm:'かんたん',   ic:'🌱', ds:'相場おだやか。マイナスの年なし！',
+   pool:[0, 0.03, 0.05, 0.05, 0.08, 0.08, 0.10, 0.12], win:0.55, hit:540000, miss:60000,
+   ideal:4100000, ranks:[3900000,3500000,3200000,3000000]},
+  {id:'n', nm:'ふつう',     ic:'🔥', ds:'標準。たまの下落も長期でカバー',
+   pool:[-0.05, 0.03, 0.05, 0.08, 0.08, 0.10, 0.15], win:0.5, hit:540000, miss:45000,
+   ideal:4600000, ranks:[4300000,3800000,3300000,3000000]},
+  {id:'h', nm:'むずかしい', ic:'👑', ds:'大荒れ相場！暴落の年もじっと我慢…',
+   pool:[-0.20, -0.10, 0.03, 0.08, 0.10, 0.15, 0.25], win:0.45, hit:600000, miss:30000,
+   ideal:3900000, ranks:[3800000,3400000,3000000,2600000]},
+];
 let CM = null;
-function cmpStart(){ CM = { year:1, max:10, cash:0, invest:0, saveOnly:0 }; cmpRender(); }
+function cmpStart(){
+  const b = loadBests();
+  $('mg-cmp-body').innerHTML = `<div class="mg-panel"><div class="mg-qtxt" style="text-align:center">むずかしさをえらぼう！</div><div id="mg-cmp-diffs"></div></div>`;
+  const box = $('mg-cmp-diffs');
+  CMP_DIFFS.forEach(d=>{
+    const btn = document.createElement('button');
+    btn.className = 'mg-choice';
+    const best = b[d.id==='n' ? 'cmp' : 'cmp_'+d.id];
+    btn.innerHTML = `${icoAll(d.ic)} <b>${d.nm}</b>　<small style="font-weight:900;background:var(--gold);border:2px solid var(--border);border-radius:8px;padding:1px 8px">ベスト: ${best!==undefined?fmtM(best):'-'}</small><br><small style="font-weight:700;color:var(--text2)">${d.ds}</small>`;
+    btn.onclick = ()=> cmpBegin(d.id);
+    box.appendChild(btn);
+  });
+}
+function cmpBegin(d){ CM = { year:1, max:10, cash:0, invest:0, saveOnly:0, d, cfg: CMP_DIFFS.find(x=>x.id===d) }; cmpRender(); }
 function cmpRender(){
+  const c = CM.cfg;
   $('mg-cmp-body').innerHTML = `
     <div class="mg-stat-row">
       <div class="mg-stat"><div class="mg-lb">年</div><div class="mg-vl">${CM.year}/${CM.max}</div></div>
@@ -7910,7 +7993,7 @@ function cmpRender(){
       <div class="mg-qtxt">今年の30万円、どうする？</div>
       <button class="mg-btn mg-grn" onclick="MG.cmpChoose('inv')">📈 積立投資に30万円<br><small style="font-weight:700">相場しだいで増減。利益にも利益がつく</small></button>
       <button class="mg-btn" onclick="MG.cmpChoose('cash')">🏦 貯金に30万円<br><small style="font-weight:700">絶対減らない。でも増えもしない</small></button>
-      <button class="mg-btn mg-red" onclick="MG.cmpChoose('gmb')">🎰 一発勝負に30万円<br><small style="font-weight:700">五分五分で約2倍 or 大損！</small></button>
+      <button class="mg-btn mg-red" onclick="MG.cmpChoose('gmb')">🎰 一発勝負に30万円<br><small style="font-weight:700">勝率${Math.round(c.win*100)}%：30万→${fmtM(c.hit)} or ${fmtM(c.miss)}に…！</small></button>
     </div>`;
 }
 function cmpChoose(k){
@@ -7918,14 +8001,14 @@ function cmpChoose(k){
   if(k==='inv'){ CM.invest += 300000; logs.push('📈 30万円を積立投資へ'); }
   if(k==='cash'){ CM.cash += 300000; logs.push('🏦 30万円を貯金へ'); }
   if(k==='gmb'){
-    const win = Math.random() < 0.5;
-    CM.cash += win ? 540000 : 45000;
-    logs.push(win ? '🎰 一発勝負…大当たり！ <b class="mg-p">30万→54万</b>' : '🎰 一発勝負…大ハズレ… <b class="mg-m">30万→4.5万</b>');
+    const win = Math.random() < CM.cfg.win;
+    CM.cash += win ? CM.cfg.hit : CM.cfg.miss;
+    logs.push(win ? `🎰 一発勝負…大当たり！ <b class="mg-p">30万→${fmtM(CM.cfg.hit)}</b>` : `🎰 一発勝負…大ハズレ… <b class="mg-m">30万→${fmtM(CM.cfg.miss)}</b>`);
   }
   // 相場変動（投資残高全体に複利で効く）
   let gainTxt = '';
   if(CM.invest > 0){
-    const r = pick([-0.05, 0.03, 0.05, 0.08, 0.08, 0.10, 0.15]);
+    const r = pick(CM.cfg.pool);
     const gain = Math.round(CM.invest * r);
     CM.invest += gain;
     gainTxt = `<div style="font-size:13px;font-weight:800;margin-top:8px">今年の相場：<b style="color:${r>=0?'#16a34a':'var(--red)'}">${r>=0?'+':''}${Math.round(r*100)}%</b> → 投資残高が <b class="${gain>=0?'mg-p':'mg-m'}">${gain>=0?'+':''}${fmtM(gain)}</b>（これが複利！残高ぜんぶに利回りがつく）</div>`;
@@ -7944,15 +8027,17 @@ function cmpChoose(k){
 function cmpCont(){ cmpRender(); }
 function cmpEnd(){
   const total = CM.cash + CM.invest;
-  // 比較: 全部貯金=300万 / 理論上の最強（毎年30万積立・平均7.7%）≒460万
-  const IDEAL = 4600000;
-  const rank = total>=4300000?['👑','複利マスター！']: total>=3800000?['🥇','時間を味方につけた！']: total>=3300000?['🥈','コツコツの勝利！']: total>=3000000?['🥉','貯金派だった？']:['💦','ギャンブルは怖い…'];
-  const isBest = saveBestChecked('cmp', total);
+  const c = CM.cfg, dn = c.nm;
+  // 比較: 全部貯金=300万 / 毎年積立し続けた場合の目安（難易度ごとの平均利回りで複利）
+  const IDEAL = c.ideal;
+  const R = c.ranks;
+  const rank = total>=R[0]?['👑','複利マスター！']: total>=R[1]?['🥇','時間を味方につけた！']: total>=R[2]?['🥈','コツコツの勝利！']: total>=R[3]?['🥉','貯金派だった？']:['💦','ギャンブルは怖い…'];
+  const isBest = saveBestChecked(CM.d==='n' ? 'cmp' : 'cmp_'+CM.d, total);
   const bar = (label, v, color) => `<div class="mg-cmp-bar"><span>${label}</span><div class="bar" style="width:${Math.min(100, Math.round(v/IDEAL*100))*2}px;background:${color}"></div><span>${fmtM(v)}</span></div>`;
   $('mg-cmp-body').innerHTML = `
     <div class="mg-panel">
       <div class="mg-result-big">${icoAll(rank[0])}</div>
-      <div class="mg-result-rank">10年後の総資産 ${fmtM(total)}</div>
+      <div class="mg-result-rank">【${dn}】10年後の総資産 ${fmtM(total)}</div>
       <div style="margin-top:10px">
         ${bar('あなた', total, 'var(--gold)')}
         ${bar('全部貯金なら', CM.saveOnly, '#cbd5e1')}
@@ -7961,13 +8046,14 @@ function cmpEnd(){
       <div class="mg-result-note" style="margin-top:10px">${rank[1]} ${isBest?'🎉 自己ベスト更新！':''}<br>
         <svg class="ic"><use href="#ic-hint"></use></svg> 複利＝「利益にも利益がつく」こと。早く始めて長く続けるほど、雪だるま式に増える！<br>
         <svg class="ic"><use href="#ic-chart"></use></svg> 本編のNISAマスがまさにこれ。1年目から積み立てるのが最強！</div>
-      <button class="mg-btn" onclick="MG.cmpStart()"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度</button>
+      <button class="mg-btn" onclick="MG.cmpBegin('${CM.d}')"><svg class="ic"><use href="#ic-refresh"></use></svg> もう一度</button>
       <button class="mg-btn mg-grn" onclick="MG.close()"><svg class="ic"><use href="#ic-dice"></use></svg> 本編で腕試し！</button>
+      <button class="mg-btn mg-sec" onclick="MG.cmpStart()">むずかしさをえらび直す</button>
       <button class="mg-btn mg-sec" onclick="MG.goMenu()">メニューへ戻る</button>
     </div>`;
 }
 
-window.MG = { open, close, openGame, goMenu, showHowto, quizStart, quizBegin, mktStart, mktBegin, mktTrade, mktNextTurn, insStart, insBegin, insDraw, insNext, insResult, budStart, budBegin, budAdj, budNextMonth, debut, scamStart, scamAns, scamNext, pfStart, pfAdj, pfNext, pfCont, pfEnd, cmpStart, cmpChoose, cmpCont, cmpEnd };
+window.MG = { open, close, openGame, goMenu, showHowto, quizStart, quizBegin, mktStart, mktBegin, mktTrade, mktNextTurn, insStart, insBegin, insDraw, insNext, insResult, budStart, budBegin, budAdj, budNextMonth, debut, scamStart, scamBegin, scamAns, scamNext, pfStart, pfBegin, pfAdj, pfNext, pfCont, pfEnd, cmpStart, cmpBegin, cmpChoose, cmpCont, cmpEnd };
 })();
 </script>
 </body>
