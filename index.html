@@ -3060,16 +3060,20 @@ function botRespond(){
 
 // 借金上限（年次で拡大）。負の下限（これ以上は借りられない）
 function botDebtFloor(p){ return p.pos<=10 ? -1000000 : p.pos<=31 ? -2000000 : -3000000; }
+// 現在の借金利子率（confirmPurchase/applyDebtInterestと同一。金利上昇 G.highInt を反映）。
+// ★これを反映しないと、金利上昇時にBotが「買える」と誤判断→confirmPurchaseが0.3で拒否→
+//   「戻る」で取引画面が再表示→再びBotが買おうとして無限ループ（上限オーバーで止まる）になる。
+function botIntRate(p){ return p.job==='emp' ? (G.highInt?0.1:0) : (G.highInt?0.3:0.2); }
 // 借金上限内で支払えるか（confirmPurchaseと同じ上限ロジック）。借金は許容するが上限超えは買わない
 function botCanAfford(p, cost){
-  const intRate = p.job==='emp' ? 0 : 0.2;
+  const intRate = botIntRate(p);
   const debtAmt = Math.max(0, cost - Math.max(0, p.cash));
   const interest = Math.floor(debtAmt * intRate);
   return (p.cash - cost - interest) >= botDebtFloor(p);
 }
 // その株価で、現金が floor を下回らない範囲で買える最大ロット数（1ロット=10株=price円・利子も考慮）
 function botAffordableLots(p, price, floor){
-  const intRate = p.job==='emp' ? 0 : 0.2;
+  const intRate = botIntRate(p);
   let lots = 0;
   while(lots < 300){
     const cost = (lots+1) * price;
@@ -5481,12 +5485,16 @@ async function broadcastLive(data, fullScreen=false) {
   const isFinal = data._final === true;
   // 便乗取引完了通知はフォロワー側（非アクティブ）から送るため例外を設ける
   const isFollowNotif = !!(data._followDone || data._followSkip);
-  if(!isMyTurn() && !isFinal && !isFollowNotif) return;
+  // ★ 最終清算中は手番(G.ci)が清算対象と一致しないため、_mySettlementActive時も送信を許可する。
+  //    これがないと清算のIPOサイコロ・市場ルーレット等が他プレイヤーに全く共有されない。
+  if(!isMyTurn() && !isFinal && !isFollowNotif && !window._mySettlementActive) return;
+  // 送信元の名前・色：清算中は清算対象プレイヤー(_botActorOverride)、通常は手番プレイヤー
+  const src = (window._mySettlementActive && window._botActorOverride) ? window._botActorOverride : G.players[G.ci];
   try {
     await fbSet(`rooms/${roomCode}/live`, {
       ...data, fullScreen, ts: Date.now(),
-      playerName: G.players[G.ci]?.name,
-      playerColor: G.players[G.ci]?.color?.bg || '#888'
+      playerName: src?.name,
+      playerColor: src?.color?.bg || '#888'
     });
   } catch(e) {}
 }
@@ -6744,7 +6752,9 @@ async function showTurnAnnounce(player) {
 // ═══════════════════════════════════════════
 function showSpectatorCard(live) {
   if(!live) return;
-  if(isMyTurn() && !live._final) { hideLiveOverlay(); _hideSmallCard(); return; }
+  // 最終清算中は「手番(G.ci)」の概念が無い（各自が順に清算）。ここで isMyTurn() 早期returnすると
+  // 手番だった1人だけ清算のIPOサイコロ等が見えなくなるため、清算中はこのガードを無効化。
+  if(isMyTurn() && !live._final && !window._settlementStarted) { hideLiveOverlay(); _hideSmallCard(); return; }
 
   // ★ ルーレット同期アニメーション
   if(live._rouletteSync && live.rouletteItems) {
