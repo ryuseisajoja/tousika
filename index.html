@@ -1909,6 +1909,38 @@ function updateMktDisplay() {
 const EMOJI_IC = {'🎲':'dice','📈':'chart','💹':'chart','📊':'chart','📉':'chartdn','💡':'hint','🛡':'shield','⚠':'warn','🏠':'house','🏦':'bank','🥇':'medal1','🥈':'medal2','🥉':'medal3','❓':'question','🎫':'ticket','🏁':'flag','💰':'coin','💵':'coin','👑':'crown','⚡':'bolt','💥':'boom','🔄':'refresh','🏢':'building','🔰':'beginner','🎮':'game','🚀':'rocket','📖':'book','🏆':'trophy','✅':'check','❌':'batsu','⭕':'maru','🦉':'owl','⚀':'d1','⚁':'d2','⚂':'d3','⚃':'d4','⚄':'d5','⚅':'d6','🔻':'plunge','💸':'surge','🌱':'seed','🔥':'flame','💦':'sweat','🎰':'dice','🧠':'question','🦄':'unicorn','💼':'case','🔒':'lock'};
 const IC = (n,px) => `<svg class="ic"${px?` style="width:${px}px;height:${px}px"`:''} aria-hidden="true"><use href="#ic-${n}"></use></svg>`;
 function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+// プレイヤー名・ランキング名など、他人が入力しネットワーク越しに届く文字列の無害化。
+// HTML特殊文字（< > & " ' ` ）を除去するので、innerHTML でも textContent でも安全（両方の描画先がある）。
+function sanitizeName(s){ return String(s == null ? '' : s).replace(/[<>&"'`]/g,'').slice(0,16).trim() || '???'; }
+// 観戦カードの descHtml（他端末が生成したHTML）をDOMで浄化して描画する。
+// 許可タグ以外は中身のテキストだけ残し、on* / src / href などの属性を全て除去（styleのみ許可）。
+const _SAFE_TAGS = { B:1, STRONG:1, I:1, EM:1, U:1, SMALL:1, SPAN:1, DIV:1, BR:1, P:1 };
+function safeHtml(html){
+  const tpl = document.createElement('template');
+  tpl.innerHTML = String(html == null ? '' : html);
+  const walk = node => {
+    [...node.childNodes].forEach(ch => {
+      if(ch.nodeType === 1){ // element
+        if(!_SAFE_TAGS[ch.tagName]){
+          // 非許可タグ（script/img/iframe等）は中身のテキストに置換して除去
+          ch.replaceWith(document.createTextNode(ch.textContent || ''));
+          return;
+        }
+        [...ch.attributes].forEach(a => {
+          const nm = a.name.toLowerCase();
+          if(nm === 'style'){
+            if(/url\s*\(|expression|javascript:/i.test(a.value)) ch.removeAttribute(a.name); // 危険なstyleは捨てる
+          } else {
+            ch.removeAttribute(a.name); // on*・src・href 等は一律除去
+          }
+        });
+        walk(ch);
+      }
+    });
+  };
+  walk(tpl.content);
+  return tpl.innerHTML;
+}
 const _icRe = /(🎲|📈|💹|📊|📉|💡|🛡|⚠|🏠|🏦|🥇|🥈|🥉|❓|🎫|🏁|💰|💵|👑|⚡|💥|🔄|🏢|🔰|🎮|🚀|📖|🏆|✅|❌|⭕|🦉|⚀|⚁|⚂|⚃|⚄|⚅|🔻|💸|🌱|🔥|💦|🎰|🧠|🦄|💼|🔒)️?/g;
 // UI部品（tag・ログ等）用：対応絵文字を全部アイコン化
 function icoAll(s){ return String(s).replace(_icRe, m => IC(EMOJI_IC[m.replace(/️/g,'')])); }
@@ -2922,21 +2954,43 @@ function maybeDriveOnlineBot(){
 // ─── ホスト移譲（心拍ベース） ───────────────────────────
 // ホストが落ちてBotが止まるのを防ぐ。ホストは定期的に心拍を書き込み、
 // 心拍が一定時間途絶えたら「後継者（人間プレイヤーの先頭）」が引き継ぐ。
+// ホスト業務を停止（Bot代行・心拍タイマーを止める）。降格時・退出時に呼ぶ
+function stopHostDuties(){
+  if(window._botDriveInterval){ clearInterval(window._botDriveInterval); window._botDriveInterval = null; }
+  if(window._hostBeatInterval){ clearInterval(window._hostBeatInterval); window._hostBeatInterval = null; }
+}
+// 心拍：DB上のホストが自分でなければ「二重ホスト」なので自ら降格する（読んでから書く）。
+// これによりスリープ復帰した旧ホストや、移譲後に復帰した端末がホストを二重に名乗るのを防ぐ。
+async function _hostBeat(){
+  if(!isHost || LOCAL_MODE || !roomCode) return;
+  try{
+    const h = await fbGet(`rooms/${roomCode}/host`);
+    // DBのホストが「自分でない実在ID」なら、正規ホストが別にいる＝自分は降格する
+    if(h && h !== myId){
+      isHost = false;
+      stopHostDuties();
+      toast('ℹ️ 別の端末がホストを担当中のため、ホスト役を解除しました');
+      return; // checkHostAlive（全端末で稼働中）が再びホスト生存を監視する
+    }
+    fbPatch(`rooms/${roomCode}`, { hostBeat: Date.now(), host: myId }).catch(()=>{});
+  }catch(e){}
+}
 function startHostDuties(){
-  if(LOCAL_MODE) return;
+  if(LOCAL_MODE || !isHost) return;
   // Bot代行
   if(window._botDriveInterval) clearInterval(window._botDriveInterval);
   window._botDriveInterval = setInterval(maybeDriveOnlineBot, 1300);
   // 心拍
   if(window._hostBeatInterval) clearInterval(window._hostBeatInterval);
-  const beat = ()=>{ if(isHost && !LOCAL_MODE && roomCode) fbPatch(`rooms/${roomCode}`, { hostBeat: Date.now(), host: myId }).catch(()=>{}); };
-  beat();
-  window._hostBeatInterval = setInterval(beat, 4000);
+  _hostBeat();
+  window._hostBeatInterval = setInterval(_hostBeat, 4000);
   maybeDriveOnlineBot();
 }
-function becomeHost(){
-  if(isHost || LOCAL_MODE) return;
+// 移譲で新ホストになる。先に host を自分に確定してから業務開始（旧ホストは次の心拍で降格）
+async function becomeHost(){
+  if(isHost || LOCAL_MODE || !roomCode) return;
   isHost = true;
+  await fbPatch(`rooms/${roomCode}`, { host: myId, hostBeat: Date.now() }).catch(()=>{});
   toast('👑 ホストを引き継ぎました（Bot代行を継続します）');
   startHostDuties();
 }
@@ -2948,8 +3002,9 @@ async function checkHostAlive(){
     if(!r) return;
     const stale = (Date.now() - (r.hostBeat || 0)) > 15000;
     if(!stale) return;
-    // 後継者＝（ターン順で）現ホスト以外の人間プレイヤーの先頭。全端末が同じ判定をするので競合しない
-    const successor = (G.players || []).filter(p => !p.isBot && p.id !== r.host)[0];
+    // 後継者＝（ターン順で）現ホスト以外・脱落していない人間プレイヤーの先頭。
+    // 全端末が同じ判定をするので競合しない（先頭が落ちていても順に次点が拾える）
+    const successor = (G.players || []).filter(p => !p.isBot && !p.isBankrupt && p.id !== r.host)[0];
     if(successor && successor.id === myId) becomeHost();
   }catch(e){}
 }
@@ -5253,7 +5308,7 @@ function renderRanking(listEl, entries, tab) {
     return `<div class="rp-entry">
       <div class="rp-rank">${rank}</div>
       <div class="rp-info">
-        <div class="rp-name">${e.name || '???'}</div>
+        <div class="rp-name">${sanitizeName(e.name)}</div>
         <div class="rp-meta"><span style="color:${jobColor};font-weight:900">${e.job||''}</span>${date ? ' ・ ' + date : ''}</div>
       </div>
       <div class="rp-score${e.score<0?' neg':''}">${fmtM(e.score)}</div>
@@ -5454,6 +5509,7 @@ function _restorePlayers(raw) {
   const arr = Array.isArray(raw) ? raw : Object.values(raw || {});
   return arr.map((p, i) => ({
     ...p,
+    name:    sanitizeName(p.name), // ★ 他プレイヤー名のXSS対策（多数のinnerHTML描画先の入口で無害化）
     bonds:   _toArray(p.bonds),
     estates: _toArray(p.estates),
     color: (p.color && typeof p.color === 'object' && p.color.bg)
@@ -5643,7 +5699,7 @@ async function syncGameState() {
           `${gs.finalRankings[0].name}（${gs.finalRankings[0].job==='emp'?'会社員':gs.finalRankings[0].job==='fre'?'フリーター':'投資家'}）`;
         document.getElementById('rankings').innerHTML = gs.finalRankings.map((p,i) => `
           <div class="rank-item">
-            <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${p.name}${p.isBankrupt?' 💥':''}</span>
+            <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${sanitizeName(p.name)}${p.isBankrupt?' 💥':''}</span>
             <span style="color:var(--gold)">${fmtM(p.cash)}</span>
           </div>`).join('');
         document.getElementById('wov').classList.add('show');
@@ -5804,6 +5860,7 @@ async function waitingPollTick() {
       const arrP = Array.isArray(rawP) ? rawP : Object.values(rawP || {});
       gs.players = arrP.map((p, i) => ({
         ...p,
+        name: sanitizeName(p.name), // ★ 名前を無害化
         color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
       }));
       Object.assign(G, gs);
@@ -5901,6 +5958,7 @@ function backToStart() {
   isHost = false; roomCode = null;
   window._tutorial = false; hideCoach();
   if(pollTimer) { clearInterval(pollTimer); pollTimer = null; } // 待機ポーリング等を停止
+  stopHostDuties(); // ★ Bot代行・心拍タイマーを停止（残ると他ルームへ誤書き込みの恐れ）
   history.replaceState(null, '', location.pathname); // ?room= を消す
   showScreen('start-screen');
 }
@@ -6123,7 +6181,7 @@ function renderWaitingPlayers(players) {
   list.innerHTML = players.map((p,i) => `
     <div class="wp-row">
       <div class="wp-dot" style="background:${COLORS[p.color%COLORS.length].bg}"></div>
-      <div class="wp-name" style="color:${COLORS[p.color%COLORS.length].bg}">${p.name}</div>
+      <div class="wp-name" style="color:${COLORS[p.color%COLORS.length].bg}">${sanitizeName(p.name)}</div>
       ${p.id===myId?'<div class="wp-you">あなた</div>':''}
     </div>`).join('') || '<div style="padding:12px;color:var(--text2)">参加者を待っています...</div>';
 
@@ -6194,7 +6252,7 @@ async function hostStartGame() {
   // プレイヤー順をシャッフルしてから色・職業を付与
   const shuffledPlayers = rawPlayers.slice().sort(() => Math.random() - 0.5);
   G.players = shuffledPlayers.map((p,i) => ({
-    id:p.id, name:p.name, color:COLORS[i % COLORS.length],
+    id:p.id, name:sanitizeName(p.name), color:COLORS[i % COLORS.length], // ★ 名前を無害化してからゲーム状態へ
     job: jobs[i], isBot: !!p.isBot,
     cash:100000, stocks:0, gold:0, estates:[], bonds:[], ipo:0, pos:0, skips:0,
     forcedN:0, hasNisa:false, nisaAmt:0, noSalNext:false, insYear:0,
@@ -6418,12 +6476,15 @@ async function _doRejoin(sess) {
     roomCode = sess.roomCode;
     myId     = sess.myId;
     myName   = sess.myName || '';
-    isHost   = sess.isHost || false;
+    isHost   = false; // ★ 保存値は信用せず、DBの room.host で確定する（切断中に移譲されている可能性）
     localStorage.setItem('fbUrl', sess.FB_URL);
 
     // Firebaseからゲーム状態を取得
     const room = await fbGet(`rooms/${roomCode}`);
     loading.remove();
+
+    // ★ ホストは離脱中に別端末へ移っていることがある。DBの現ホストで再判定して二重ホストを防ぐ
+    if(room && room.host) isHost = (room.host === myId);
 
     if(!room) {
       localStorage.removeItem('session');
@@ -6445,6 +6506,7 @@ async function _doRejoin(sess) {
     const rawP = Array.isArray(gs.players) ? gs.players : Object.values(gs.players || {});
     gs.players = rawP.map((p, i) => ({
       ...p,
+      name:    sanitizeName(p.name), // ★ 名前を無害化
       bonds:   _toArray(p.bonds),
       estates: _toArray(p.estates),
       color: (p.color && p.color.bg) ? p.color : COLORS[i % COLORS.length]
@@ -6702,7 +6764,7 @@ function showSpectatorCard(live) {
     if(tag) { tag.innerHTML = icoAll(escHtml(live.tag||'')); tag.style.background = tagBg; }
     if(ttl) ttl.textContent = live.title||'';
     if(dsc) {
-      if(live.descHtml) dsc.innerHTML = icoMark(live.descHtml);
+      if(live.descHtml) dsc.innerHTML = icoMark(safeHtml(live.descHtml));
       else dsc.textContent = live.desc||'';
       dsc.style.display = (live.desc||live.descHtml)?'block':'none';
     }
