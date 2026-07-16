@@ -1311,7 +1311,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
 <!-- ═══ Firebase設定画面 ═══ -->
 <div class="online-screen hidden" id="firebase-screen">
   <div class="t-main" style="z-index:1">
-    <div class="t-kanji"><span>投</span><span>資</span><span>家</span><span>人</span><span>生</span></div>
+    <div class="t-kanji"><span style="color:var(--red)">ビ</span><span style="color:var(--blue)">リ</span><span style="color:var(--green)">オ</span><span style="color:var(--orange)">ン</span><span style="color:var(--purple)">バ</span><span style="color:var(--red)">ト</span><span style="color:var(--blue)">ル</span></div>
   </div>
   <div class="ob-card">
     <div class="ob-title">🔥 Firebase 接続設定</div>
@@ -1343,7 +1343,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
   <div class="lobby-logo">
     <div class="ll-badge">💰 FINANCIAL BOARD GAME</div>
     <div class="ll-title">
-      <span>投</span><span>資</span><span>家</span><span>人</span><span>生</span>
+      <span style="color:#ff6b6b">ビ</span><span style="color:#4facfe">リ</span><span style="color:#4ade80">オ</span><span style="color:#ff9f43">ン</span><span style="color:#d8b4fe">バ</span><span style="color:#ff6b6b">ト</span><span style="color:#4facfe">ル</span>
     </div>
     <div class="ll-sub">知識・運・決断力が試される超実践型金融ゲーム</div>
   </div>
@@ -1797,12 +1797,14 @@ const MARKET_POOL = [
   MARKETS[3], MARKETS[3],
   MARKETS[4],
 ];
-// リアル志向モード用プール: 安定50% / デフレ20% / インフレ20% / 深刻なデフレ5% / ハイパー5%
+// リアル志向モード用プール: 安定約65% / デフレ13% / インフレ13% / 深刻なデフレ4% / ハイパー4%
+// （安定モードの効果をはっきりさせるため安定を厚め・極端相場を薄めに）
 const REAL_MARKET_POOL = [
   MARKETS[0],
-  MARKETS[1], MARKETS[1], MARKETS[1], MARKETS[1],
-  MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2],
-  MARKETS[3], MARKETS[3], MARKETS[3], MARKETS[3],
+  MARKETS[1], MARKETS[1], MARKETS[1],
+  MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2],
+  MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2], MARKETS[2],
+  MARKETS[3], MARKETS[3], MARKETS[3],
   MARKETS[4],
 ];
 // 現在のモードに応じた市場プールを返す（リアル志向モードは安定寄り）
@@ -2793,10 +2795,11 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
    return new Promise(resolve => {
        showModal({
            type: 't-happen', tag:'🎲 勝負！', title: title, fullScreen:true,
-           desc: `${desc}<br><br><div id="exc-die" style="font-size:64px;text-align:center;"><svg class="ic"><use href="#ic-dice"></use></svg></div>`,
+           desc: `${desc}<br><br><div style="display:flex;justify-content:center;"><div id="exc-die" class="die"><svg class="ic"><use href="#ic-dice"></use></svg></div></div>`,
            acts: [{lbl:'サイコロを振る！', p:true, fn:() => {
                document.getElementById('macts').innerHTML = '';
                const die = document.getElementById('exc-die');
+               die.classList.add('spin');
                let c=0; let delay=55;
                broadcastLive({
                  type:'t-happen', tag:'🎲 サイコロ勝負！', title: title,
@@ -2812,6 +2815,7 @@ async function rollDiceExcitement(title, desc, fixedRoll=null) {
                    if(c<45) { setTimeout(spin, fx(delay)); }
                    else {
                        const roll = fixedRoll !== null ? fixedRoll : (Math.floor(Math.random()*6)+1);
+                       die.classList.remove('spin');
                        die.innerHTML = icoAll(['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]); die.style.color='var(--red)'; die.style.transform='scale(1.3)';
                        broadcastLive({
                          type:'t-happen', tag:'🎲 結果！', title: title,
@@ -3011,20 +3015,25 @@ async function checkHostAlive(){
 
 // Botの操作テンポ（ms）。大きいほどゆっくり。window._botDelay で調整可能
 window._botDelay = window._botDelay || { roll: 700, think: 2000 };
+// オンラインは他の人が動きを追えるよう、Botをゆっくりにする（ローカルは従来どおり）
+function _botDelayNow(){
+  const d = window._botDelay;
+  return LOCAL_MODE ? d : { roll: d.roll + 800, think: d.think + 1200 };
+}
 
 // Botの手番：少し待ってサイコロを振る
 function maybeBotTurn(){
   if(!isBotActing() || isMoving) return;
   if(window._botRollTimer) clearTimeout(window._botRollTimer);
   toast(`🤖 ${botActor().name} の番…`);
-  window._botRollTimer = setTimeout(()=>{ if(isBotActing() && !isMoving) onRoll(); }, window._botDelay.roll);
+  window._botRollTimer = setTimeout(()=>{ if(isBotActing() && !isMoving) onRoll(); }, _botDelayNow().roll);
 }
 
 // モーダル表示時にBotの自動応答を予約（モーダルを読む時間を確保）
 function scheduleBotResponse(){
   if(!isBotActing()) return;
   if(window._botBtnTimer) clearTimeout(window._botBtnTimer);
-  window._botBtnTimer = setTimeout(botRespond, window._botDelay.think);
+  window._botBtnTimer = setTimeout(botRespond, _botDelayNow().think);
 }
 
 function botRespond(){
@@ -3342,9 +3351,10 @@ async function receiveSalary(p, year, textPrefix) {
             }
         } else {
             const mult = {1:100000, 2:300000, 3:500000}[year] || 0;
-            showModal({type:'t-event', tag:'給料日', title:'投資の成果は...？', fullScreen:true, desc: `${textPrefix}<br>投資家の給与はサイコロで決まります！<br>（出目 × ${fmtM(mult)}）`, extra:`<div id="sal-die" style="font-size:64px;text-align:center;margin-top:10px;"><svg class="ic"><use href="#ic-dice"></use></svg></div>`, acts:[{lbl:'サイコロを振る', p:true, fn:()=> {
+            showModal({type:'t-event', tag:'給料日', title:'投資の成果は...？', fullScreen:true, desc: `${textPrefix}<br>投資家の給与はサイコロで決まります！<br>（出目 × ${fmtM(mult)}）`, extra:`<div style="display:flex;justify-content:center;margin-top:12px;"><div id="sal-die" class="die"><svg class="ic"><use href="#ic-dice"></use></svg></div></div>`, acts:[{lbl:'サイコロを振る', p:true, fn:()=> {
                 document.getElementById('macts').innerHTML = '';
                 const die = document.getElementById('sal-die');
+                die.classList.add('spin');
                 let c=0; let delay=80;
                 // ★ 開始broadcast
                 broadcastLive({type:'t-happen', tag:'🎲 サイコロ振り中...', title:'投資家の給料！', desc:`出目 × ${fmtM(mult)}`}, true).catch(()=>{});
@@ -3357,6 +3367,7 @@ async function receiveSalary(p, year, textPrefix) {
                     if(c<38) { setTimeout(spin, delay); }
                     else {
                         const roll = Math.floor(Math.random()*6)+1;
+                        die.classList.remove('spin');
                         die.innerHTML = icoAll(['⚀','⚁','⚂','⚃','⚄','⚅'][roll-1]); die.style.color = 'var(--red)'; die.style.transform = 'scale(1.2)';
                         const s = roll * mult;
                         p.cash += s;
@@ -5629,7 +5640,11 @@ async function syncGameState() {
   if(!FB_URL)     { _syncLastState='FB_URL=null';       _dot('#ef4444'); return; }
   if(_syncRunning){ _syncLastState='busy';              return; }
   if(_isPushing)  { _syncLastState='書き込み中';         return; } // ★ 書き込み中は読まない
-  if(isMyTurn() && isMoving){ _syncLastState='自ターン移動中'; return; }
+  // ★ 自分の手番中は自分が状態の正本（サイコロ→移動→マス効果→市場取引まで自分が進める）。
+  //    ここで同期するとG.playersが作り直され、取引処理が握るプレイヤー参照が切り離されて
+  //    株購入などが「反映されずに消える」原因になる。手番が終われば（nextTurnでciが移り）自動で再開。
+  if(isMyTurn()){ _syncLastState='自分の手番（同期スキップ）'; return; }
+  if(window._myFollowTradeActive){ _syncLastState='便乗取引中（同期スキップ）'; return; } // ★ 便乗取引中もG.playersを上書きしない
   if(window._mySettlementActive){ _syncLastState='自分の清算処理中'; _dot('#fbbf24'); return; } // ★ 清算中はG.playersを上書きしない
 
   _syncRunning = true;
