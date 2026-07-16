@@ -2240,8 +2240,12 @@ const OWL_TIPS = [
   '勝つコツは<strong>現金を寝かせない</strong>こと。お金に働いてもらおう！',
   '「<strong>絶対もうかる</strong>」は絶対ウソ。詐欺は保険でも防げないから近づかない！',
   '<strong>市場マス</strong>では相場をチェック。安いときに買って高いときに売る、それだけ！',
+];
+// タイトル画面専用のヒント（ミニゲーム関連など、対局中に言うと変なもの）
+const OWL_TIPS_MENU = [
   'ミニゲームを4つ合格すると「<strong>投資家見習い免許</strong>」がもらえるよ。ためしてみて！',
-  'お金は使うのも大事。<strong>幸福度</strong>とのバランスも金融力のうち！',
+  'お金は使うのも大事。<strong>幸福度</strong>とのバランスも金融力のうち！（家計やりくりで体験できるよ）',
+  '<strong>詐欺を見抜け！</strong>で鍛えると、本編のハプニングにも動じなくなるよ。',
 ];
 let _lastOwlTip = -1;
 function owlHint(){
@@ -2250,8 +2254,10 @@ function owlHint(){
   if(inGame && Math.random() < 0.4){
     html = marketAdvice(); // ゲーム中は今の相場に合わせたアドバイスも混ぜる
   } else {
-    let i; do { i = Math.floor(Math.random() * OWL_TIPS.length); } while(i === _lastOwlTip && OWL_TIPS.length > 1);
-    _lastOwlTip = i; html = OWL_TIPS[i];
+    // ゲーム中は本編に関係あるヒントだけ。タイトル画面ではミニゲーム系も混ぜる
+    const pool = inGame ? OWL_TIPS : OWL_TIPS.concat(OWL_TIPS_MENU);
+    let i; do { i = Math.floor(Math.random() * pool.length); } while(i === _lastOwlTip && pool.length > 1);
+    _lastOwlTip = i; html = pool[i];
   }
   showCoach(html, 9000);
 }
