@@ -2968,6 +2968,16 @@ function maybeDriveOnlineBot(){
 function stopHostDuties(){
   if(window._botDriveInterval){ clearInterval(window._botDriveInterval); window._botDriveInterval = null; }
   if(window._hostBeatInterval){ clearInterval(window._hostBeatInterval); window._hostBeatInterval = null; }
+  if(window._turnTimeoutInterval){ clearInterval(window._turnTimeoutInterval); window._turnTimeoutInterval = null; }
+}
+// オンライン用タイマーを全停止（ゲーム終了時・タイトルへ戻る時に呼ぶ）。
+// 残すと終了後も同期ポーリング・心拍・Bot代行が回り続け、通信の無駄と他ルームへの誤書き込みの温床になる
+function stopOnlineTimers(){
+  stopHostDuties();
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if(window._livePollInterval){ clearInterval(window._livePollInterval); window._livePollInterval = null; }
+  if(window._hostCheckInterval){ clearInterval(window._hostCheckInterval); window._hostCheckInterval = null; }
+  if(window._presenceInterval){ clearInterval(window._presenceInterval); window._presenceInterval = null; }
 }
 // 心拍：DB上のホストが自分でなければ「二重ホスト」なので自ら降格する（読んでから書く）。
 // これによりスリープ復帰した旧ホストや、移譲後に復帰した端末がホストを二重に名乗るのを防ぐ。
@@ -2994,6 +3004,9 @@ function startHostDuties(){
   if(window._hostBeatInterval) clearInterval(window._hostBeatInterval);
   _hostBeat();
   window._hostBeatInterval = setInterval(_hostBeat, 4000);
+  // 手番タイムアウト監視（切断プレイヤーの手番を自動スキップ）
+  if(window._turnTimeoutInterval) clearInterval(window._turnTimeoutInterval);
+  window._turnTimeoutInterval = setInterval(checkTurnTimeout, 5000);
   maybeDriveOnlineBot();
 }
 // 移譲で新ホストになる。先に host を自分に確定してから業務開始（旧ホストは次の心拍で降格）
@@ -3008,14 +3021,64 @@ async function becomeHost(){
 async function checkHostAlive(){
   if(LOCAL_MODE || !roomCode || isHost || !FB_URL) return;
   try{
-    const r = await fbGet(`rooms/${roomCode}`);
-    if(!r) return;
-    const stale = (Date.now() - (r.hostBeat || 0)) > 15000;
+    // 5秒ごとに走るため、ルーム全体（gameState込み）ではなく必要なフィールドだけ取得する
+    const [host, hostBeat] = await Promise.all([
+      fbGet(`rooms/${roomCode}/host`),
+      fbGet(`rooms/${roomCode}/hostBeat`)
+    ]);
+    if(host === null && hostBeat === null) return; // ルーム消滅 or 通信失敗
+    const stale = (Date.now() - (typeof hostBeat === 'number' ? hostBeat : 0)) > 15000;
     if(!stale) return;
     // 後継者＝（ターン順で）現ホスト以外・脱落していない人間プレイヤーの先頭。
     // 全端末が同じ判定をするので競合しない（先頭が落ちていても順に次点が拾える）
-    const successor = (G.players || []).filter(p => !p.isBot && !p.isBankrupt && p.id !== r.host)[0];
+    const successor = (G.players || []).filter(p => !p.isBot && !p.isBankrupt && p.id !== host)[0];
     if(successor && successor.id === myId) becomeHost();
+  }catch(e){}
+}
+
+// ─── プレゼンス（生存ビート）───────────────────────────
+// 全員が5秒ごとに自分の生存時刻を書き込む。ホストの手番タイムアウト判定が
+// 「切断」と「接続中だが考え中」を見分けるために使う
+function startPresenceBeat(){
+  if(LOCAL_MODE || !roomCode || !FB_URL) return;
+  if(window._presenceInterval) clearInterval(window._presenceInterval);
+  const beat = () => { if(roomCode) fbSet(`rooms/${roomCode}/presence/${myId}`, Date.now()); };
+  beat();
+  window._presenceInterval = setInterval(beat, 5000);
+}
+
+// ─── 手番タイムアウト（ホストのみ実行）─────────────────
+// 切断プレイヤーの手番でゲームが無期限停止するのを防ぐ。
+// 「手番が90秒進んでいない」かつ「手番プレイヤーのプレゼンスが45秒途絶」で自動スキップ。
+// プレゼンスが新しい（＝接続中でただ考えている）プレイヤーはスキップしない。
+const TURN_TIMEOUT_MS = 90000;
+const PRESENCE_STALE_MS = 45000;
+async function checkTurnTimeout(){
+  if(LOCAL_MODE || !isHost || !roomCode || !FB_URL || !_gameEntered) return;
+  if(G.gameOver || window._settlementStarted) return;
+  const cur = G.players[G.ci];
+  if(!cur || cur.isBot || cur.isGoal || cur.id === myId){ window._turnWatch = null; return; } // Bot代行・自分の手番は対象外
+  // 手番（ci/turn）が変わったら計測をリセット
+  const w = window._turnWatch;
+  if(!w || w.ci !== G.ci || w.turn !== G.turn){
+    window._turnWatch = { ci: G.ci, turn: G.turn, ts: Date.now() };
+    return;
+  }
+  // ライブ中継を最近受信していれば操作中とみなす
+  const lastActivity = Math.max(w.ts, window._lastLiveSeenAt || 0);
+  if(Date.now() - lastActivity < TURN_TIMEOUT_MS) return;
+  try{
+    const beat = await fbGet(`rooms/${roomCode}/presence/${cur.id}`);
+    if(typeof beat === 'number' && (Date.now() - beat) < PRESENCE_STALE_MS){
+      w.ts = Date.now(); // 接続は生きている（考え中）→ 計測をやり直す
+      return;
+    }
+    // 切断と判断 → ホストが手番をスキップ（nextTurnのpushStateで全員に同期される）
+    window._turnWatch = null;
+    log(`⏰ <span style="color:${cur.color?.bg||'#888'}">${cur.name}</span> の応答がないため手番をスキップ`);
+    toast(`⏰ ${cur.name} さんの応答がないため手番をスキップしました`);
+    isMoving = false;
+    nextTurn();
   }catch(e){}
 }
 
@@ -4486,7 +4549,6 @@ async function processCell(p, cell){
       p.forcedN++;
       G.year = 2; document.getElementById('yr-badge').textContent='2年目';
       if(!LOCAL_MODE) pushState(); // 強制ストップ状態を即保存
-      setTimeout(()=>{ const allYear2 = G.players.every(pl=>pl.isGoal||pl.isBankrupt||pl.forcedN>=1); if(allYear2) {} }, 100);
 
       // ★ receiveSalary でルーレット演出あり（投資家はサイコロ）
       await receiveSalary(p, 1, '1年目の決算です。');
@@ -5091,12 +5153,17 @@ function showWinner(){
 
   // オンライン: gameOver フラグを Firebase に書き込んで全員に通知
   if(!LOCAL_MODE && roomCode && FB_URL) {
-    G.gameOver = true;
-    G.finalRankings = sorted.map(p => ({
-      name: p.name, cash: p.cash, job: p.job, isBankrupt: p.isBankrupt || false
-    }));
-    pushState(); // gameOverフラグごとFirebaseに保存
-    saveGameResult(sorted); // ランキングに記録
+    // 既にgameOver（復帰や同期経由の表示）なら二重のpushState・ランキング二重記録を防ぐ
+    if(!G.gameOver) {
+      G.gameOver = true;
+      G.finalRankings = sorted.map(p => ({
+        name: p.name, cash: p.cash, job: p.job, isBankrupt: p.isBankrupt || false
+      }));
+      pushState(); // gameOverフラグごとFirebaseに保存
+      saveGameResult(sorted); // ランキングに記録
+      fbPatch(`rooms/${roomCode}`, { finishedAt: Date.now() }); // cleanupOldRoomsが1時間後にルームを削除
+    }
+    stopOnlineTimers(); // ★ 終了後は同期・心拍・Bot代行・プレゼンスを全停止（通信の無駄を止める）
   }
 }
 
@@ -5413,11 +5480,11 @@ let lastVersion = -1;
 let myName = '';
 
 // ─── Firebase REST API ───────────────────────
-async function fbGet(path) {
+async function fbGet(path, extraParams) {
   try {
     await ensureFbAuth();
     const timeout = new Promise((_,reject) => setTimeout(()=>reject(new Error('timeout')), 7000));
-    const req = fetch(`${FB_URL}/${path}.json?_=${Date.now()}${fbAuthParam('&')}`);
+    const req = fetch(`${FB_URL}/${path}.json?_=${Date.now()}${extraParams ? '&'+extraParams : ''}${fbAuthParam('&')}`);
     const r = await Promise.race([req, timeout]);
     if(r.status === 401 || r.status === 403) return '__PERMISSION_DENIED__';
     if(!r.ok) { console.warn('fbGet HTTP error', r.status, path); return null; }
@@ -5721,7 +5788,7 @@ async function syncGameState() {
     }
 
     if(gs.gameOver) {
-      clearInterval(pollTimer);
+      stopOnlineTimers(); // ★ 終了後は同期・心拍・Bot代行・プレゼンスを全停止
       // finalRankings がある場合はそのデータで表示（自分で計算せずホストの結果を使う）
       if(gs.finalRankings && gs.finalRankings.length > 0) {
         document.getElementById('wname').textContent =
@@ -5748,6 +5815,7 @@ async function livePollTick() {
     const live = await fbGet(`rooms/${roomCode}/live`);
     if(live && live.ts > (_lastLiveTs || 0)) {
       _lastLiveTs = live.ts;
+      window._lastLiveSeenAt = Date.now(); // 受信時刻（ローカル時計）。手番タイムアウトの活動判定に使う
 
       // ── 公開操作チャンス: 自分が対象投資家なら取引モーダルを出す ──
       // _followDone が立っている場合は自分が送った完了通知なので招待として扱わない
@@ -5986,25 +6054,34 @@ function backToStart() {
   LOCAL_MODE = false;
   isHost = false; roomCode = null;
   window._tutorial = false; hideCoach();
-  if(pollTimer) { clearInterval(pollTimer); pollTimer = null; } // 待機ポーリング等を停止
-  stopHostDuties(); // ★ Bot代行・心拍タイマーを停止（残ると他ルームへ誤書き込みの恐れ）
+  stopOnlineTimers(); // ★ 同期・ライブ・心拍・Bot代行・プレゼンスを全停止（残ると他ルームへ誤書き込みの恐れ）
   history.replaceState(null, '', location.pathname); // ?room= を消す
   showScreen('start-screen');
 }
 
-// 24時間以上前のルームを自動削除（ランキング rankings/ は別パスなので消えない）
+// 古いルーム・終了済みルームを自動削除（ランキング rankings/ は別パスなので消えない）
+// 24時間経過、またはゲーム終了（finishedAt）から1時間経過で削除
 async function cleanupOldRooms() {
   if(!FB_URL) return;
   try {
-    const rooms = await fbGet('rooms');
-    if(!rooms || typeof rooms !== 'object') return;
+    // shallowクエリでコード一覧だけ取得（gameState込みの全ルーム取得は通信量が大きい）
+    const codes = await fbGet('rooms', 'shallow=true');
+    if(!codes || typeof codes !== 'object') return;
     const now = Date.now();
     const DAY = 24 * 60 * 60 * 1000;
-    for(const code in rooms) {
-      const created = rooms[code] && rooms[code].created;
-      // 進行中のゲーム（ホスト心拍が10分以内）は24時間を超えても消さない
-      const beatFresh = (now - (rooms[code] && rooms[code].hostBeat || 0)) < 10 * 60 * 1000;
-      if(created && (now - created) > DAY && !beatFresh) {
+    const HOUR = 60 * 60 * 1000;
+    for(const code of Object.keys(codes)) {
+      const [created, hostBeat, finishedAt] = await Promise.all([
+        fbGet(`rooms/${code}/created`),
+        fbGet(`rooms/${code}/hostBeat`),
+        fbGet(`rooms/${code}/finishedAt`)
+      ]);
+      // 進行中のゲーム（ホスト心拍が10分以内）は消さない
+      const beatFresh = (now - (typeof hostBeat === 'number' ? hostBeat : 0)) < 10 * 60 * 1000;
+      if(beatFresh) continue;
+      const oldRoom  = typeof created === 'number' && (now - created) > DAY;
+      const finished = typeof finishedAt === 'number' && (now - finishedAt) > HOUR;
+      if(oldRoom || finished) {
         fetch(`${FB_URL}/rooms/${code}.json${fbAuthParam('?')}`, { method:'DELETE' }).catch(()=>{});
       }
     }
@@ -6047,30 +6124,48 @@ async function randomMatch() {
   const restoreBtn = () => { if(btn){ btn.disabled = false; btn.innerHTML = `${IC('dice')} ランダムマッチで対戦`; } };
 
   try {
-    const rooms = await fbGet('rooms');
+    // shallowクエリでコード一覧→公開ルームだけ詳細を取得（gameState込みの全ルーム取得を避ける）
+    const codes = await fbGet('rooms', 'shallow=true');
     let target = null;
-    if(rooms && typeof rooms === 'object') {
+    if(codes && typeof codes === 'object') {
       const now = Date.now();
-      const candidates = Object.entries(rooms).filter(([code, r]) => {
-        if(!r || r.public !== true || r.started) return false;
+      const codeList = Object.keys(codes);
+      const pubFlags = await Promise.all(codeList.map(c => fbGet(`rooms/${c}/public`)));
+      const pubCodes = codeList.filter((c, i) => pubFlags[i] === true);
+      const infos = await Promise.all(pubCodes.map(async code => {
+        const [started, created, players, host] = await Promise.all([
+          fbGet(`rooms/${code}/started`),
+          fbGet(`rooms/${code}/created`),
+          fbGet(`rooms/${code}/players`),
+          fbGet(`rooms/${code}/host`)
+        ]);
+        return { code, started, created, players, host };
+      }));
+      const candidates = infos.filter(r => {
+        if(r.started) return false;
         const pc = r.players ? Object.keys(r.players).length : 0;
         if(pc < 1 || pc >= 6) return false;                 // 満員/空は除外
         if(r.players && r.players[myId]) return false;       // 自分が既にいる部屋は除外
         if((now - (r.created || 0)) > 10 * 60 * 1000) return false; // 古い募集は除外
         return true;
       // 人数が多い部屋を優先（早く成立させる）
-      }).sort((a, b) => Object.keys(b[1].players).length - Object.keys(a[1].players).length);
-      if(candidates.length) target = candidates[0][0];
+      }).sort((a, b) => Object.keys(b.players).length - Object.keys(a.players).length);
+      if(candidates.length) target = candidates[0];
     }
 
     if(target) {
       // 既存の公開ルームに参加
-      roomCode = target;
-      const r = rooms[target];
-      isHost = (r.host === myId);
-      const color = Object.keys(r.players || {}).length;
-      const ok = await fbSet(`rooms/${target}/players/${myId}`, { id:myId, name, color, joined:Date.now() });
+      roomCode = target.code;
+      isHost = (target.host === myId);
+      const color = Object.keys(target.players || {}).length;
+      const ok = await fbSet(`rooms/${roomCode}/players/${myId}`, { id:myId, name, color, joined:Date.now() });
       if(!ok) { alert('❌ 参加に失敗しました。もう一度お試しください。'); restoreBtn(); return; }
+      // ★ 開始直後の競合対策: 参加書き込みの直後に開始されていないか再確認
+      if(!(await confirmJoinNotStarted(roomCode))) {
+        roomCode = null;
+        alert('⚠️ 直前にゲームが開始されたため参加できませんでした。もう一度お試しください。');
+        restoreBtn(); return;
+      }
       history.replaceState(null, '', `?room=${roomCode}`);
       toast('🎲 マッチしました！');
       restoreBtn();
@@ -6139,6 +6234,19 @@ async function createRoom() {
   goToWaiting();
 }
 
+// 参加書き込みの後に「開始済み」を再確認する（startedチェック→players書き込みの間の競合窓対策）。
+// 開始直後に滑り込むと gameState に自分が含まれず観戦状態になるため、その場合は参加を取り消してfalseを返す
+async function confirmJoinNotStarted(code){
+  await new Promise(r => setTimeout(r, 700)); // ホストの started 書き込みが届くのを待つ
+  const started = await fbGet(`rooms/${code}/started`);
+  if(started !== true) return true;
+  const gp = await fbGet(`rooms/${code}/gameState/players`);
+  const inGame = gp && Object.values(gp).some(p => p && p.id === myId);
+  if(inGame) return true; // ホストの開始処理に間に合っていた → そのまま参加
+  await fbSet(`rooms/${code}/players/${myId}`, null); // 中途半端な参加を取り消す
+  return false;
+}
+
 async function joinRoom() {
   const name = document.getElementById('lobby-name').value.trim();
   if(!name) { alert('プレイヤー名を入力してください'); return; }
@@ -6161,6 +6269,13 @@ async function joinRoom() {
   const color = cnt;
   const ok = await fbSet(`rooms/${code}/players/${myId}`, { id:myId, name, color, joined:Date.now() });
   if(!ok) { alert('❌ 参加に失敗しました。もう一度お試しください。'); return; }
+
+  // ★ 開始直後の競合対策: 参加書き込みの直後に開始されていないか再確認
+  if(!(await confirmJoinNotStarted(code))) {
+    roomCode = null;
+    alert('このルームはすでにゲームが開始されています');
+    return;
+  }
 
   history.replaceState(null,'',`?room=${roomCode}`);
   toast(`✅ ルーム ${code} に参加しました！`);
@@ -6336,7 +6451,10 @@ function enterGame() {
   if(!LOCAL_MODE) {
     if(pollTimer) clearInterval(pollTimer);
     pollTimer      = setInterval(syncGameState, 1500);
-    setInterval(livePollTick, 1500);
+    // ★ livePollTickは必ず既存タイマーをclearしてから張り直す（2戦目以降の多重登録＝通信倍増を防ぐ）
+    if(window._livePollInterval) clearInterval(window._livePollInterval);
+    window._livePollInterval = setInterval(livePollTick, 1500);
+    startPresenceBeat(); // 生存ビート開始（手番タイムアウト判定用）
     // ★ オンラインBot補充: ホストはBot代行＋心拍を開始。非ホストはホスト生存を監視（落ちたら後継者が引き継ぐ）
     if(isHost) startHostDuties();
     if(window._hostCheckInterval) clearInterval(window._hostCheckInterval);
