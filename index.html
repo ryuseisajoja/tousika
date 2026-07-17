@@ -1218,7 +1218,7 @@ body { background: var(--bg); color: var(--text); font-family: 'M PLUS Rounded 1
     <div style="text-align:center;opacity:0;animation:opFadeInOut 2.5s .45s ease both">
       <div style="font-family:'Nunito',sans-serif;font-size:clamp(16px,3.5vw,24px);font-weight:900;letter-spacing:.35em;color:#fff;line-height:1">PRODUCED BY</div>
       <div style="font-size:clamp(12px,2.5vw,18px);font-weight:900;letter-spacing:.1em;color:#fff;margin-top:8px">Team 金融すごろく（YouKey College）</div>
-      <div style="font-size:clamp(9px,1.8vw,13px);font-weight:700;letter-spacing:.06em;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.8">Hideshige Hashimoto　Kanae Maeda　Soichi Morimoto<br>Toki Kobayashi　Ryusei Koya</div>
+      <div style="font-size:clamp(9px,1.8vw,13px);font-weight:700;letter-spacing:.06em;color:rgba(255,255,255,.6);margin-top:6px;line-height:1.8">Hideshige Hashimoto　Kanae Maeda　Soichi Morimoto<br>Toki Kobayashi　Ryusei Koya　Kotaro Saito</div>
     </div>
   </div>
 
@@ -1843,7 +1843,7 @@ const HAPPS = [
   {name:'信用収縮', ins:false, desc:'借金がある場合のみ、現在の借金額の30％を追加で支払う。', type:'creditCrunch'},
   {name:'追徴課税', ins:false, desc:'20万円支払う（会社員は免除）。', type:'taxInv'},
   {name:'ギリシャ危機', ins:false, desc:'国債を3分の1失う。', type:'bondCrisis'},
-  {name:'銀行破綻', ins:false, desc:'持っている現金が10万円まで保証。それ以上は10万円になる。', type:'bankFail'}
+  {name:'銀行破綻', ins:false, desc:'持っている現金が100万円まで保証。それ以上は100万円になる。', type:'bankFail'}
 ];
 
 let G = { pc:3, players:[], ci:0, turn:1, year:1, market: MARKETS[2], highInt: false, marketManip: null, goalOrder: [], version:0 };
@@ -4628,7 +4628,7 @@ async function processCell(p, cell){
           for(const b of p.bonds){if(rem21<=0)break;const t=Math.min(b.units,rem21);b.units-=t;rem21-=t;}
           p.bonds=p.bonds.filter(b=>b.units>0); hc21v.val=0;
         }
-        else if(hc21v.type==='bankFail'){if(p.cash>100000)p.cash=100000; hc21v.val=0;}
+        else if(hc21v.type==='bankFail'){if(p.cash>1000000)p.cash=1000000; hc21v.val=0;}
         else if(hc21v.type==='creditCrunch'){ hc21v.val = (p.cash<0) ? -Math.floor(Math.abs(p.cash)*0.3) : 0; }
         else if(hc21v.type==='estLoss'&&pEstates(p).length>0){pEstates(p).sort((a,b)=>b.price-a.price).splice(0,1); hc21v.val=0;}
         else if(hc21v.type==='noSal') { p.noSalNext=true; hc21v.val=0; }
@@ -4730,7 +4730,7 @@ async function processCell(p, cell){
           for(const b of p.bonds){if(remH<=0)break;const t=Math.min(b.units,remH);b.units-=t;remH-=t;}
           p.bonds=p.bonds.filter(b=>b.units>0); hcv.val=0;
         }
-        else if(hcv.type==='bankFail'){if(p.cash>100000)p.cash=100000; hcv.val=0;}
+        else if(hcv.type==='bankFail'){if(p.cash>1000000)p.cash=1000000; hcv.val=0;}
         else if(hcv.type==='creditCrunch'){ hcv.val = (p.cash<0) ? -Math.floor(Math.abs(p.cash)*0.3) : 0; }
         else if(hcv.type==='noSal') { p.noSalNext=true; hcv.val=0; }
         if(hcv.val) p.cash+=hcv.val;
@@ -4795,7 +4795,7 @@ async function processCell(p, cell){
             for(const b of p.bonds){if(rem31<=0)break;const t=Math.min(b.units,rem31);b.units-=t;rem31-=t;}
             p.bonds=p.bonds.filter(b=>b.units>0);
           }
-          else if(hcF.type === 'bankFail') { if(p.cash > 100000) p.cash = 100000; }
+          else if(hcF.type === 'bankFail') { if(p.cash > 1000000) p.cash = 1000000; }
           else if(hcF.type === 'creditCrunch') { if(p.cash < 0) hcF.val = -Math.floor(Math.abs(p.cash)*0.3); }
           else if(hcF.type === 'estLoss' && pEstates(p).length>0) pEstates(p).sort((a,b)=>a.price-b.price).pop();
           else if(hcF.type === 'noSal') p.noSalNext = true;
@@ -5270,10 +5270,12 @@ function closeAchievements(){ document.getElementById('achievements-panel')?.cla
 // ─ ゲーム終了時に結果を保存 ─
 async function saveGameResult(sortedPlayers) {
   if(LOCAL_MODE || !FB_URL) return; // オンラインゲームのみ
-  const now   = new Date();
-  const ymd   = now.toISOString().slice(0,10).replace(/-/g,''); // 20240430
-  const ym    = ymd.slice(0,6);                                  // 202404
-  const ts    = Date.now();
+  // ★ 全端末で同一のgameId（＝同一の保存キー）を使う。上書きになるので何台が保存しても1ゲーム1記録
+  const ts    = G.gameStartTs || Date.now();
+  const d     = new Date(ts);
+  const _p2   = n => String(n).padStart(2,'0');
+  const ymd   = `${d.getFullYear()}${_p2(d.getMonth()+1)}${_p2(d.getDate())}`; // ローカル日付（旧: UTCで深夜0〜9時が前日扱いだった）
+  const ym    = ymd.slice(0,6);
   const gameId = `g_${ts}`;
 
   // 全プレイヤー分を保存
@@ -5332,7 +5334,8 @@ async function loadRanking(tab) {
 
   try {
     const now = new Date();
-    const todayYmd = now.toISOString().slice(0,10).replace(/-/g,'');
+    const _p2 = n => String(n).padStart(2,'0');
+    const todayYmd = `${now.getFullYear()}${_p2(now.getMonth()+1)}${_p2(now.getDate())}`; // ローカル日付（保存側と統一）
     const thisYm   = todayYmd.slice(0,6);
 
     let entries = [];
@@ -5359,6 +5362,15 @@ async function loadRanking(tab) {
         });
       }
     }
+
+    // ★ 同一ゲームの重複記録を除去（旧版は各端末が別gameIdで保存していたため人数分重複していた）
+    const _seenRk = new Set();
+    entries = entries.filter(e => {
+      const k = `${e.ymd}|${e.rank}|${e.name}|${e.score}`;
+      if(_seenRk.has(k)) return false;
+      _seenRk.add(k);
+      return true;
+    });
 
     if(entries.length === 0) {
       listEl.innerHTML = '<div class="rp-empty">📊 データがありません<br>ゲームを完了すると記録されます！</div>';
@@ -6405,6 +6417,7 @@ async function hostStartGame() {
   G.pc = _pc; G.ci = 0; G.turn = 1; G.year = 1;
   G.market = MARKETS[2]; G.goalOrder = []; G.version = 1;
   G.highInt = false; G.marketManip = null;
+  G.gameStartTs = Date.now(); // ランキング保存の共通gameId。各端末がDate.now()で別IDを発行すると同一ゲームが人数分重複記録される
   G.realMode = !!room.realMode; // ← ホストが待合室で設定したリアル志向モードを全員に同期
 
   const ok = await fbPatch(`rooms/${roomCode}`, { started:true, gameState:G });
