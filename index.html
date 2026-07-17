@@ -2677,7 +2677,8 @@ function renderAll(){
     const jl = p.job==='emp' ? '<span class="jpill">会社員</span>' :
                p.job==='fre' ? '<span class="jpill" style="color:var(--orange);border-color:var(--orange)">フリーター</span>' :
                '<span class="jpill" style="color:var(--green)">投資家</span>';
-    const bankruptTag = p.isBankrupt ? ' <span class="jpill" style="color:#fff;background:var(--red);border-color:var(--red)">💥破産</span>' : '';
+    const bankruptTag = p.forfeited ? ' <span class="jpill" style="color:#fff;background:#64748b;border-color:#64748b">🔌離脱</span>'
+                      : p.isBankrupt ? ' <span class="jpill" style="color:#fff;background:var(--red);border-color:var(--red)">💥破産</span>' : '';
     const b1 = pBonds(p).filter(b=>b.type==='1yr').reduce((a,b)=>a+b.units,0);
     const b2 = pBonds(p).filter(b=>b.type==='2yr').reduce((a,b)=>a+b.units,0);
 
@@ -2741,7 +2742,7 @@ function renderAll(){
         <div class="mob-pcard${i===G.ci?' active':''}" onclick="showPlayerAssets(${i})">
           <div class="mob-pcard-dot" style="background:${p.color?.bg||'#888'}"></div>
           <div style="flex:1;min-width:0">
-            <div class="mob-pcard-name" style="color:${p.color?.bg||'#888'}">${p.name}${p.isBankrupt?' 💥':p.isGoal?' 🏁':''}</div>
+            <div class="mob-pcard-name" style="color:${p.color?.bg||'#888'}">${p.name}${p.forfeited?' 🔌':p.isBankrupt?' 💥':p.isGoal?' 🏁':''}</div>
             <div class="mob-pcard-assets-hint">タップで資産確認</div>
           </div>
           <div class="mob-pcard-cash${p.cash<0?' neg':''}">${fmtM(p.cash)}</div>
@@ -3049,8 +3050,10 @@ function startPresenceBeat(){
 
 // ─── 手番タイムアウト（ホストのみ実行）─────────────────
 // 切断プレイヤーの手番でゲームが無期限停止するのを防ぐ。
-// 「手番が90秒進んでいない」かつ「手番プレイヤーのプレゼンスが45秒途絶」で自動スキップ。
-// プレゼンスが新しい（＝接続中でただ考えている）プレイヤーはスキップしない。
+// 「手番が90秒進んでいない」かつ「手番プレイヤーのプレゼンスが45秒途絶」なら切断と判断し、
+// その人を脱落（破産と同じisGoal+isBankrupt）扱いにする。単にスキップするだけだと
+// 本人がゴールに到達せず「全員ゴール」判定に届かないまま最終清算に入れなくなるため、脱落で確定させる。
+// プレゼンスが新しい（＝接続中でただ考えている）プレイヤーは対象にしない。
 const TURN_TIMEOUT_MS = 90000;
 const PRESENCE_STALE_MS = 45000;
 async function checkTurnTimeout(){
@@ -3073,12 +3076,15 @@ async function checkTurnTimeout(){
       w.ts = Date.now(); // 接続は生きている（考え中）→ 計測をやり直す
       return;
     }
-    // 切断と判断 → ホストが手番をスキップ（nextTurnのpushStateで全員に同期される）
+    // 切断と判断 → ホストが対象プレイヤーを脱落（最下位）扱いにして手番を進める
     window._turnWatch = null;
-    log(`⏰ <span style="color:${cur.color?.bg||'#888'}">${cur.name}</span> の応答がないため手番をスキップ`);
-    toast(`⏰ ${cur.name} さんの応答がないため手番をスキップしました`);
+    cur.isGoal    = true;  // 以降ターンをスキップ（破産と同じゴール扱い→全員ゴール判定に寄与）
+    cur.isBankrupt= true;  // 最終清算で脱落者として処理（資産は現金化されず最下位寄りに）
+    cur.forfeited = true;  // 切断脱落マーク（表示・復帰判定用）
+    log(`🔌 <span style="color:${cur.color?.bg||'#888'}">${cur.name}</span> が接続を失い<strong>脱落</strong>しました`);
+    toast(`🔌 ${cur.name} さんが接続を失ったため脱落扱いにしました`);
     isMoving = false;
-    nextTurn();
+    nextTurn(); // 状態はnextTurn内のpushStateで全員に同期される
   }catch(e){}
 }
 
@@ -5142,7 +5148,7 @@ function showWinner(){
   document.getElementById('wname').textContent=`${sorted[0].name}（${sorted[0].job==='emp'?'会社員':sorted[0].job==='fre'?'フリーター':'投資家'}）`;
   document.getElementById('rankings').innerHTML = sorted.map((p,i) => `
     <div class="rank-item">
-      <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${p.name}${p.isBankrupt?' 💥':''}</span>
+      <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${p.name}${p.forfeited?' 🔌':p.isBankrupt?' 💥':''}</span>
       <span style="color:var(--gold)">${fmtM(p.cash)}</span>
     </div>
   `).join('');
@@ -5157,7 +5163,7 @@ function showWinner(){
     if(!G.gameOver) {
       G.gameOver = true;
       G.finalRankings = sorted.map(p => ({
-        name: p.name, cash: p.cash, job: p.job, isBankrupt: p.isBankrupt || false
+        name: p.name, cash: p.cash, job: p.job, isBankrupt: p.isBankrupt || false, forfeited: p.forfeited || false
       }));
       pushState(); // gameOverフラグごとFirebaseに保存
       saveGameResult(sorted); // ランキングに記録
@@ -5807,7 +5813,7 @@ async function syncGameState() {
           `${gs.finalRankings[0].name}（${gs.finalRankings[0].job==='emp'?'会社員':gs.finalRankings[0].job==='fre'?'フリーター':'投資家'}）`;
         document.getElementById('rankings').innerHTML = gs.finalRankings.map((p,i) => `
           <div class="rank-item">
-            <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${sanitizeName(p.name)}${p.isBankrupt?' 💥':''}</span>
+            <span>${['🥇','🥈','🥉','4位','5位','6位'][i]} ${sanitizeName(p.name)}${p.forfeited?' 🔌':p.isBankrupt?' 💥':''}</span>
             <span style="color:var(--gold)">${fmtM(p.cash)}</span>
           </div>`).join('');
         document.getElementById('wov').classList.add('show');
@@ -6992,7 +6998,7 @@ window.showPlayerAssets = function(idx) {
     ? safeEstates.map(e=>`🏠 ${fmtM(e.price)}`).join('　')
     : 'なし';
   const jobLabel = p.job==='emp'?'🏢 会社員':p.job==='inv'?'📈 投資家':'💼 フリーター';
-  const statusLabel = p.isBankrupt?'💥 破産':p.isGoal?'🏁 ゴール済':'🎮 プレイ中';
+  const statusLabel = p.forfeited?'🔌 離脱':p.isBankrupt?'💥 破産':p.isGoal?'🏁 ゴール済':'🎮 プレイ中';
   showModal({
     type:'t-info', tag:'📊 資産確認',
     title:`${p.name} の資産`,
